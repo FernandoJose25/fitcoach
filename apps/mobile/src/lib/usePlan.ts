@@ -9,8 +9,11 @@ export function usePlan() {
   return useMemo(() => (profile && targets ? buildPlan(targets, profile, FOODS, RECIPES, variants) : []), [profile, targets, variants]);
 }
 
+// Referencia estable: devolver `[]` nuevo en cada lectura hace que Zustand re-renderice sin fin.
+const EMPTY: LogItem[] = [];
+
 export function useTodayLogs(): LogItem[] {
-  return useApp((s) => s.logs[todayKey()] ?? []);
+  return useApp((s) => s.logs[todayKey()] ?? EMPTY);
 }
 
 export const sum = (items: Item[]) => totals(items, FOODS);
