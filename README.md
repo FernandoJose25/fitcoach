@@ -1,6 +1,6 @@
 # FitCoach
 
-App móvil gratuita de nutrición + entrenamiento. Especificación completa en [docs/SPEC.md](docs/SPEC.md).
+App móvil gratuita de nutrición + entrenamiento. Especificación completa en [docs/SPEC.md](docs/SPEC.md) y plan de ejecución en [docs/PLAN.md](docs/PLAN.md).
 
 ```
 packages/core   lógica pura (calorías, plan de comidas, rutinas, veredicto) — 100 % testeable
