@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useUi } from '@/store/useUi';
 import { fonts, useTheme } from '@/theme';
 
-const COLORS = ['#C8F44D', '#FFB547', '#FF7A59', '#38bdf8', '#f472b6'];
+const COLORS = ['#FF5A2E', '#D6B26E', '#8EA4B9', '#EDE9E1', '#6B675E'];
 
 function Dot({ i, seed }: { i: number; seed: number }) {
   const t = useSharedValue(0);
@@ -22,7 +22,7 @@ function Dot({ i, seed }: { i: number; seed: number }) {
     opacity: 1 - t.value,
     transform: [{ translateX: x * t.value }, { translateY: y * t.value }, { scale: 1 - 0.7 * t.value }],
   }));
-  return <Animated.View style={[{ position: 'absolute', width: 9, height: 9, borderRadius: 5, backgroundColor: color }, a]} />;
+  return <Animated.View style={[{ position: 'absolute', width: 4, height: 11, borderRadius: 1, backgroundColor: color }, a]} />;
 }
 
 /** Toast + confeti globales (registro exitoso). Se monta una vez en el layout raíz. */
@@ -52,7 +52,7 @@ export function Overlay() {
             backgroundColor: c.ink,
             paddingVertical: 10,
             paddingHorizontal: 16,
-            borderRadius: 14,
+            borderRadius: 10,
           }}
         >
           <Text style={{ color: c.bg, fontFamily: fonts.bold }}>{toast}</Text>

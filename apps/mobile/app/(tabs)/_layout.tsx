@@ -3,28 +3,31 @@ import { Tabs, useRouter } from 'expo-router';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { useEffect } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Icon, type IconName } from '@/components/Icon';
 import { Tap } from '@/components/Tap';
-import { alpha, fonts, spring, useTheme } from '@/theme';
+import { fonts, spring, useTheme } from '@/theme';
 
-const TABS: Record<string, { icon: string; label: string }> = {
-  index: { icon: '🏠', label: 'Hoy' },
-  plan: { icon: '🍱', label: 'Plan' },
-  entreno: { icon: '🏋️', label: 'Entreno' },
-  aprende: { icon: '📚', label: 'Aprende' },
+const TABS: Record<string, { icon: IconName; label: string }> = {
+  index: { icon: 'today', label: 'Hoy' },
+  plan: { icon: 'plan', label: 'Menú' },
+  entreno: { icon: 'train', label: 'Entreno' },
+  aprende: { icon: 'learn', label: 'Aprende' },
 };
 
 function TabButton({ name, on, onPress }: { name: string; on: boolean; onPress: () => void }) {
   const { c } = useTheme();
-  const s = useSharedValue(1);
+  // Indicador de señal: filete bermellón que crece sobre la pestaña activa.
+  const w = useSharedValue(on ? 1 : 0);
   useEffect(() => {
-    s.value = withSpring(on ? 1.2 : 1, spring);
-  }, [on, s]);
-  const a = useAnimatedStyle(() => ({ transform: [{ scale: s.value }, { translateY: on ? -3 : 0 }] }));
+    w.value = withSpring(on ? 1 : 0, spring);
+  }, [on, w]);
+  const bar = useAnimatedStyle(() => ({ transform: [{ scaleX: w.value }], opacity: w.value }));
   const t = TABS[name];
   return (
-    <Tap haptic={false} onPress={onPress} style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 2, height: '100%' }}>
-      <Animated.Text style={[{ fontSize: 20 }, a]}>{t.icon}</Animated.Text>
-      <Text style={{ fontSize: 11, color: on ? c.ink : c.mut, fontFamily: on ? fonts.bold : fonts.med }}>{t.label}</Text>
+    <Tap haptic={false} onPress={onPress} accessibilityRole="tab" accessibilityState={{ selected: on }} accessibilityLabel={t.label} style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 5, height: '100%' }}>
+      <Animated.View style={[{ position: 'absolute', top: 0, width: 22, height: 2, backgroundColor: c.acc }, bar]} />
+      <Icon name={t.icon} size={22} color={on ? c.ink : c.mut} />
+      <Text style={{ fontSize: 9.5, letterSpacing: 1.2, textTransform: 'uppercase', color: on ? c.ink : c.mut, fontFamily: fonts.num }}>{t.label}</Text>
     </Tap>
   );
 }
@@ -50,16 +53,16 @@ function TabBar({ state, navigation, navigateToTab }: TabBarProps) {
         position: 'absolute',
         left: 12,
         right: 12,
-        bottom: insets.bottom + 12,
-        height: 68,
-        borderRadius: 26,
+        bottom: insets.bottom + 10,
+        height: 66,
+        borderRadius: 16,
         backgroundColor: c.card,
         borderWidth: 1,
         borderColor: c.line,
         flexDirection: 'row',
         alignItems: 'center',
         shadowColor: '#000',
-        shadowOpacity: 0.12,
+        shadowOpacity: 0.2,
         shadowRadius: 16,
         shadowOffset: { width: 0, height: 8 },
         elevation: 8,
@@ -69,24 +72,22 @@ function TabBar({ state, navigation, navigateToTab }: TabBarProps) {
       <View style={{ width: 78, alignItems: 'center' }}>
         <Tap
           onPress={() => router.push('/scan')}
+          accessibilityLabel="Registrar comida"
           style={{
-            width: 62,
-            height: 62,
-            borderRadius: 31,
-            marginTop: -28,
+            width: 52,
+            height: 52,
+            borderRadius: 12,
             backgroundColor: c.acc,
             alignItems: 'center',
             justifyContent: 'center',
             shadowColor: c.acc,
-            shadowOpacity: 0.45,
-            shadowRadius: 12,
-            shadowOffset: { width: 0, height: 8 },
-            elevation: 6,
-            borderWidth: 4,
-            borderColor: alpha(c.bg, 0.6),
+            shadowOpacity: 0.35,
+            shadowRadius: 10,
+            shadowOffset: { width: 0, height: 4 },
+            elevation: 4,
           }}
         >
-          <Text style={{ fontSize: 30, color: c.on, fontFamily: fonts.bold, lineHeight: 34 }}>＋</Text>
+          <Icon name="plus" size={24} stroke={2.25} color={c.on} />
         </Tap>
       </View>
       {render(['entreno', 'aprende'])}

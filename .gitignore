@@ -6,3 +6,5 @@ dist/
 !.env.example
 *.log
 supabase/.temp/
+__pycache__/
+bugreport-*.zip

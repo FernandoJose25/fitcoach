@@ -41,7 +41,9 @@ export interface Food {
   p: number;
   c: number;
   f: number;
-  role: 'P' | 'C' | 'V' | 'F';
+  /** P proteína · C carbohidrato · V verdura/fruta · F grasa · M plato preparado (solo registro, no entra en recetas). */
+  role: 'P' | 'C' | 'V' | 'F' | 'M';
+  /** Etiquetas de alérgeno o preferencia, separadas por coma (p. ej. "res,cebolla"). */
   tag?: string;
 }
 

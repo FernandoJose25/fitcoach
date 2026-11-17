@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { AppState } from 'react-native';
-import type { Profile } from '@fitcoach/core';
+import type { Profile, SetLog } from '@fitcoach/core';
 import { supabase } from './supabase';
 import { allFoods } from './usePlan';
 import { useApp, type LogItem, type Via } from '@/store/useApp';
@@ -15,7 +15,8 @@ const ok = <T extends { error: unknown }>(r: T) => {
   return r;
 };
 
-async function userId() {
+/** Sesión de Supabase (anónima si no hay); devuelve el id del usuario. */
+export async function userId() {
   const { data } = await supabase!.auth.getSession();
   if (data.session) return data.session.user.id;
   return ok(await supabase!.auth.signInAnonymously()).data.user!.id;
@@ -85,6 +86,11 @@ async function pushDay(uid: string, day: string) {
       ok(await supabase!.from('meal_log_items').insert(logs.map((l) => ({ log_id: idOf[String(l.slot)], food_id: l.foodId, grams: l.grams, via: l.via }))));
     }
     ok(await supabase!.from('water_logs').upsert({ user_id: uid, day, glasses: s.water[day] ?? 0 }));
+    const sets = s.sets[day] ?? [];
+    ok(await supabase!.from('workout_sets').delete().eq('user_id', uid).eq('day', day));
+    if (sets.length) {
+      ok(await supabase!.from('workout_sets').insert(sets.map((x) => ({ user_id: uid, day, exercise: x.exercise, set_no: x.setNo, reps: x.reps, weight_kg: x.weightKg }))));
+    }
   } catch (e) {
     const now = useApp.getState().dirtyDays;
     if (!now.includes(day)) useApp.setState({ dirtyDays: [...now, day] });
@@ -92,7 +98,7 @@ async function pushDay(uid: string, day: string) {
   }
 }
 
-/** Sin perfil local pero con datos en la nube (misma cuenta): recupera perfil, registros y agua. */
+/** Sin perfil local pero con datos en la nube (misma cuenta): recupera perfil, registros, agua y series. */
 async function pull(uid: string) {
   const { data: row } = ok(await supabase!.from('profiles').select('*').eq('user_id', uid).maybeSingle());
   if (!row) return;
@@ -114,6 +120,7 @@ async function pull(uid: string) {
   };
   const { data: meals } = ok(await supabase!.from('meal_logs').select('day, slot, meal_log_items(food_id, grams, via)').eq('user_id', uid));
   const { data: water } = ok(await supabase!.from('water_logs').select('day, glasses').eq('user_id', uid));
+  const { data: wsets } = ok(await supabase!.from('workout_sets').select('day, exercise, set_no, reps, weight_kg').eq('user_id', uid));
   const offIds = [...new Set((meals ?? []).flatMap((m) => m.meal_log_items.map((i) => i.food_id as string)))].filter((id) => id.startsWith('off_'));
   const { data: off } = offIds.length ? ok(await supabase!.from('foods').select('id, name_es, emoji, kcal, p, c, f, role').in('id', offIds)) : { data: [] };
 
@@ -127,8 +134,17 @@ async function pull(uid: string) {
       if (known[i.food_id]) (logs[m.day] ??= []).push({ foodId: i.food_id, grams: Number(i.grams), slot: Number(m.slot), via: i.via as Via });
     }
   }
+  const sets: Record<string, SetLog[]> = {};
+  for (const w of wsets ?? []) (sets[w.day] ??= []).push({ exercise: w.exercise, setNo: w.set_no, reps: w.reps ?? 0, weightKg: Number(w.weight_kg ?? 0) });
   useApp.getState().commitProfile(profile);
-  useApp.setState({ logs, water: Object.fromEntries((water ?? []).map((w) => [w.day, w.glasses])), dirtyDays: [], profileDirty: false });
+  useApp.setState({
+    logs,
+    water: Object.fromEntries((water ?? []).map((w) => [w.day, w.glasses])),
+    sets,
+    workoutDays: Object.keys(sets), // aproximación: un día con series cuenta como entreno hecho
+    dirtyDays: [],
+    profileDirty: false,
+  });
 }
 
 let running = false;

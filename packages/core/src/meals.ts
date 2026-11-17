@@ -26,6 +26,9 @@ export const TAGS: Record<string, string[]> = {
 export const bannedTags = (p: Pick<Profile, 'allergies' | 'avoid'>) =>
   new Set([...p.allergies, ...p.avoid].flatMap((l) => TAGS[l] ?? []));
 
+/** ¿Lleva el alimento alguna etiqueta vetada? */
+export const isBanned = (f: Pick<Food, 'tag'>, banned: Set<string>) => !!f.tag && f.tag.split(',').some((t) => banned.has(t));
+
 export function buildPlan(
   t: Targets,
   p: Profile,
@@ -34,17 +37,23 @@ export function buildPlan(
   variants: number[] = [],
 ): Meal[] {
   const banned = bannedTags(p);
-  const ok = (id: string) => !!foods[id] && (!foods[id].tag || !banned.has(foods[id].tag!));
+  const ok = (id: string) => !!foods[id] && !isBanned(foods[id], banned);
   const plan: Meal[] = [];
   SPLITS[p.mealsPerDay].forEach(([label, slot, share], i) => {
     const tk = t.kcal * share;
     const tp = t.protein * share;
     const base = (r: Recipe) => totals(r.items, foods);
+    // Distancia tras escalar la receta: error relativo de kcal + error relativo de proteína absoluta.
+    const score = (r: Recipe) => {
+      const b = base(r);
+      const f = clamp(tk / b.kcal, 0.55, 1.9);
+      return Math.abs(b.kcal * f - tk) / tk + Math.abs(b.p * f - tp) / tp;
+    };
     const cands = recipes
       .filter((r) => r.slots.includes(slot) && r.items.every((x) => ok(x.foodId)))
-      .sort(
-        (a, b) => Math.abs(base(a).p / base(a).kcal - tp / tk) - Math.abs(base(b).p / base(b).kcal - tp / tk),
-      );
+      .map((r) => ({ r, s: score(r) }))
+      .sort((a, b) => a.s - b.s)
+      .map(({ r }) => r);
     const used = plan.map((m) => m.recipeId);
     const pool = cands.filter((r) => !used.includes(r.id));
     const list = pool.length ? pool : cands;

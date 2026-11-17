@@ -5,6 +5,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { foodFromOff, frequentFoodIds, offId, searchFoods, verdict, type Food } from '@fitcoach/core';
 import { Chip } from '@/components/Chip';
+import { PlateScan } from '@/components/PlateScan';
 import { Tap } from '@/components/Tap';
 import { BigButton, Card, Em, H, Pill, Small, T } from '@/components/ui';
 import { sum, useFoods, usePlan, useTodayLogs } from '@/lib/usePlan';
@@ -19,7 +20,7 @@ const MODES: [Mode, string][] = [
   ['plato', '📷 Plato'],
 ];
 
-/** Registro manual: búsqueda, código de barras y (F4) foto del plato. */
+/** Registro manual: búsqueda, código de barras y foto del plato con IA. */
 export default function Scan() {
   const { c } = useTheme();
   const insets = useSafeAreaInsets();
@@ -65,7 +66,7 @@ export default function Scan() {
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 14 }}>
         <Tap
           onPress={() => (picked ? setPicked(null) : router.back())}
-          style={{ width: 42, height: 42, borderRadius: 21, backgroundColor: c.card, borderWidth: 1, borderColor: c.line, alignItems: 'center', justifyContent: 'center' }}
+          style={{ width: 42, height: 42, borderRadius: 11, backgroundColor: c.card, borderWidth: 1, borderColor: c.line, alignItems: 'center', justifyContent: 'center' }}
         >
           <Text style={{ color: c.ink, fontSize: 18 }}>{picked ? '‹' : '✕'}</Text>
         </Tap>
@@ -99,7 +100,7 @@ export default function Scan() {
                   keyboardType="number-pad"
                   maxLength={4}
                   selectTextOnFocus
-                  style={{ color: c.ink, fontFamily: fonts.titleX, fontSize: 32, minWidth: 70, textAlign: 'right', padding: 0 }}
+                  style={{ color: c.ink, fontFamily: fonts.titleX, fontSize: 39, minWidth: 70, textAlign: 'right', padding: 0 }}
                 />
                 <T kind="mut">g</T>
               </View>
@@ -115,7 +116,7 @@ export default function Scan() {
                 ] as const
               ).map(([label, per100, color]) => (
                 <View key={label} style={{ alignItems: 'center', flex: 1 }}>
-                  <Text style={{ fontFamily: fonts.title, fontSize: 17, color }}>{Math.round(per100 * k)}</Text>
+                  <Text style={{ fontFamily: fonts.title, fontSize: 21, color }}>{Math.round(per100 * k)}</Text>
                   <Small>{label}</Small>
                 </View>
               ))}
@@ -187,13 +188,19 @@ export default function Scan() {
           {mode === 'codigo' && <Barcode onFood={(f) => pick(f, 'barcode')} />}
 
           {mode === 'plato' && (
-            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', gap: 10 }}>
-              <Text style={{ fontSize: 56 }}>📷</Text>
-              <H size={20}>Foto del plato</H>
-              <T kind="mut" style={{ textAlign: 'center' }}>
-                El escáner con IA llega pronto. Mientras tanto, busca el alimento o escanea su código de barras.
-              </T>
-            </View>
+            <PlateScan
+              foods={foods}
+              slotLabel={plan[slot]?.label ?? 'mi día'}
+              targets={targets}
+              goal={profile.goal}
+              eaten={eaten}
+              onRegister={(items) => {
+                useApp.getState().addLogs(items.map((i) => ({ ...i, slot, via: 'scan' as const })));
+                useUi.getState().confetti();
+                useUi.getState().showToast(`Plato registrado en ${plan[slot]?.label ?? 'tu día'} ✓`);
+                router.back();
+              }}
+            />
           )}
         </>
       )}

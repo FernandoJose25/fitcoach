@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { bannedTags, buildPlan, FOODS, RECIPES, totals, type Food, type Item } from '@fitcoach/core';
+import { bannedTags, buildPlan, isBanned, FOODS, RECIPES, totals, type Food, type Item } from '@fitcoach/core';
 import { useApp, todayKey, type LogItem } from '@/store/useApp';
 
 /** Plan del día recalculado desde el core cuando cambian perfil, metas o variantes. */
@@ -31,7 +31,7 @@ export const sum = (items: Item[]) => totals(items, allFoods());
 export function bestProtein(p: { allergies: string[]; avoid: string[] }) {
   const banned = bannedTags(p);
   const list = Object.values(FOODS)
-    .filter((f) => f.role === 'P' && (!f.tag || !banned.has(f.tag)))
+    .filter((f) => f.role === 'P' && !isBanned(f, banned))
     .sort((a, b) => b.p / b.kcal - a.p / a.kcal);
   return list[0] ? { id: list[0].id, name: list[0].name, pPer100: list[0].p } : null;
 }

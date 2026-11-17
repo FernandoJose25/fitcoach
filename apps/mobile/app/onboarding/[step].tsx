@@ -31,7 +31,7 @@ const LAST = STEPS.length - 1; // resumen
 
 function Stepper({ label, unit, value, min, max, step = 1, onChange }: { label: string; unit: string; value: number; min: number; max: number; step?: number; onChange: (v: number) => void }) {
   const { c } = useTheme();
-  const btn = { width: 34, height: 34, borderRadius: 11, backgroundColor: c.bg, borderWidth: 1, borderColor: c.line, alignItems: 'center' as const, justifyContent: 'center' as const };
+  const btn = { width: 34, height: 34, borderRadius: 8, backgroundColor: c.bg, borderWidth: 1, borderColor: c.line, alignItems: 'center' as const, justifyContent: 'center' as const };
   return (
     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 12, paddingHorizontal: 14, borderRadius: radius.btn, backgroundColor: c.card, borderWidth: 1, borderColor: c.line, marginBottom: 10 }}>
       <T kind="bold">{label}</T>
@@ -121,7 +121,7 @@ export default function OnboardingStep() {
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 14 }}>
         <Tap
           onPress={() => router.back()}
-          style={{ width: 36, height: 36, borderRadius: 12, backgroundColor: c.card, borderWidth: 1, borderColor: c.line, alignItems: 'center', justifyContent: 'center' }}
+          style={{ width: 36, height: 36, borderRadius: 8, backgroundColor: c.card, borderWidth: 1, borderColor: c.line, alignItems: 'center', justifyContent: 'center' }}
         >
           <Text style={{ color: c.ink, fontSize: 18 }}>‹</Text>
         </Tap>
@@ -145,7 +145,7 @@ export default function OnboardingStep() {
                 placeholder="¿Cómo te llamas?"
                 placeholderTextColor={c.mut}
                 maxLength={18}
-                style={{ padding: 13, paddingHorizontal: 14, borderRadius: 14, backgroundColor: c.card, color: c.ink, borderWidth: 1, borderColor: touched && errors.name ? c.f : c.line, fontFamily: fonts.med, fontSize: 15, marginBottom: 8 }}
+                style={{ padding: 13, paddingHorizontal: 14, borderRadius: 10, backgroundColor: c.card, color: c.ink, borderWidth: 1, borderColor: touched && errors.name ? c.f : c.line, fontFamily: fonts.med, fontSize: 15, marginBottom: 8 }}
               />
               {touched && errors.name && <Small style={{ color: c.f, marginBottom: 8 }}>{errors.name}</Small>}
               <Label>Sexo biológico</Label>
@@ -204,7 +204,7 @@ export default function OnboardingStep() {
           {summary && (
             <>
               <Card hero>
-                <Text style={{ fontFamily: fonts.titleX, fontSize: 36, color: c.acc }}>{fmt(summary.kcal)} kcal</Text>
+                <Text style={{ fontFamily: fonts.titleX, fontSize: 44, color: c.acc }}>{fmt(summary.kcal)} kcal</Text>
                 <Small>
                   Mantenimiento {fmt(summary.tdee)} kcal · {summary.weeklyKg > 0 ? '+' : ''}
                   {summary.weeklyKg} kg/sem

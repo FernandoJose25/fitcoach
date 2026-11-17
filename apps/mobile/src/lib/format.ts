@@ -6,7 +6,6 @@ export const fmt = (n: number) =>
 
 export const grams = (g: number) => (g >= 1000 ? `${(g / 1000).toFixed(1)} kg` : `${Math.round(g)} g`);
 
-export const SLOT_ICON: Record<string, string> = { D: '🍳', S: '🍎', A: '🍽️', C: '🌙' };
 export const WEEKDAYS = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
 
 /** Lunes = 0 … Domingo = 6. */

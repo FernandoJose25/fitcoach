@@ -5,12 +5,12 @@ import { Tap } from './Tap';
 import { Em, Small, T } from './ui';
 import { fonts, radius, spring, useTheme } from '@/theme';
 
-/** Chip de selección: scale 1.04 al activarse. */
+/** Chip de selección: scale 1.02 al activarse. */
 export function Chip({ label, on, onPress, small }: { label: string; on: boolean; onPress: () => void; small?: boolean }) {
   const { c } = useTheme();
-  const s = useSharedValue(on ? 1.04 : 1);
+  const s = useSharedValue(on ? 1.02 : 1);
   useEffect(() => {
-    s.value = withSpring(on ? 1.04 : 1, spring);
+    s.value = withSpring(on ? 1.02 : 1, spring);
   }, [on, s]);
   const a = useAnimatedStyle(() => ({ transform: [{ scale: s.value }] }));
   return (
@@ -20,13 +20,13 @@ export function Chip({ label, on, onPress, small }: { label: string; on: boolean
         style={{
           paddingVertical: small ? 8 : 12,
           paddingHorizontal: small ? 12 : 15,
-          borderRadius: 15,
-          backgroundColor: on ? c.acc : c.card,
-          borderWidth: on ? 0 : 1,
-          borderColor: c.line,
+          borderRadius: radius.chip,
+          backgroundColor: on ? c.ink : c.card,
+          borderWidth: 1,
+          borderColor: on ? c.ink : c.line,
         }}
       >
-        <Text style={{ color: on ? c.on : c.ink, fontFamily: fonts.bold, fontSize: small ? 13 : 14 }}>{label}</Text>
+        <Text style={{ color: on ? c.bg : c.ink, fontFamily: fonts.bold, fontSize: small ? 13 : 14 }}>{label}</Text>
       </Tap>
     </Animated.View>
   );
@@ -49,7 +49,7 @@ export function OptionCard({ title, desc, on, onPress }: { title: string; desc: 
           paddingHorizontal: 16,
           borderRadius: radius.btn,
           backgroundColor: on ? c.hero : c.card,
-          borderWidth: on ? 2 : 1,
+          borderWidth: 1,
           borderColor: on ? c.acc : c.line,
           marginBottom: 10,
         }}

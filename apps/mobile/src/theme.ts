@@ -1,52 +1,63 @@
 import { useColorScheme } from 'react-native';
 import { useApp } from '@/store/useApp';
 
+/**
+ * Dirección visual: "instrumento de precisión". Carbón + hueso, un único acento
+ * bermellón como señal, macros en tonos minerales (latón / acero), filetes finos.
+ */
 export const palette = {
   dark: {
-    bg: '#0B0F14',
-    card: '#151A21',
-    ink: '#F0F3F6',
-    mut: '#8B95A5',
-    line: '#232A34',
-    acc: '#C8F44D',
-    on: '#0B0F14',
-    p: '#C8F44D',
-    c: '#FFB547',
-    f: '#FF7A59',
-    hero: '#17230F',
-    water: '#1F4E66',
+    bg: '#0C0C0B',
+    card: '#151513',
+    ink: '#EDE9E1',
+    mut: '#8C887F',
+    line: '#262520',
+    acc: '#FF5A2E',
+    on: '#0C0C0B',
+    p: '#FF5A2E',
+    c: '#D6B26E',
+    f: '#8EA4B9',
+    hero: '#1A1512',
+    water: '#2B4456',
+    rest: '#8EA4B9',
   },
   light: {
-    bg: '#F3F5EF',
-    card: '#FFFFFF',
-    ink: '#11151B',
-    mut: '#5F6B7A',
-    line: '#E3E7DD',
-    acc: '#1E9E57',
+    bg: '#F1EEE7',
+    card: '#FAF8F3',
+    ink: '#151513',
+    mut: '#6B675E',
+    line: '#DCD7CB',
+    acc: '#E0461C',
     on: '#FFFFFF',
-    p: '#1E9E57',
-    c: '#E08A00',
-    f: '#E0533A',
-    hero: '#E3F6D0',
-    water: '#BFE7FA',
+    p: '#E0461C',
+    c: '#A57A23',
+    f: '#4D6C8A',
+    hero: '#F6E6DC',
+    water: '#C7D8E4',
+    rest: '#3E6585',
   },
 } as const;
 
 export type Scheme = keyof typeof palette;
 export type Palette = (typeof palette)[Scheme];
 
-export const radius = { card: 24, btn: 18, chip: 16 } as const;
-export const spring = { damping: 12, stiffness: 220, mass: 0.6 } as const; // rebote de botones
+export const radius = { card: 14, btn: 10, chip: 8 } as const;
+export const spring = { damping: 16, stiffness: 260, mass: 0.6 } as const; // rebote contenido, sin "gomitas"
 export const ease = { out: [0.22, 1, 0.36, 1] as const }; // curva de entradas
 
 export const fonts = {
-  title: 'Sora_700Bold',
-  titleX: 'Sora_800ExtraBold',
-  titleS: 'Sora_600SemiBold',
-  body: 'DMSans_400Regular',
-  med: 'DMSans_500Medium',
-  bold: 'DMSans_700Bold',
+  title: 'BarlowCondensed_700Bold',
+  titleX: 'BarlowCondensed_800ExtraBold',
+  titleS: 'BarlowCondensed_600SemiBold',
+  body: 'IBMPlexSans_400Regular',
+  med: 'IBMPlexSans_500Medium',
+  bold: 'IBMPlexSans_600SemiBold',
+  num: 'IBMPlexMono_500Medium',
+  numB: 'IBMPlexMono_600SemiBold',
 } as const;
+
+/** Escala de los titulares condensados respecto al tamaño nominal (son más estrechos y bajos). */
+export const titleScale = 1.22;
 
 /** Color con alfa (hex #RRGGBB + 0–1). */
 export const alpha = (hex: string, a: number) =>

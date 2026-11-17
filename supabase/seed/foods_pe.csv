@@ -30,3 +30,275 @@ mani,Maní,🥜,567,26,16,49,F,mani,seed
 pbut,Mantequilla de maní,🥜,588,25,20,50,F,mani,seed
 almendra,Almendras,🌰,579,21,22,50,F,frutos,seed
 aceite,Aceite de oliva,🫒,884,0,0,100,F,,seed
+pollo_muslo,Muslo de pollo sin piel,🍗,177,24,0,8.4,P,pollo,seed
+pollo_piel,Pierna de pollo con piel,🍗,214,26,0,11.8,P,pollo,seed
+pollo_molido,Pollo molido,🍗,143,17.4,0,8.1,P,pollo,seed
+higado_pollo,Hígado de pollo,🍗,167,24,0.9,6.5,P,pollo,seed
+molleja,Mollejas de pollo,🍗,154,30,0,2.7,P,pollo,seed
+pavo,Pechuga de pavo,🦃,135,30,0,1.5,P,pavo,seed
+pato,Pato,🦆,201,23.5,0,11.2,P,,seed
+res_molida,Carne molida de res,🥩,176,20,0,10,P,res,seed
+bistec,Bistec de res,🥩,200,28,0,9,P,res,seed
+asado_tira,Asado de tira,🥩,300,24,0,22,P,res,seed
+higado_res,Hígado de res,🥩,175,27,3.8,4.7,P,res,seed
+corazon_res,Corazón de res,🫀,112,17.7,0.1,3.9,P,res,seed
+cerdo_chuleta,Chuleta de cerdo,🥓,231,25,0,14,P,cerdo,seed
+jamon_cerdo,Jamón inglés,🥓,145,21,1.5,6,P,cerdo,seed
+cordero,Carne de cordero,🍖,258,25,0,17,P,,seed
+cabrito,Cabrito,🍖,143,27,0,3,P,,seed
+cuy,Cuy,🐹,96,19,0.1,1.6,P,,seed
+alpaca,Carne de alpaca,🦙,104,22,0,1.5,P,,seed
+huevo_duro,Huevo sancochado,🥚,155,12.6,1.1,10.6,P,huevo,seed
+huevo_frito,Huevo frito,🍳,196,13.6,0.8,15,P,huevo,seed
+clara,Claras de huevo,🥚,52,11,0.7,0.2,P,huevo,seed
+huevo_codorniz,Huevos de codorniz,🥚,158,13,0.4,11,P,huevo,seed
+bonito,Bonito,🐟,138,24,0,4.6,P,pescado,seed
+jurel,Jurel,🐟,127,21,0,4.5,P,pescado,seed
+caballa,Caballa,🐟,205,19,0,13.9,P,pescado,seed
+merluza,Merluza,🐟,90,18.3,0,1.3,P,pescado,seed
+lenguado,Lenguado,🐟,91,18.8,0,1.2,P,pescado,seed
+corvina,Corvina,🐟,104,20,0,2.6,P,pescado,seed
+perico,Perico,🐟,85,18.5,0,0.7,P,pescado,seed
+tilapia,Tilapia,🐟,96,20,0,1.7,P,pescado,seed
+salmon,Salmón,🐟,208,20,0,13,P,pescado,seed
+anchoveta,Anchoveta,🐟,131,20.4,0,4.8,P,pescado,seed
+pejerrey,Pejerrey,🐟,95,19,0,1.8,P,pescado,seed
+sardina,Sardinas en lata,🥫,208,25,0,11.5,P,pescado,seed
+atun_aceite,Atún en aceite,🥫,198,29,0,8.2,P,pescado,seed
+calamar,Calamar,🦑,92,15.6,3.1,1.4,P,mariscos,seed
+pulpo,Pulpo,🐙,82,14.9,2.2,1,P,mariscos,seed
+conchas,Conchas de abanico,🐚,88,16.8,2.4,0.8,P,mariscos,seed
+choros,Choros,🦪,86,11.9,3.7,2.2,P,mariscos,seed
+langostino,Langostinos,🦐,85,20,0,0.5,P,mariscos,seed
+cangrejo,Cangrejo,🦀,87,18,0,1.1,P,mariscos,seed
+atun_fresco,Atún fresco,🐟,109,24.4,0,0.5,P,pescado,seed
+surimi,Palitos de cangrejo (surimi),🦀,95,7.6,15,0.5,P,pescado,seed
+leche_desc,Leche descremada,🥛,34,3.4,5,0.1,P,lacteos,seed
+leche_evap,Leche evaporada,🥫,134,6.8,10,7.6,P,lacteos,seed
+yogur_natural,Yogur natural,🥛,61,3.5,4.7,3.3,P,lacteos,seed
+yogur_light,Yogur griego sin grasa,🥛,59,10.2,3.6,0.4,P,lacteos,seed
+queso_edam,Queso edam,🧀,357,25,1.4,28,P,lacteos,seed
+mozzarella,Queso mozzarella,🧀,280,28,3.1,17,P,lacteos,seed
+parmesano,Queso parmesano,🧀,431,38,4.1,29,P,lacteos,seed
+cottage,Queso cottage,🧀,98,11,3.4,4.3,P,lacteos,seed
+requeson,Requesón,🧀,174,11,3,13,P,lacteos,seed
+leche_deslac,Leche deslactosada,🥛,46,3.1,4.8,1.5,P,lacteos,seed
+whey,Proteína whey (polvo),🥤,400,80,8,6,P,lacteos,seed
+frijol,Frijol canario cocido,🫘,127,8.7,22.8,0.5,P,,seed
+frijol_negro,Frijoles negros cocidos,🫘,132,8.9,23.7,0.5,P,,seed
+garbanzo,Garbanzos cocidos,🫘,164,8.9,27.4,2.6,P,,seed
+pallar,Pallares cocidos,🫘,115,7.8,20.9,0.4,P,,seed
+arveja_partida,Arvejas partidas cocidas,🫘,118,8.3,21,0.4,P,,seed
+habas,Habas cocidas,🫘,110,7.6,19.7,0.4,P,,seed
+tarwi,Tarwi (chocho) cocido,🫘,151,17,8,6.2,P,,seed
+soya_text,Soya texturizada (seca),🫘,333,50,30,1.2,P,soya,seed
+edamame,Edamame,🫘,121,11.9,8.9,5.2,P,soya,seed
+tempeh,Tempeh,🫘,192,20.3,7.6,10.8,P,soya,seed
+leche_soya,Bebida de soya,🥛,54,3.3,6.3,1.8,P,soya,seed
+arroz_integral,Arroz integral cocido,🍚,123,2.7,25.6,1,C,,seed
+papa_amarilla,Papa amarilla sancochada,🥔,97,2.1,22,0.1,C,,seed
+papa_horno,Papa al horno,🥔,93,2.5,21,0.1,C,,seed
+pure,Puré de papa,🥔,113,1.9,16.9,4.2,C,lacteos,seed
+olluco,Olluco cocido,🥔,62,1.1,14.3,0.1,C,,seed
+oca,Oca,🥔,61,1,13,0.6,C,,seed
+choclo,Choclo sancochado,🌽,96,3.4,21,1.5,C,,seed
+mote,Mote sancochado,🌽,116,2.6,24,0.9,C,,seed
+cancha,Cancha serrana,🌽,412,8.4,72,9.6,C,,seed
+tortilla_maiz,Tortilla de maíz,🫓,218,5.7,44.6,2.9,C,,seed
+tortilla_trigo,Tortilla de trigo,🫓,312,8.3,51,8,C,gluten,seed
+pan_frances,Pan francés,🥖,280,9,56,1.8,C,gluten,seed
+pan_yema,Pan de yema,🍞,300,9,53,5.5,C,"gluten,huevo",seed
+pan_molde,Pan de molde blanco,🍞,266,8.9,49,3.3,C,gluten,seed
+tostada,Tostadas de pan,🍞,390,12,77,3.2,C,gluten,seed
+galleta_soda,Galletas de soda,🍘,418,9.5,74,8.6,C,gluten,seed
+galleta_arroz,Galletas de arroz,🍘,387,8,81,2.8,C,,seed
+fideo_integral,Fideos integrales cocidos,🍝,149,6,30,1.7,C,gluten,seed
+fideo_arroz,Fideos de arroz cocidos,🍜,109,0.9,24,0.2,C,,seed
+cuscus,Cuscús cocido,🍚,112,3.8,23,0.2,C,gluten,seed
+avena_cocida,Avena cocida en agua,🥣,71,2.5,12,1.5,C,gluten,seed
+bulgur,Trigo (bulgur) cocido,🌾,83,3.1,18.6,0.2,C,gluten,seed
+granola,Granola,🥣,471,10,64,20,C,gluten,seed
+hojuelas_maiz,Hojuelas de maíz,🥣,357,7.5,84,0.4,C,,seed
+kiwicha,Kiwicha cocida,🌾,102,3.8,18.7,1.6,C,,seed
+kiwicha_pop,Kiwicha pop,🌾,374,13.6,65.3,7,C,,seed
+harina,Harina de trigo,🌾,364,10,76,1,C,gluten,seed
+maicena,Maicena,🌽,381,0.3,91,0.1,C,,seed
+platano_verde,Plátano verde sancochado,🍌,116,0.8,31.2,0.2,C,,seed
+pasas,Pasas,🍇,299,3.1,79,0.5,C,,seed
+datiles,Dátiles,🌴,282,2.5,75,0.4,C,,seed
+lechuga,Lechuga,🥬,15,1.4,2.9,0.2,V,,seed
+espinaca,Espinaca,🥬,23,2.9,3.6,0.4,V,,seed
+zanahoria,Zanahoria,🥕,41,0.9,9.6,0.2,V,,seed
+cebolla,Cebolla,🧅,40,1.1,9.3,0.1,V,cebolla,seed
+cebolla_china,Cebolla china,🧅,32,1.8,7.3,0.2,V,cebolla,seed
+poro,Poro,🧅,61,1.5,14,0.3,V,cebolla,seed
+ajo,Ajo,🧄,149,6.4,33,0.5,V,,seed
+pepino,Pepino,🥒,15,0.7,3.6,0.1,V,,seed
+zapallo,Zapallo,🎃,26,1,6.5,0.1,V,,seed
+zapallito,Zapallito italiano,🥒,17,1.2,3.1,0.3,V,,seed
+vainita,Vainitas,🥬,31,1.8,7,0.2,V,,seed
+arveja,Arvejas verdes,🥬,81,5.4,14.5,0.4,V,,seed
+coliflor,Coliflor,🥦,25,1.9,5,0.3,V,,seed
+col,Col,🥬,25,1.3,5.8,0.1,V,,seed
+beterraga,Beterraga,🥗,43,1.6,10,0.2,V,,seed
+pimiento,Pimiento,🫑,26,1,6,0.3,V,,seed
+aji_amarillo,Ají amarillo,🌶️,40,1.9,8.8,0.4,V,,seed
+rocoto,Rocoto,🌶️,40,1.9,8.8,0.4,V,,seed
+champinon,Champiñones,🍄,22,3.1,3.3,0.3,V,hongos,seed
+berenjena,Berenjena,🍆,25,1,5.9,0.2,V,,seed
+apio,Apio,🥬,16,0.7,3,0.2,V,,seed
+palmito,Palmitos,🌴,28,2.5,4.6,0.6,V,,seed
+caigua,Caigua,🥒,15,0.6,3.4,0.1,V,,seed
+esparrago,Espárragos,🥬,20,2.2,3.9,0.1,V,,seed
+alcachofa,Alcachofa,🥬,47,3.3,10.5,0.2,V,,seed
+kale,Kale,🥬,49,4.3,8.8,0.9,V,,seed
+rucula,Rúcula,🥬,25,2.6,3.7,0.7,V,,seed
+rabanito,Rabanito,🥗,16,0.7,3.4,0.1,V,,seed
+culantro,Culantro,🌿,23,2.1,3.7,0.5,V,,seed
+perejil,Perejil,🌿,36,3,6.3,0.8,V,,seed
+brotes_soya,Brotes de soya,🌱,30,3,5.9,0.2,V,soya,seed
+yacon,Yacón,🍠,54,0.4,12.5,0.1,V,,seed
+verduras_mixtas,Verduras mixtas congeladas,🥕,64,2.9,13,0.5,V,,seed
+pera,Pera,🍐,57,0.4,15,0.1,V,,seed
+naranja,Naranja,🍊,47,0.9,11.8,0.1,V,,seed
+mandarina,Mandarina,🍊,53,0.8,13.3,0.3,V,,seed
+fresa,Fresas,🍓,32,0.7,7.7,0.3,V,,seed
+papaya,Papaya,🍈,43,0.5,10.8,0.3,V,,seed
+pina,Piña,🍍,50,0.5,13.1,0.1,V,,seed
+mango,Mango,🥭,60,0.8,15,0.4,V,,seed
+uva,Uvas,🍇,69,0.7,18,0.2,V,,seed
+sandia,Sandía,🍉,30,0.6,7.6,0.2,V,,seed
+melon,Melón,🍈,34,0.8,8.2,0.2,V,,seed
+kiwi,Kiwi,🥝,61,1.1,14.7,0.5,V,,seed
+arandano,Arándanos,🫐,57,0.7,14.5,0.3,V,,seed
+durazno,Durazno,🍑,39,0.9,9.5,0.3,V,,seed
+granadilla,Granadilla,🍈,92,2.4,21,0.7,V,,seed
+maracuya,Maracuyá,🍈,97,2.2,23,0.7,V,,seed
+lucuma,Lúcuma,🍑,99,1.5,25,0.5,V,,seed
+chirimoya,Chirimoya,🍈,75,1.6,17.7,0.7,V,,seed
+aguaymanto,Aguaymanto,🍒,53,1.9,11.2,0.7,V,,seed
+limon,Limón,🍋,29,1.1,6.5,0.3,V,,seed
+ciruela,Ciruela,🍑,46,0.7,11.4,0.3,V,,seed
+higo,Higo,🍈,74,0.8,19,0.3,V,,seed
+pitahaya,Pitahaya,🍈,60,1.2,13,0.4,V,,seed
+guanabana,Guanábana,🍈,66,1,16.8,0.3,V,,seed
+toronja,Toronja,🍊,42,0.8,10.7,0.1,V,,seed
+aceite_veg,Aceite vegetal,🌻,884,0,0,100,F,,seed
+mantequilla,Mantequilla,🧈,717,0.9,0.1,81,F,lacteos,seed
+crema_leche,Crema de leche,🥛,345,2,2.8,37,F,lacteos,seed
+queso_crema,Queso crema,🧀,342,6,4,34,F,lacteos,seed
+mayonesa,Mayonesa,🥫,680,1,0.6,75,F,huevo,seed
+nuez,Nueces,🌰,654,15,14,65,F,frutos,seed
+pecana,Pecanas,🌰,691,9.2,14,72,F,frutos,seed
+castana,Castañas,🌰,659,14,12,67,F,frutos,seed
+pistacho,Pistachos,🌰,560,20,28,45,F,frutos,seed
+maranon,Marañón,🌰,553,18,30,44,F,frutos,seed
+pbut_almendra,Mantequilla de almendras,🌰,614,21,19,56,F,frutos,seed
+leche_almendra,Bebida de almendras,🥛,17,0.4,1.5,1.1,F,frutos,seed
+chia,Semillas de chía,🌱,486,17,42,31,F,,seed
+linaza,Linaza,🌱,534,18,29,42,F,,seed
+girasol,Semillas de girasol,🌻,584,21,20,51,F,,seed
+sacha_inchi,Sacha inchi,🌰,600,27,13,49,F,,seed
+aceituna,Aceitunas,🫒,115,0.8,6.3,10.7,F,,seed
+coco,Coco rallado,🥥,354,3.3,15,33,F,,seed
+lomo_saltado,Lomo saltado,🥩,145,10.5,8,8,M,"res,cebolla,soya",seed
+arroz_pollo,Arroz con pollo,🍗,155,9,20,4.2,M,pollo,seed
+ceviche,Ceviche de pescado,🐟,85,15,4,1,M,"pescado,cebolla",seed
+ceviche_mixto,Ceviche mixto,🦐,85,15,4,1,M,"pescado,mariscos,cebolla",seed
+leche_tigre,Leche de tigre,🥛,60,8,4,1,M,"pescado,cebolla",seed
+causa,Causa limeña de pollo,🥔,170,6,20,7.5,M,"pollo,huevo",seed
+aji_gallina,Ají de gallina,🍲,180,11,9,11,M,"pollo,lacteos,gluten",seed
+pollo_brasa,Pollo a la brasa,🍗,230,25,1,14,M,pollo,seed
+papa_huancaina,Papa a la huancaína,🥔,160,4.5,15,9,M,"lacteos,gluten,huevo",seed
+tallarines_verdes,Tallarines verdes,🍝,170,6,22,6.5,M,"gluten,lacteos",seed
+tallarin_saltado,Tallarín saltado de pollo,🍝,155,9,18,5,M,"gluten,pollo,soya,cebolla",seed
+chaufa,Arroz chaufa de pollo,🍚,170,8,24,4.6,M,"pollo,huevo,soya,cebolla",seed
+seco_res,Seco de res,🍲,135,11,6,7.5,M,"res,cebolla",seed
+seco_pollo,Seco de pollo,🍲,120,12,5,6,M,"pollo,cebolla",seed
+estofado,Estofado de pollo,🍲,105,9,7,4.5,M,"pollo,cebolla",seed
+carapulcra,Carapulcra,🍲,160,8,16,7,M,"cerdo,mani",seed
+anticuchos,Anticuchos,🍢,160,22,3,7,M,res,seed
+rocoto_relleno,Rocoto relleno,🌶️,140,8,8,8.5,M,"res,lacteos,huevo",seed
+tamal,Tamal de cerdo,🫔,190,6,20,9.5,M,cerdo,seed
+papa_rellena,Papa rellena,🥔,190,7,24,7.5,M,"res,huevo",seed
+chicharron,Chicharrón de cerdo,🥓,350,25,0,28,M,cerdo,seed
+pan_chicharron,Pan con chicharrón,🥪,260,12,28,11,M,"cerdo,gluten,cebolla",seed
+sopa_criolla,Sopa criolla,🍲,90,4.5,8,4.5,M,"res,lacteos,gluten",seed
+caldo_gallina,Caldo de gallina,🍲,55,5,4,2,M,"pollo,gluten,huevo",seed
+chupe_camarones,Chupe de camarones,🍲,100,6,9,4.5,M,"mariscos,lacteos,huevo",seed
+jalea,Jalea mixta,🐟,230,14,18,11,M,"pescado,mariscos,gluten",seed
+sudado,Sudado de pescado,🐟,85,12,3,2.8,M,"pescado,cebolla",seed
+choritos_chalaca,Choritos a la chalaca,🦪,95,10,6,3.5,M,"mariscos,cebolla",seed
+arroz_mariscos,Arroz con mariscos,🍤,160,8,22,4.3,M,mariscos,seed
+pescado_frito,Pescado frito,🐟,200,19,6,11,M,"pescado,gluten",seed
+olluquito,Olluquito con charqui,🥔,95,6,9,3.8,M,res,seed
+tacu_tacu,Tacu tacu,🫘,190,6,26,7,M,,seed
+arroz_pato,Arroz con pato,🦆,170,9,20,6,M,,seed
+arroz_tapado,Arroz tapado,🍚,170,8,22,5.5,M,"res,huevo",seed
+pachamanca,Pachamanca,🍖,150,12,10,7,M,"res,cerdo,pollo",seed
+cuy_chactado,Cuy chactado,🐹,250,20,3,17.5,M,,seed
+juane,Juane,🍙,170,7,22,6,M,"pollo,huevo",seed
+tacacho,Tacacho con cecina,🍌,275,10,25,15,M,cerdo,seed
+cau_cau,Cau cau,🍲,110,8,9,4.5,M,res,seed
+locro,Locro de zapallo,🎃,85,3,10,3.8,M,lacteos,seed
+menestron,Menestrón,🍲,75,3.5,10,2.4,M,"res,lacteos,gluten",seed
+sopa_quinua,Sopa de quinua,🍲,60,3,8,1.8,M,,seed
+bistec_pobre,Bistec a lo pobre,🍳,210,11,15,12,M,"res,huevo",seed
+saltado_vainitas,Saltado de vainitas,🥬,89,6,6,4.6,M,"res,soya,cebolla",seed
+pollo_horno,Pollo al horno con papas,🍗,160,13,10,7.5,M,pollo,seed
+pollo_broaster,Pollo broaster,🍗,260,20,10,15.5,M,"pollo,gluten",seed
+ensalada_rusa,Ensalada rusa,🥗,120,2,12,7.2,M,huevo,seed
+tortilla_verduras,Tortilla de verduras,🍳,150,9,5,10.5,M,huevo,seed
+hummus,Hummus,🫘,166,7.9,14.3,9.6,M,,seed
+guacamole,Guacamole,🥑,157,2,8.5,14.7,M,cebolla,seed
+salsa_criolla,Salsa criolla,🧅,35,1,7,0.6,M,cebolla,seed
+huancaina,Crema huancaína,🥫,230,6,8,19,M,"lacteos,gluten",seed
+salchipapa,Salchipapa,🍟,270,7,26,15.5,M,cerdo,seed
+papas_fritas,Papas fritas,🍟,312,3.4,41,15,M,,seed
+yuca_frita,Yuca frita,🍟,300,1.3,45,13,M,,seed
+platano_frito,Plátano maduro frito,🍌,236,1.5,40,9,M,,seed
+chifles,Chifles,🍌,531,2.3,63.8,30,M,,seed
+hamburguesa,Hamburguesa,🍔,250,13,24,11,M,"res,gluten",seed
+pizza,Pizza de queso,🍕,266,11,33,10,M,"gluten,lacteos",seed
+empanada,Empanada de carne,🥟,290,9,30,15,M,"res,gluten,huevo",seed
+triple,Sándwich triple,🥪,230,7,20,13.5,M,"gluten,huevo",seed
+pan_pollo,Pan con pollo,🥪,220,12,25,8,M,"pollo,gluten",seed
+hot_dog,Hot dog,🌭,290,10,24,17,M,"cerdo,gluten",seed
+chorizo,Chorizo,🌭,455,24,1.9,38,M,cerdo,seed
+salchicha,Salchicha,🌭,301,12,2,27,M,cerdo,seed
+tocino,Tocino,🥓,541,37,1.4,42,M,cerdo,seed
+sushi,Maki de sushi,🍣,145,5,28,1.2,M,"pescado,soya",seed
+papas_bolsa,Papitas de bolsa,🍟,536,7,53,34,M,,seed
+palomitas,Palomitas de maíz,🍿,387,13,78,4.5,M,,seed
+azucar,Azúcar,🍬,387,0,100,0,M,,seed
+miel,Miel,🍯,304,0.3,82,0,M,,seed
+mermelada,Mermelada,🍓,278,0.4,69,0.1,M,,seed
+chocolate,Chocolate negro 70 %,🍫,598,7.8,46,43,M,,seed
+barra_cereal,Barra de cereal,🍫,410,6,70,12,M,gluten,seed
+galleta_rellena,Galletas rellenas,🍪,480,5,70,20,M,gluten,seed
+galleta_avena,Galletas de avena,🍪,450,6.5,69,17,M,gluten,seed
+paneton,Panetón,🍞,376,7.5,55,14,M,"gluten,huevo,lacteos",seed
+queque,Queque de vainilla,🍰,380,5.5,52,17,M,"gluten,huevo,lacteos",seed
+alfajor,Alfajor,🍪,430,5,68,16,M,"gluten,lacteos",seed
+picarones,Picarones con miel,🍩,290,4,45,11,M,gluten,seed
+mazamorra,Mazamorra morada,🍇,110,0.4,27,0.1,M,,seed
+arroz_leche,Arroz con leche,🍚,134,3.3,23,3.2,M,lacteos,seed
+helado,Helado,🍨,207,3.5,24,11,M,lacteos,seed
+ensalada_frutas,Ensalada de frutas,🍓,60,0.7,15,0.2,M,,seed
+gaseosa,Gaseosa,🥤,42,0,10.6,0,M,,seed
+chicha,Chicha morada,🍇,50,0.2,12.5,0,M,,seed
+jugo_naranja,Jugo de naranja,🧃,45,0.7,10.4,0.2,M,,seed
+jugo_surtido,Jugo surtido,🧃,55,0.6,13,0.2,M,,seed
+limonada,Limonada,🍋,40,0.1,10.5,0,M,,seed
+leche_chocolatada,Leche chocolatada,🥛,83,3.2,10.4,3.4,M,lacteos,seed
+yogur_bebible,Yogur bebible de fruta,🥤,85,2.8,15,2,M,lacteos,seed
+agua_coco,Agua de coco,🥥,19,0.7,3.7,0.2,M,,seed
+rehidratante,Bebida rehidratante,🥤,26,0,6.4,0,M,,seed
+energizante,Bebida energética,🥤,45,0,11,0,M,,seed
+cafe,Café negro,☕,2,0.3,0,0,M,,seed
+infusion,Té o infusión,🍵,1,0,0.2,0,M,,seed
+cerveza,Cerveza,🍺,43,0.5,3.6,0,M,,seed
+vino,Vino tinto,🍷,85,0.1,2.6,0,M,,seed
+maca,Maca en polvo,🌾,325,14,71,3.5,M,,seed
+ketchup,Kétchup,🥫,101,1,27,0.1,M,,seed
+sillao,Sillao (salsa de soya),🥫,53,8,4.9,0.6,M,"soya,gluten",seed

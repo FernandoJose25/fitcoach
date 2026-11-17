@@ -197,7 +197,7 @@ Reparto por número de comidas (`splits.ts`): 3 → D .28 / A .40 / C .32 · 4 �
 
 Algoritmo por comida (`meals.ts`, `buildPlan`):
 1. Filtrar recetas cuyo `slots` incluya el tipo de comida **y** cuyos ingredientes no estén vetados (alérgenos + evitados, vía `TAGS` → `bannedTags`).
-2. Ordenar por cercanía entre su proporción proteína/kcal y la de la meta de esa comida.
+2. Ordenar por la distancia tras escalar: error relativo de kcal + error relativo de proteína absoluta frente a la meta de esa comida.
 3. Quitar las ya usadas en otras comidas del día (si quedan opciones).
 4. Elegir la posición `variant % n` (el botón *Cambiar* incrementa `variant`).
 5. Escalar: `factor = clamp(kcalMeta / kcalBase, 0.55, 1.9)`; gramos redondeados a 5 g.
@@ -205,12 +205,10 @@ Algoritmo por comida (`meals.ts`, `buildPlan`):
 
 `shoppingList(plan)`: suma de gramos de todo el plan × 7.
 
-**Verificación con los datos semilla (23 recetas)** para el perfil de prueba (hombre, 25 años, 70 kg, 175 cm, ganar masa, 4 comidas):
-- Meta: 2 990 kcal, 140 g de proteína. El plan cubre ≈ 2 850 kcal (−4.6 %), dentro del ±12 % de la prueba.
-- Con maní + lácteos + gluten vetados, el desayuno cae al respaldo por roles; el resto sigue con recetas.
-- Con "Vegano", el snack cae al respaldo y almuerzo y cena repiten "Arroz salteado con tofu": el catálogo vegano se queda corto.
-- El almuerzo toca el tope de escala 1.9×. Con 120+ recetas, incluidas porciones más grandes, esto desaparece.
-- Cuando amplíes el catálogo, prueba también ordenar por cercanía a la **proteína absoluta** de la comida, no solo por la proporción.
+**Verificación con el catálogo de contenido (133 recetas)** para el perfil de prueba (hombre, 25 años, 70 kg, 175 cm, ganar masa, 4 comidas):
+- Meta: 2 990 kcal y 140 g de proteína. El plan da 3 022 kcal y 140 g.
+- Con "Vegano", o con gluten y lácteos vetados, todas las comidas siguen con recetas distintas (sin respaldo).
+- Platos preparados, dulces y bebidas (rol `M`) no entran en recetas ni en el respaldo por roles.
 
 ---
 
@@ -234,10 +232,10 @@ Implementado en `packages/core/src/workouts.ts` (`TRAIN_DAYS`, `SPLIT`, `buildSe
 Cámara → foto comprimida (≤ 1024 px, JPEG 0.7, base64)
   → Edge Function `scan-food` (valida JWT, limita 30 escaneos/día/usuario)
      → proveedor de visión (Groq o Gemini) devuelve SOLO { items: [{ name, grams, confidence }] }
-  → app busca cada `name` en la tabla `foods` (pg_trgm) y toma kcal/macros de la base
+  → app empareja cada `name` con la base local (`matchFood` en `scan.ts`) y toma kcal/macros de ahí
   → hoja de resultado editable → veredicto → consultar o registrar
 ```
-Si un alimento no se encuentra en la base, se muestra como "estimado por IA" con una etiqueta visible y se pide confirmación manual.
+Si un alimento no se encuentra en la base, se marca "No está en la base" y el usuario elige el alimento con el buscador; no se registra hasta elegirlo.
 
 ### 9.2 Prompt del sistema
 Ver `supabase/functions/scan-food/index.ts` (constante `SYSTEM`).
@@ -245,12 +243,8 @@ Ver `supabase/functions/scan-food/index.ts` (constante `SYSTEM`).
 ### 9.3 Edge Function
 `supabase/functions/scan-food/index.ts` (Deno). Variables (`supabase secrets set`): `VISION_BASE_URL`, `VISION_MODEL` (modelo con visión **vigente**), `VISION_API_KEY`.
 
-### 9.4 Búsqueda en la base
-```sql
-select id, name_es, kcal, p, c, f from foods
-where name_es % :name           -- similitud por trigramas (pg_trgm)
-order by similarity(name_es, :name) desc limit 3;
-```
+### 9.4 Emparejado con la base
+`matchFood(foods, name)` en `packages/core/src/scan.ts`, en la app y sin red: quita artículos, preposiciones y formas de cocción, reduce plurales a su raíz y puntúa por palabras compartidas. Devuelve `null` si el puntaje es menor que 0.75.
 
 ### 9.5 Veredicto antes de comer
 `packages/core/src/scan.ts` → `verdict(item, eaten, targets, goal)` devuelve `over` (> 105 % de la meta), `protein` (ganar: ≥ 25 % kcal de proteína; perder: ≥ 30 %), `tight` (> 80 % de lo que queda) u `ok`.

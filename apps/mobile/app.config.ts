@@ -10,6 +10,8 @@ const config: ExpoConfig = {
   userInterfaceStyle: 'automatic',
   android: {
     package: 'com.fitcoach.app',
+    // Aviso puntual del fin del descanso; sin este permiso Android puede retrasar la notificación hasta ~1 min.
+    permissions: ['android.permission.SCHEDULE_EXACT_ALARM'],
     adaptiveIcon: {
       foregroundImage: './assets/android-icon-foreground.png',
       backgroundImage: './assets/android-icon-background.png',
@@ -22,6 +24,7 @@ const config: ExpoConfig = {
     'expo-router',
     'expo-font',
     ['expo-splash-screen', { image: './assets/splash-icon.png', resizeMode: 'contain', backgroundColor: '#0B0F14' }],
+    'expo-notifications',
     ['expo-camera', { cameraPermission: 'FitCoach usa la cámara para leer códigos de barras y analizar tu plato.', recordAudioAndroid: false }],
   ],
   experiments: { typedRoutes: true },

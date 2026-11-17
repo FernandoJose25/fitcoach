@@ -1,4 +1,51 @@
-import type { Goal, Targets } from './types';
+import type { Food, Goal, Targets } from './types';
+import { normalize } from './foodlog';
+
+/** Lo que devuelve la Edge Function `scan-food` por cada alimento detectado. */
+export type ScanItem = { name: string; grams: number; confidence: number };
+
+// Palabras que no distinguen un alimento: artículos, preposiciones y formas de cocción.
+const STOP = new Set(
+  'de del la el los las con en a al y o un una sin para por su tipo estilo cocido cocida cocidos cocidas sancochado sancochada hervido hervida plancha horno vapor crudo cruda natural casero casera'.split(' '),
+);
+
+/** Raíz simple en español: quita el plural y la vocal final ("papas" → "pap", "fritas"/"frito" → "frit"). */
+const stem = (w: string) => {
+  if (w.length > 5 && w.endsWith('es')) w = w.slice(0, -2);
+  else if (w.length > 3 && w.endsWith('s')) w = w.slice(0, -1);
+  return w.length > 3 ? w.replace(/[aeiou]$/, '') : w;
+};
+
+const tokens = (s: string) =>
+  normalize(s)
+    .replace(/[^a-z0-9ñ ]/g, ' ')
+    .split(/\s+/)
+    .filter((w) => w && !STOP.has(w))
+    .map(stem);
+
+/**
+ * Alimento de la base que mejor corresponde a un nombre dado por la IA ("pechuga de pollo a la plancha"
+ * → Pechuga de pollo), o `null` si ninguno se parece lo suficiente.
+ * Puntaje: fracción de palabras de la consulta encontradas + la mitad de la fracción de palabras del alimento cubiertas.
+ */
+export function matchFood(foods: Record<string, Food>, name: string): Food | null {
+  const q = tokens(name);
+  if (!q.length) return null;
+  let best: Food | null = null;
+  let bestScore = 0;
+  for (const f of Object.values(foods)) {
+    const ft = tokens(f.name);
+    if (!ft.length) continue;
+    const hitQ = q.filter((w) => ft.includes(w)).length;
+    if (!hitQ) continue;
+    const score = hitQ / q.length + (0.5 * ft.filter((w) => q.includes(w)).length) / ft.length;
+    if (score > bestScore) {
+      best = f;
+      bestScore = score;
+    }
+  }
+  return bestScore >= 0.75 ? best : null;
+}
 
 export type Verdict = { level: 'ok' | 'protein' | 'tight' | 'over'; text: string };
 

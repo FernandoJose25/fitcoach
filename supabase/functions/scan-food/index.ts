@@ -1,6 +1,10 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
 const DAILY_LIMIT = 30;
+// Groq por defecto (API compatible con OpenAI). El modelo con visión de Groq está en preview:
+// si lo retiran, cambia VISION_MODEL sin redesplegar (`supabase secrets set VISION_MODEL=...`).
+const BASE_URL = Deno.env.get('VISION_BASE_URL') ?? 'https://api.groq.com/openai/v1';
+const MODEL = Deno.env.get('VISION_MODEL') ?? 'qwen/qwen3.8-27b';
 const SYSTEM = `Eres un asistente de nutrición. Analiza la foto de una comida y responde SOLO con JSON válido:
 {"items":[{"name":"nombre del alimento en español, genérico y simple","grams":<número>,"confidence":<0 a 1>}]}
 Reglas: separa cada alimento del plato; estima el peso en gramos de la porción visible; usa nombres como
@@ -19,22 +23,28 @@ Deno.serve(async (req) => {
     const today = new Date().toISOString().slice(0, 10);
     const { data: u } = await supa.from('scan_usage').select('n').eq('user_id', user.id).eq('day', today).maybeSingle();
     if ((u?.n ?? 0) >= DAILY_LIMIT) return Response.json({ error: 'limit' }, { status: 429 });
-    await supa.from('scan_usage').upsert({ user_id: user.id, day: today, n: (u?.n ?? 0) + 1 });
 
     const { imageBase64, mime = 'image/jpeg' } = await req.json();
-    // Proveedor compatible con OpenAI (Groq). Cambia VISION_BASE_URL / VISION_MODEL para otro proveedor.
-    const res = await fetch(`${Deno.env.get('VISION_BASE_URL')}/chat/completions`, {
+    if (typeof imageBase64 !== 'string' || !imageBase64) return Response.json({ error: 'image' }, { status: 400 });
+    const res = await fetch(`${BASE_URL}/chat/completions`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${Deno.env.get('VISION_API_KEY')}` },
       body: JSON.stringify({
-        model: Deno.env.get('VISION_MODEL'),
+        model: MODEL,
         temperature: 0.2,
+        response_format: { type: 'json_object' },
         messages: [
           { role: 'system', content: SYSTEM },
           { role: 'user', content: [{ type: 'image_url', image_url: { url: `data:${mime};base64,${imageBase64}` } }] },
         ],
       }),
     });
+    if (!res.ok) {
+      console.error('vision', res.status, await res.text());
+      return Response.json({ error: 'provider' }, { status: 502 });
+    }
+    // Solo cuenta el escaneo si el proveedor respondió.
+    await supa.from('scan_usage').upsert({ user_id: user.id, day: today, n: (u?.n ?? 0) + 1 });
     const json = await res.json();
     const text: string = json.choices?.[0]?.message?.content ?? '{"items":[]}';
     const parsed = JSON.parse(text.match(/\{[\s\S]*\}/)?.[0] ?? '{"items":[]}');
