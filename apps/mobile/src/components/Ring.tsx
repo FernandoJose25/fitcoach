@@ -16,7 +16,8 @@ export function Ring({ pct, size = 128, children }: { pct: number; size?: number
   useEffect(() => {
     off.value = withTiming(C * (1 - Math.min(1, Math.max(0, pct))), { duration: 1100, easing: easeOut });
   }, [pct, off]);
-  const props = useAnimatedProps(() => ({ strokeDashoffset: off.value }));
+  // Al 0 % se oculta el arco: con strokeLinecap="round" quedaría un punto visible.
+  const props = useAnimatedProps(() => ({ strokeDashoffset: off.value, opacity: off.value > C - 1 ? 0 : 1 }));
   return (
     <View style={{ width: size, height: size }}>
       <Svg width={size} height={size} viewBox="0 0 120 120" style={{ transform: [{ rotate: '-90deg' }] }}>

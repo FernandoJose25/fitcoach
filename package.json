@@ -4,6 +4,7 @@
   "packageManager": "pnpm@11.4.0",
   "scripts": {
     "test": "pnpm --filter @fitcoach/core test",
+    "android": "pnpm --filter mobile android",
     "typecheck": "pnpm -r typecheck",
     "lint": "eslint .",
     "format": "prettier --write ."
