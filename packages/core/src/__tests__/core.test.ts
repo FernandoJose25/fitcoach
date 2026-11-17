@@ -4,6 +4,7 @@ import { computeTargets } from '../nutrition';
 import { buildPlan, bannedTags } from '../meals';
 import { buildSession, TRAIN_DAYS } from '../workouts';
 import { verdict } from '../scan';
+import { foodFromOff, frequentFoodIds, searchFoods } from '../foodlog';
 import { FOODS } from '../data/foods';
 import { RECIPES } from '../data/recipes';
 
@@ -99,5 +100,24 @@ describe('veredicto', () => {
   });
   it('destaca alta proteína al ganar masa', () => {
     expect(verdict({ kcal: 300, p: 40 }, { kcal: 0 }, t, 'gain').level).toBe('protein');
+  });
+});
+
+describe('registro', () => {
+  it('busca sin tildes y prioriza el prefijo', () => {
+    expect(searchFoods(FOODS, 'atun')[0].id).toBe('atun');
+    expect(searchFoods(FOODS, 'mani').map((f) => f.id)).toEqual(['mani', 'pbut']);
+    expect(searchFoods(FOODS, 'zzz')).toEqual([]);
+  });
+  it('frecuentes: distintos, del más reciente al más antiguo', () => {
+    const logs = { '2026-11-16': [{ foodId: 'arroz' }, { foodId: 'pollo' }], '2026-11-17': [{ foodId: 'huevo' }, { foodId: 'pollo' }] };
+    expect(frequentFoodIds(logs)).toEqual(['pollo', 'huevo', 'arroz']);
+    expect(frequentFoodIds(logs, 1)).toEqual(['pollo']);
+  });
+  it('mapea un producto de Open Food Facts', () => {
+    const f = foodFromOff('775', { product_name: 'Avena', brands: 'Quaker, Pepsico', nutriments: { 'energy-kcal_100g': 375, proteins_100g: 13.5, carbohydrates_100g: 60, fat_100g: 7 } });
+    expect(f).toMatchObject({ id: 'off_775', name: 'Avena (Quaker)', kcal: 375, p: 13.5, role: 'C' });
+    expect(foodFromOff('1', { product_name: 'Sin datos', nutriments: {} })).toBeNull();
+    expect(foodFromOff('1', undefined)).toBeNull();
   });
 });

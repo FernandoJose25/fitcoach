@@ -7,6 +7,7 @@ import { DMSans_400Regular, DMSans_500Medium, DMSans_700Bold } from '@expo-googl
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Overlay } from '@/components/Overlay';
+import { useSync } from '@/lib/sync';
 import { useApp } from '@/store/useApp';
 import { useTheme } from '@/theme';
 
@@ -24,6 +25,7 @@ export default function RootLayout() {
     DMSans_700Bold,
   });
   const ready = fontsLoaded && hydrated;
+  useSync();
   useEffect(() => {
     if (ready) SplashScreen.hideAsync().catch(() => {});
   }, [ready]);

@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { bannedTags, buildPlan, FOODS, RECIPES, totals, type Item } from '@fitcoach/core';
+import { bannedTags, buildPlan, FOODS, RECIPES, totals, type Food, type Item } from '@fitcoach/core';
 import { useApp, todayKey, type LogItem } from '@/store/useApp';
 
 /** Plan del día recalculado desde el core cuando cambian perfil, metas o variantes. */
@@ -16,7 +16,16 @@ export function useTodayLogs(): LogItem[] {
   return useApp((s) => s.logs[todayKey()] ?? EMPTY);
 }
 
-export const sum = (items: Item[]) => totals(items, FOODS);
+/** Catálogo + productos escaneados por código de barras. */
+export const allFoods = (): Record<string, Food> => ({ ...FOODS, ...useApp.getState().customFoods });
+export const foodOf = (id: string): Food => FOODS[id] ?? useApp.getState().customFoods[id];
+
+export function useFoods() {
+  const custom = useApp((s) => s.customFoods);
+  return useMemo(() => ({ ...FOODS, ...custom }), [custom]);
+}
+
+export const sum = (items: Item[]) => totals(items, allFoods());
 
 /** Alimento proteico permitido con mejor proteína por kcal (para el coach). */
 export function bestProtein(p: { allergies: string[]; avoid: string[] }) {

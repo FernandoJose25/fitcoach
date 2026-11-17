@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { computeTargets, type Item, type Profile, type Targets } from '@fitcoach/core';
+import { computeTargets, type Food, type Item, type Profile, type Targets } from '@fitcoach/core';
 
 export type Via = 'plan' | 'manual' | 'scan' | 'barcode';
 export interface LogItem extends Item {
@@ -40,6 +40,10 @@ interface AppState {
   streak: number;
   scheme: SchemePref;
   draft: Partial<Profile>;
+  customFoods: Record<string, Food>; // productos escaneados por código de barras (Open Food Facts)
+  dirtyDays: string[]; // días con cambios sin subir a Supabase
+  profileDirty: boolean;
+  addFood: (f: Food) => void;
   setDraft: (patch: Partial<Profile>) => void;
   resetDraft: (from?: Profile | null) => void;
   commitProfile: (p: Profile) => void;
@@ -49,6 +53,8 @@ interface AppState {
   setWater: (glasses: number, day?: string) => void;
   setScheme: (s: SchemePref) => void;
 }
+
+const touch = (days: string[], day: string) => (days.includes(day) ? days : [...days, day]);
 
 export const useApp = create<AppState>()(
   persist(
@@ -62,20 +68,25 @@ export const useApp = create<AppState>()(
       streak: 0,
       scheme: 'auto',
       draft: { ...DRAFT_DEFAULT },
+      customFoods: {},
+      dirtyDays: [],
+      profileDirty: false,
+      addFood: (f) => set({ customFoods: { ...get().customFoods, [f.id]: f } }),
       setDraft: (patch) => set({ draft: { ...get().draft, ...patch } }),
       resetDraft: (from) => set({ draft: from ? { ...from } : { ...DRAFT_DEFAULT } }),
-      commitProfile: (p) => set({ profile: p, targets: computeTargets(p), variants: [], draft: { ...p } }),
+      commitProfile: (p) => set({ profile: p, targets: computeTargets(p), variants: [], draft: { ...p }, profileDirty: true }),
       swapRecipe: (slot) => {
         const v = [...get().variants];
         v[slot] = (v[slot] ?? 0) + 1;
         const day = todayKey();
-        set({ variants: v, logs: { ...get().logs, [day]: (get().logs[day] ?? []).filter((l) => l.slot !== slot) } });
+        set({ variants: v, logs: { ...get().logs, [day]: (get().logs[day] ?? []).filter((l) => l.slot !== slot) }, dirtyDays: touch(get().dirtyDays, day) });
       },
       addLogs: (items, day = todayKey()) =>
-        set({ logs: { ...get().logs, [day]: [...(get().logs[day] ?? []), ...items] } }),
+        set({ logs: { ...get().logs, [day]: [...(get().logs[day] ?? []), ...items] }, dirtyDays: touch(get().dirtyDays, day) }),
       clearSlot: (slot, day = todayKey()) =>
-        set({ logs: { ...get().logs, [day]: (get().logs[day] ?? []).filter((l) => l.slot !== slot) } }),
-      setWater: (glasses, day = todayKey()) => set({ water: { ...get().water, [day]: Math.max(0, Math.min(8, glasses)) } }),
+        set({ logs: { ...get().logs, [day]: (get().logs[day] ?? []).filter((l) => l.slot !== slot) }, dirtyDays: touch(get().dirtyDays, day) }),
+      setWater: (glasses, day = todayKey()) => 
+        set({ water: { ...get().water, [day]: Math.max(0, Math.min(8, glasses)) }, dirtyDays: touch(get().dirtyDays, day) }),
       setScheme: (scheme) => set({ scheme }),
     }),
     {
@@ -90,6 +101,9 @@ export const useApp = create<AppState>()(
         streak: s.streak,
         scheme: s.scheme,
         draft: s.draft,
+        customFoods: s.customFoods,
+        dirtyDays: s.dirtyDays,
+        profileDirty: s.profileDirty,
       }),
       onRehydrateStorage: () => () => useApp.setState({ hydrated: true }),
     },

@@ -22,6 +22,7 @@ const config: ExpoConfig = {
     'expo-router',
     'expo-font',
     ['expo-splash-screen', { image: './assets/splash-icon.png', resizeMode: 'contain', backgroundColor: '#0B0F14' }],
+    ['expo-camera', { cameraPermission: 'FitCoach usa la cámara para leer códigos de barras y analizar tu plato.', recordAudioAndroid: false }],
   ],
   experiments: { typedRoutes: true },
 };

@@ -86,7 +86,7 @@ function TabBar({ state, navigation, navigateToTab }: TabBarProps) {
             borderColor: alpha(c.bg, 0.6),
           }}
         >
-          <Text style={{ fontSize: 26 }}>📷</Text>
+          <Text style={{ fontSize: 30, color: c.on, fontFamily: fonts.bold, lineHeight: 34 }}>＋</Text>
         </Tap>
       </View>
       {render(['entreno', 'aprende'])}

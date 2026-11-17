@@ -22,7 +22,7 @@ pnpm --filter mobile start     # Metro / Expo Go
 - [x] F0 Setup
 - [x] F1 Core + datos semilla + tests
 - [x] F2 Onboarding + Hoy + Plan
-- [ ] F3 Registro
+- [ ] F3 Registro (búsqueda y código de barras hechos; sincronización pendiente de probar con Supabase)
 - [ ] F4 Escáner IA
 - [ ] F5 Entreno
 - [ ] F6 Aprende + Perfil + Lista de compras

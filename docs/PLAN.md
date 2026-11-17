@@ -13,7 +13,9 @@ Objetivo: una sola app gratuita con la lógica de **Fitia** (nutrición) y **Sim
 | Monorepo, CI, Supabase (esquema + Edge Function) | ✅ | F0 |
 | Motor de calorías/macros, plan con recetas, rutinas, veredicto, coach | ✅ 12 tests | `packages/core` |
 | Welcome, onboarding (10 pantallas, auto-avance), Hoy, Plan, Perfil básico | ✅ probado en emulador | F2 |
-| Registro manual, búsqueda, código de barras, sincronización | ⬜ | F3 |
+| Registro manual, búsqueda, frecuentes, código de barras | ✅ búsqueda probada en emulador; falta escanear un código real en un teléfono | F3 |
+| Sincronización con Supabase (auth anónima, perfil, registros, agua) | 🟡 escrita, sin probar: falta el proyecto Supabase (§7) y aplicar `0002_off_foods.sql` | F3 |
+| Recuperar datos al reinstalar | ⬜ la sesión anónima se pierde al desinstalar; requiere vincular email | F3 |
 | Entreno (series, peso, descanso, historial) | ⬜ | F5 |
 | Escáner de plato con IA | ⬜ | F4 |
 | Aprende, perfil con gráfico de peso | ⬜ | F6 |
@@ -28,8 +30,8 @@ Objetivo: una sola app gratuita con la lógica de **Fitia** (nutrición) y **Sim
 | Metas y macros calculados desde el onboarding | ✅ misma fórmula | — |
 | Plan diario con recetas intercambiables y porciones escaladas | ✅ con 23 recetas | Contenido |
 | Base grande de alimentos peruanos | ⬜ 31 alimentos | Contenido |
-| Búsqueda rápida y alimentos frecuentes | ⬜ | F3 |
-| Código de barras (Open Food Facts) | ⬜ | F3 |
+| Búsqueda rápida y alimentos frecuentes | ✅ | — |
+| Código de barras (Open Food Facts) | ✅ falta prueba en teléfono | — |
 | Foto del plato con IA | ⬜ | F4 |
 | Agua y lista de compras | ✅ | — |
 | Peso semanal con gráfico | ⬜ | F6 |

@@ -10,7 +10,7 @@ import { Ring } from '@/components/Ring';
 import { Tap } from '@/components/Tap';
 import { BigButton, Card, Em, H, Pill, Screen, Small, T, flipIn } from '@/components/ui';
 import { SLOT_ICON, WEEKDAYS, currentWeek, fmt, weekdayIndex } from '@/lib/format';
-import { bestProtein, sum, usePlan, useTodayLogs } from '@/lib/usePlan';
+import { bestProtein, foodOf, sum, usePlan, useTodayLogs } from '@/lib/usePlan';
 import { todayKey, useApp } from '@/store/useApp';
 import { useUi } from '@/store/useUi';
 import { alpha, fonts, useTheme } from '@/theme';
@@ -129,7 +129,7 @@ export default function Hoy() {
                 {L.length ? (
                   L.slice(0, 3).map((l, j) => (
                     <View key={j} style={{ marginRight: -14, borderRadius: 15, borderWidth: 3, borderColor: c.card }}>
-                      <Em>{FOODS[l.foodId].emoji}</Em>
+                      <Em>{foodOf(l.foodId).emoji}</Em>
                     </View>
                   ))
                 ) : (
