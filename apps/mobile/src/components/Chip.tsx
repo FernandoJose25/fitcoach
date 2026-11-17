@@ -1,22 +1,26 @@
 import { useEffect } from 'react';
 import { Text, View } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { Tap } from './Tap';
-import { Em, Small, T } from './ui';
-import { fonts, radius, spring, useTheme } from '@/theme';
+import { Em, Small, T, easeOut } from './ui';
+import { fonts, radius, useTheme } from '@/theme';
+
+// Selección sin rebote: escala corta con curva de salida.
+const SELECT = { duration: 180, easing: easeOut };
 
 /** Chip de selección: scale 1.02 al activarse. */
 export function Chip({ label, on, onPress, small }: { label: string; on: boolean; onPress: () => void; small?: boolean }) {
   const { c } = useTheme();
   const s = useSharedValue(on ? 1.02 : 1);
   useEffect(() => {
-    s.value = withSpring(on ? 1.02 : 1, spring);
+    s.value = withTiming(on ? 1.02 : 1, SELECT);
   }, [on, s]);
   const a = useAnimatedStyle(() => ({ transform: [{ scale: s.value }] }));
   return (
     <Animated.View style={a}>
       <Tap
         onPress={onPress}
+        accessibilityState={{ selected: on }}
         style={{
           paddingVertical: small ? 8 : 12,
           paddingHorizontal: small ? 12 : 15,
@@ -37,13 +41,14 @@ export function OptionCard({ title, desc, on, onPress }: { title: string; desc: 
   const { c } = useTheme();
   const s = useSharedValue(1);
   useEffect(() => {
-    s.value = withSpring(on ? 1.02 : 1, spring);
+    s.value = withTiming(on ? 1.02 : 1, SELECT);
   }, [on, s]);
   const a = useAnimatedStyle(() => ({ transform: [{ scale: s.value }] }));
   return (
     <Animated.View style={a}>
       <Tap
         onPress={onPress}
+        accessibilityState={{ selected: on }}
         style={{
           padding: 14,
           paddingHorizontal: 16,

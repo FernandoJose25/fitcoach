@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { Alert, Text, View, useWindowDimensions } from 'react-native';
+import { Alert, Linking, Text, View, useWindowDimensions } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
 import { CameraView, useCameraPermissions } from 'expo-camera';
@@ -277,15 +277,19 @@ function PhotoCamera({ onClose }: { onClose: () => void }) {
     }
   };
 
-  if (!permission?.granted)
+  if (!permission?.granted) {
+    const blocked = permission?.canAskAgain === false;
     return (
       <View style={{ flex: 1, backgroundColor: c.bg, alignItems: 'center', justifyContent: 'center', padding: 24, gap: 14 }}>
         <H style={{ textAlign: 'center' }}>Necesitamos la cámara</H>
-        <Small style={{ textAlign: 'center' }}>Las fotos de progreso se guardan solo en tu teléfono.</Small>
-        <BigButton label="Permitir cámara" onPress={requestPermission} style={{ alignSelf: 'stretch' }} />
+        <Small style={{ textAlign: 'center' }}>
+          {blocked ? 'La cámara está bloqueada para FitCoach. Actívala en los ajustes del teléfono.' : 'Las fotos de progreso se guardan solo en tu teléfono.'}
+        </Small>
+        <BigButton label={blocked ? 'Abrir ajustes' : 'Permitir cámara'} onPress={blocked ? () => Linking.openSettings() : requestPermission} style={{ alignSelf: 'stretch' }} />
         <Pill label="Cancelar" ghost onPress={onClose} />
       </View>
     );
+  }
   return (
     <View style={{ flex: 1, backgroundColor: '#000000' }}>
       <CameraView ref={cam} style={{ flex: 1 }} facing={facing} />
@@ -294,7 +298,7 @@ function PhotoCamera({ onClose }: { onClose: () => void }) {
         <Tap onPress={shoot} accessibilityLabel="Tomar foto" style={{ width: 76, height: 76, borderRadius: 38, borderWidth: 4, borderColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center', opacity: busy ? 0.5 : 1 }}>
           <View style={{ width: 58, height: 58, borderRadius: 29, backgroundColor: c.acc }} />
         </Tap>
-        <Pill label="Girar" ghost onPress={() => setFacing((f) => (f === 'back' ? 'front' : 'back'))} />
+        <Pill label="Girar" a11y="Cambiar entre cámara frontal y trasera" ghost onPress={() => setFacing((f) => (f === 'back' ? 'front' : 'back'))} />
       </View>
     </View>
   );

@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, FlatList, ScrollView, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, FlatList, Linking, ScrollView, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { CameraView, useCameraPermissions } from 'expo-camera';
@@ -15,10 +15,12 @@ import { fonts, radius, useTheme } from '@/theme';
 
 type Mode = 'buscar' | 'codigo' | 'plato';
 const MODES: [Mode, string][] = [
-  ['buscar', '🔎 Buscar'],
-  ['codigo', '▦ Código'],
-  ['plato', '📷 Plato'],
+  ['buscar', 'Buscar'],
+  ['codigo', 'Código de barras'],
+  ['plato', 'Plato'],
 ];
+/** Open Food Facts puede tardar; sin respuesta en 12 s se muestra el error en vez de un spinner infinito. */
+const OFF_TIMEOUT = 12_000;
 
 /** Registro manual: búsqueda, código de barras y foto del plato con IA. */
 export default function Scan() {
@@ -66,6 +68,7 @@ export default function Scan() {
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 14 }}>
         <Tap
           onPress={() => (picked ? setPicked(null) : router.back())}
+          accessibilityLabel={picked ? 'Volver a la búsqueda' : 'Cerrar'}
           style={{ width: 42, height: 42, borderRadius: 11, backgroundColor: c.card, borderWidth: 1, borderColor: c.line, alignItems: 'center', justifyContent: 'center' }}
         >
           <Text style={{ color: c.ink, fontSize: 18 }}>{picked ? '‹' : '✕'}</Text>
@@ -92,7 +95,7 @@ export default function Scan() {
               </View>
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-              <Pill label="−" ghost style={{ width: 52 }} textStyle={{ fontSize: 18 }} onPress={() => setGrams((g) => Math.max(10, g - 10))} />
+              <Pill label="−" a11y="Restar 10 gramos" ghost style={{ width: 52 }} textStyle={{ fontSize: 18 }} onPress={() => setGrams((g) => Math.max(10, g - 10))} />
               <View style={{ flex: 1, flexDirection: 'row', alignItems: 'baseline', justifyContent: 'center', gap: 4 }}>
                 <TextInput
                   value={grams ? String(grams) : ''}
@@ -100,11 +103,12 @@ export default function Scan() {
                   keyboardType="number-pad"
                   maxLength={4}
                   selectTextOnFocus
+                  accessibilityLabel="Gramos"
                   style={{ color: c.ink, fontFamily: fonts.titleX, fontSize: 39, minWidth: 70, textAlign: 'right', padding: 0 }}
                 />
                 <T kind="mut">g</T>
               </View>
-              <Pill label="＋" ghost style={{ width: 52 }} textStyle={{ fontSize: 18 }} onPress={() => setGrams((g) => Math.min(2000, g + 10))} />
+              <Pill label="＋" a11y="Sumar 10 gramos" ghost style={{ width: 52 }} textStyle={{ fontSize: 18 }} onPress={() => setGrams((g) => Math.min(2000, g + 10))} />
             </View>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 16 }}>
               {(
@@ -143,6 +147,7 @@ export default function Scan() {
                 onChangeText={setQuery}
                 placeholder="Busca un alimento…"
                 placeholderTextColor={c.mut}
+                accessibilityLabel="Buscar alimento"
                 autoCorrect={false}
                 style={{ backgroundColor: c.card, borderWidth: 1, borderColor: c.line, borderRadius: radius.btn, paddingHorizontal: 16, paddingVertical: 12, color: c.ink, fontFamily: fonts.body, fontSize: 15, marginBottom: 10 }}
               />
@@ -165,9 +170,12 @@ export default function Scan() {
                   ) : undefined
                 }
                 ListEmptyComponent={
-                  <T kind="mut" style={{ textAlign: 'center', marginTop: 30 }}>
-                    No encontramos “{query}”. Prueba con otro nombre o escanea el código de barras.
-                  </T>
+                  <View style={{ alignItems: 'center', gap: 12, marginTop: 30 }}>
+                    <T kind="mut" style={{ textAlign: 'center' }}>
+                      No encontramos “{query}”. Prueba con una palabra más simple o escanea el código de barras.
+                    </T>
+                    <Pill label="Escanear código" ghost onPress={() => setMode('codigo')} />
+                  </View>
                 }
                 renderItem={({ item: f }) => (
                   <Tap onPress={() => pick(f, f.id.startsWith('off_') ? 'barcode' : 'manual')} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: c.line }}>
@@ -185,7 +193,7 @@ export default function Scan() {
             </>
           )}
 
-          {mode === 'codigo' && <Barcode onFood={(f) => pick(f, 'barcode')} />}
+          {mode === 'codigo' && <Barcode onFood={(f) => pick(f, 'barcode')} onSearch={() => setMode('buscar')} />}
 
           {mode === 'plato' && (
             <PlateScan
@@ -194,6 +202,7 @@ export default function Scan() {
               targets={targets}
               goal={profile.goal}
               eaten={eaten}
+              onSearch={() => setMode('buscar')}
               onRegister={(items) => {
                 useApp.getState().addLogs(items.map((i) => ({ ...i, slot, via: 'scan' as const })));
                 useUi.getState().confetti();
@@ -209,7 +218,7 @@ export default function Scan() {
 }
 
 /** Lee un código de barras y trae el producto de Open Food Facts (se guarda como alimento propio). */
-function Barcode({ onFood }: { onFood: (f: Food) => void }) {
+function Barcode({ onFood, onSearch }: { onFood: (f: Food) => void; onSearch: () => void }) {
   const { c } = useTheme();
   const [permission, requestPermission] = useCameraPermissions();
   const [state, setState] = useState<'scan' | 'loading' | { error: string }>('scan');
@@ -228,17 +237,24 @@ function Barcode({ onFood }: { onFood: (f: Food) => void }) {
     const cached = useApp.getState().customFoods[offId(code)];
     if (cached) return onFood(cached);
     setState('loading');
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), OFF_TIMEOUT);
     try {
       const res = await fetch(`https://world.openfoodfacts.org/api/v2/product/${code}.json?fields=product_name,product_name_es,generic_name,brands,nutriments`, {
         headers: { 'User-Agent': 'FitCoach/0.1 (Android)' },
+        signal: ctrl.signal,
       });
+      // 404 = el producto no existe en Open Food Facts; otro error = el servicio falló.
+      if (!res.ok && res.status !== 404) return setState({ error: 'Open Food Facts no responde ahora. Inténtalo en un momento o búscalo por nombre.' });
       const food = res.ok ? foodFromOff(code, (await res.json()).product) : null;
       if (!food) return setState({ error: 'No encontramos ese producto o no tiene datos nutricionales. Búscalo por nombre.' });
       useApp.getState().addFood(food);
       setState('scan');
       onFood(food);
     } catch {
-      setState({ error: 'No hay conexión. Revisa tu internet e inténtalo de nuevo.' });
+      setState({ error: ctrl.signal.aborted ? 'La consulta tardó demasiado. Revisa tu conexión e inténtalo de nuevo.' : 'No hay conexión. Revisa tu internet e inténtalo de nuevo.' });
+    } finally {
+      clearTimeout(timer);
     }
   };
 
@@ -246,11 +262,11 @@ function Barcode({ onFood }: { onFood: (f: Food) => void }) {
   if (!permission.granted) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', gap: 12 }}>
-        <Text style={{ fontSize: 48 }}>▦</Text>
         <T kind="mut" style={{ textAlign: 'center' }}>
-          Necesitamos la cámara para leer el código de barras.
+          {permission.canAskAgain ? 'Necesitamos la cámara para leer el código de barras.' : 'La cámara está bloqueada para FitCoach. Actívala en los ajustes del teléfono para leer códigos.'}
         </T>
-        <Pill label="Permitir cámara" onPress={requestPermission} />
+        <Pill label={permission.canAskAgain ? 'Permitir cámara' : 'Abrir ajustes'} onPress={permission.canAskAgain ? requestPermission : () => Linking.openSettings()} />
+        <Pill label="Buscar por nombre" ghost onPress={onSearch} />
       </View>
     );
   }
@@ -269,7 +285,10 @@ function Barcode({ onFood }: { onFood: (f: Food) => void }) {
         ) : (
           <View style={{ padding: 20, alignItems: 'center', gap: 12 }}>
             <T style={{ textAlign: 'center' }}>{state.error}</T>
-            <Pill label="Escanear otro" onPress={() => setState('scan')} />
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              <Pill label="Escanear otro" onPress={() => setState('scan')} />
+              <Pill label="Buscar por nombre" ghost onPress={onSearch} />
+            </View>
           </View>
         )}
       </View>

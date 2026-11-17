@@ -1,9 +1,9 @@
 import { useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, FlatList, ScrollView, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, FlatList, Linking, ScrollView, Text, TextInput, View } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Image } from 'expo-image';
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
-import { FunctionsHttpError } from '@supabase/supabase-js';
+import { FunctionsFetchError, FunctionsHttpError, FunctionsRelayError } from '@supabase/supabase-js';
 import { matchFood, searchFoods, totals, verdict, type Food, type Goal, type ScanItem, type Targets } from '@fitcoach/core';
 import { Tap } from '@/components/Tap';
 import { BigButton, Card, Em, H, Pill, Small, T } from '@/components/ui';
@@ -18,7 +18,15 @@ const ERRORS: Record<string, string> = {
   limit: 'Llegaste al límite de 30 fotos de hoy. Mañana se renueva; mientras tanto, búscalo por nombre.',
   provider: 'El servicio de IA no respondió. Inténtalo de nuevo en un momento.',
   unauthorized: 'No pudimos iniciar tu sesión. Revisa tu internet e inténtalo de nuevo.',
+  offline: 'Sin conexión. La foto del plato necesita internet; mientras tanto, búscalo por nombre.',
+  slow: 'El análisis tardó demasiado. Revisa tu conexión e inténtalo de nuevo.',
+  unavailable: 'El análisis de fotos no está disponible ahora. Búscalo por nombre mientras lo arreglamos.',
 };
+/** La IA puede tardar con fotos grandes; más allá de esto se corta para no dejar el spinner girando. */
+const SCAN_TIMEOUT = 35_000;
+const SESSION_TIMEOUT = 10_000;
+const withTimeout = <T,>(p: Promise<T>, ms: number) =>
+  Promise.race([p, new Promise<never>((_, reject) => setTimeout(() => reject(new Error('timeout')), ms))]);
 
 /** Foto del plato → Edge Function `scan-food` (Groq) → alimentos de la base con gramos editables → veredicto. */
 export function PlateScan({
@@ -28,6 +36,7 @@ export function PlateScan({
   goal,
   eaten,
   onRegister,
+  onSearch,
 }: {
   foods: Record<string, Food>;
   slotLabel: string;
@@ -35,6 +44,8 @@ export function PlateScan({
   goal: Goal;
   eaten: { kcal: number };
   onRegister: (items: { foodId: string; grams: number }[]) => void;
+  /** Salida cuando la foto no sirve: buscar el alimento por nombre. */
+  onSearch: () => void;
 }) {
   const { c } = useTheme();
   const [permission, requestPermission] = useCameraPermissions();
@@ -50,12 +61,29 @@ export function PlateScan({
       setState({ kind: 'loading', uri: photo.uri });
       const img = await ImageManipulator.manipulate(photo.uri).resize({ width: 1024 }).renderAsync();
       const { base64 } = await img.saveAsync({ compress: 0.7, format: SaveFormat.JPEG, base64: true });
-      await userId(); // asegura la sesión (anónima) para que la función acepte el JWT
-      const { data, error } = await supabase.functions.invoke<{ items: ScanItem[] }>('scan-food', { body: { imageBase64: base64, mime: 'image/jpeg' } });
+      // Asegura la sesión (anónima) para que la función acepte el JWT; sin red no debe quedarse colgado.
+      try {
+        await withTimeout(userId(), SESSION_TIMEOUT);
+      } catch {
+        return setState({ kind: 'error', text: ERRORS.offline });
+      }
+      const { data, error } = await supabase.functions.invoke<{ items: ScanItem[] }>('scan-food', { body: { imageBase64: base64, mime: 'image/jpeg' }, timeout: SCAN_TIMEOUT });
       if (error) {
         const code = error instanceof FunctionsHttpError ? ((await error.context.json().catch(() => ({}))) as { error?: string }).error : undefined;
         const status = error instanceof FunctionsHttpError ? (error.context as Response).status : 0;
-        return setState({ kind: 'error', text: ERRORS[code ?? (status === 401 ? 'unauthorized' : '')] ?? 'No pudimos analizar la foto. Revisa tu internet e inténtalo de nuevo.' });
+        const key =
+          code && ERRORS[code]
+            ? code
+            : status === 401
+              ? 'unauthorized'
+              : status === 404 || status >= 500 || error instanceof FunctionsRelayError
+                ? 'unavailable'
+                : error instanceof FunctionsFetchError
+                  ? /abort|timeout/i.test((error.context as { name?: string } | undefined)?.name ?? '')
+                    ? 'slow'
+                    : 'offline'
+                  : '';
+        return setState({ kind: 'error', text: ERRORS[key] ?? 'No pudimos analizar la foto. Revisa tu internet e inténtalo de nuevo.' });
       }
       const items = data?.items ?? [];
       if (!items.length) return setState({ kind: 'error', text: 'No reconocimos comida en la foto. Prueba con más luz y el plato completo a la vista.' });
@@ -68,10 +96,10 @@ export function PlateScan({
   if (!supabase) {
     return (
       <Center>
-        <Text style={{ fontSize: 48 }}>📷</Text>
         <T kind="mut" style={{ textAlign: 'center' }}>
           La foto del plato necesita conexión con el servidor. Mientras tanto, busca el alimento por nombre.
         </T>
+        <Pill label="Buscar por nombre" onPress={onSearch} />
       </Center>
     );
   }
@@ -79,11 +107,11 @@ export function PlateScan({
   if (!permission.granted) {
     return (
       <Center>
-        <Text style={{ fontSize: 48 }}>📷</Text>
         <T kind="mut" style={{ textAlign: 'center' }}>
-          Necesitamos la cámara para analizar tu plato.
+          {permission.canAskAgain ? 'Necesitamos la cámara para analizar tu plato.' : 'La cámara está bloqueada para FitCoach. Actívala en los ajustes del teléfono para analizar tu plato.'}
         </T>
-        <Pill label="Permitir cámara" onPress={requestPermission} />
+        <Pill label={permission.canAskAgain ? 'Permitir cámara' : 'Abrir ajustes'} onPress={permission.canAskAgain ? requestPermission : () => Linking.openSettings()} />
+        <Pill label="Buscar por nombre" ghost onPress={onSearch} />
       </Center>
     );
   }
@@ -91,9 +119,11 @@ export function PlateScan({
   if (state.kind === 'error') {
     return (
       <Center>
-        <Text style={{ fontSize: 48 }}>🍽️</Text>
         <T style={{ textAlign: 'center' }}>{state.text}</T>
-        <Pill label="Tomar otra foto" onPress={() => setState({ kind: 'camera' })} />
+        <View style={{ flexDirection: 'row', gap: 8 }}>
+          <Pill label="Tomar otra foto" onPress={() => setState({ kind: 'camera' })} />
+          <Pill label="Buscar por nombre" ghost onPress={onSearch} />
+        </View>
       </Center>
     );
   }
@@ -133,7 +163,7 @@ export function PlateScan({
           </View>
           {rows.map((r, i) => (
             <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 10, borderTopWidth: 1, borderTopColor: c.line }}>
-              <Tap haptic={false} onPress={() => setReplacing(i)} style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+              <Tap haptic={false} onPress={() => setReplacing(i)} accessibilityHint="Elegir otro alimento" style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                 <Em size={38}>{r.food?.emoji ?? '❓'}</Em>
                 <View style={{ flex: 1 }}>
                   <T kind="bold" numberOfLines={1}>
@@ -144,9 +174,9 @@ export function PlateScan({
                   </Small>
                 </View>
               </Tap>
-              <Pill label="−" ghost style={{ width: 38, paddingVertical: 6 }} onPress={() => setRows(rows.map((x, j) => (j === i ? { ...x, grams: Math.max(0, x.grams - 10) } : x)))} />
+              <Pill label="−" a11y={`Restar 10 gramos de ${r.food?.name ?? r.name}`} ghost style={{ width: 38, paddingVertical: 6 }} onPress={() => setRows(rows.map((x, j) => (j === i ? { ...x, grams: Math.max(0, x.grams - 10) } : x)))} />
               <Text style={{ color: c.ink, fontFamily: fonts.title, fontSize: 18, minWidth: 50, textAlign: 'center' }}>{r.grams} g</Text>
-              <Pill label="＋" ghost style={{ width: 38, paddingVertical: 6 }} onPress={() => setRows(rows.map((x, j) => (j === i ? { ...x, grams: Math.min(2000, x.grams + 10) } : x)))} />
+              <Pill label="＋" a11y={`Sumar 10 gramos de ${r.food?.name ?? r.name}`} ghost style={{ width: 38, paddingVertical: 6 }} onPress={() => setRows(rows.map((x, j) => (j === i ? { ...x, grams: Math.min(2000, x.grams + 10) } : x)))} />
             </View>
           ))}
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 12 }}>
@@ -195,7 +225,7 @@ export function PlateScan({
           <CameraView ref={camera} style={{ width: '100%', height: '100%' }} facing="back" />
         )}
       </View>
-      <BigButton label="📸  Tomar foto" disabled={state.kind === 'loading'} onPress={shoot} />
+      <BigButton label="Tomar foto" disabled={state.kind === 'loading'} onPress={shoot} />
       <Small style={{ textAlign: 'center' }}>Encuadra el plato completo desde arriba y con buena luz. Máximo 30 fotos al día.</Small>
     </View>
   );

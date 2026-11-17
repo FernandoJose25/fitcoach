@@ -1,13 +1,18 @@
-import { Switch, Text, View } from 'react-native';
+import { useMemo, useState } from 'react';
+import { Alert, Linking, Pressable, Switch, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import Constants from 'expo-constants';
 import { GOALS, LEVELS, PLACES, achievements } from '@fitcoach/core';
 import { Chip } from '@/components/Chip';
 import { Icon } from '@/components/Icon';
 import { Tap } from '@/components/Tap';
-import { BigButton, Card, Eyebrow, H, KV, Screen, Small, T } from '@/components/ui';
-import { fmt } from '@/lib/format';
+import { BigButton, Card, Eyebrow, H, KV, Num, Pill, Screen, Small, T } from '@/components/ui';
+import { WEEKDAYS, fmt, weekdayIndex } from '@/lib/format';
+import { CONTACT_EMAIL, PRIVACY_URL } from '@/lib/links';
 import { syncReminders } from '@/lib/notify';
-import { useApp, type GuidePref, type Reminders, type SchemePref } from '@/store/useApp';
+import { cloudEnabled, deleteAccount } from '@/lib/sync';
+import { sum } from '@/lib/usePlan';
+import { todayKey, useApp, type GuidePref, type Reminders, type SchemePref } from '@/store/useApp';
 import { useUi } from '@/store/useUi';
 import { alpha, fonts, radius, useTheme } from '@/theme';
 
@@ -63,6 +68,7 @@ export default function Perfil() {
         <KV k="Entreno" v={`${PLACES.find((x) => x.value === p.where)?.label} · ${p.daysPerWeek} días · ${LEVELS.find((x) => x.value === p.level)?.label}`} />
         <KV k="Comidas al día" v={String(p.mealsPerDay)} />
       </Card>
+      <KcalWeek />
       <Card>
         <H style={{ marginBottom: 10 }}>Tema</H>
         <View style={{ flexDirection: 'row', gap: 8 }}>
@@ -97,9 +103,157 @@ export default function Perfil() {
           resetDraft(p);
           router.push('/onboarding/0');
         }}
+        style={{ marginBottom: 14 }}
       />
-      <Small style={{ textAlign: 'center', marginTop: 14 }}>Orientativo: no reemplaza a un nutricionista ni a un médico.</Small>
+      <AccountCard />
+      <AboutCard />
+      <Small style={{ textAlign: 'center', marginTop: 4 }}>Orientativo: no reemplaza a un nutricionista ni a un médico.</Small>
     </Screen>
+  );
+}
+
+/** Calorías consumidas en los últimos 7 días frente a la meta: columnas de una serie, valor solo en la seleccionada. */
+function KcalWeek() {
+  const { c } = useTheme();
+  const t = useApp((s) => s.targets)!;
+  const logs = useApp((s) => s.logs);
+  const custom = useApp((s) => s.customFoods);
+  const [sel, setSel] = useState(6);
+  const days = useMemo(
+    () =>
+      Array.from({ length: 7 }, (_, i) => {
+        const d = new Date();
+        d.setDate(d.getDate() - 6 + i);
+        return d;
+      }),
+    [],
+  );
+  const vals = useMemo(() => days.map((d) => Math.round(sum(logs[todayKey(d)] ?? []).kcal)), [days, logs, custom]);
+  const logged = vals.filter((v) => v > 0);
+  const H_ = 112;
+  const max = Math.max(t.kcal * 1.2, ...vals);
+  const y = (v: number) => (v / max) * H_;
+  const avg = logged.length ? logged.reduce((a, v) => a + v, 0) / logged.length : 0;
+  const near = logged.filter((v) => Math.abs(v - t.kcal) <= t.kcal * 0.1).length;
+  return (
+    <Card>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}>
+        <H>Calorías · 7 días</H>
+        <Small>meta {fmt(t.kcal)} kcal</Small>
+      </View>
+      {logged.length === 0 ? (
+        <Small style={{ marginTop: 8 }}>Aún no registras comidas esta semana. Hazlo desde Menú o con el botón + y aquí verás cómo vas frente a tu meta.</Small>
+      ) : (
+        <>
+          <View
+            accessible
+            accessibilityLabel={`Calorías de los últimos 7 días: ${days.map((d, i) => `${WEEKDAYS[weekdayIndex(d)]} ${vals[i]}`).join(', ')}. Meta ${t.kcal}.`}
+            style={{ height: H_ + 40, marginTop: 12 }}
+          >
+            {/* Línea de meta: filete fino en tinta, con su rótulo a la izquierda. */}
+            <View style={{ position: 'absolute', left: 0, right: 0, bottom: 22 + y(t.kcal), height: 1, backgroundColor: alpha(c.ink, 0.28) }} />
+            <Eyebrow style={{ position: 'absolute', left: 0, bottom: 26 + y(t.kcal), fontSize: 9 }}>meta</Eyebrow>
+            <View style={{ flex: 1, flexDirection: 'row' }}>
+              {days.map((d, i) => (
+                <Pressable key={i} onPress={() => setSel(i)} style={{ flex: 1, alignItems: 'center', justifyContent: 'flex-end' }}>
+                  {sel === i && vals[i] > 0 && <Num style={{ fontSize: 11, marginBottom: 4 }}>{fmt(vals[i])}</Num>}
+                  <View style={{ width: 18, height: vals[i] ? Math.max(3, y(vals[i])) : 0, backgroundColor: c.acc, borderTopLeftRadius: 4, borderTopRightRadius: 4 }} />
+                  <View style={{ alignSelf: 'stretch', height: 1, backgroundColor: c.line }} />
+                  <Text style={{ height: 18, marginTop: 4, color: sel === i ? c.ink : c.mut, fontFamily: sel === i ? fonts.numB : fonts.num, fontSize: 10.5 }}>{WEEKDAYS[weekdayIndex(d)]}</Text>
+                </Pressable>
+              ))}
+            </View>
+          </View>
+          <Small style={{ marginTop: 6 }}>
+            Promedio {fmt(avg)} kcal en {logged.length} {logged.length === 1 ? 'día' : 'días'} con registro · {near} cerca de tu meta (±10 %).
+          </Small>
+        </>
+      )}
+    </Card>
+  );
+}
+
+/** Copia en la nube y borrado de cuenta (SPEC §14). */
+function AccountCard() {
+  const { c } = useTheme();
+  const pending = useApp((s) => s.dirtyDays.length > 0 || s.profileDirty);
+  const [busy, setBusy] = useState(false);
+  const status = !cloudEnabled
+    ? 'Tus datos se guardan solo en este teléfono.'
+    : pending
+      ? 'Hay cambios por subir; se suben solos cuando hay conexión.'
+      : 'Copia en la nube al día.';
+  const confirm = () =>
+    Alert.alert(
+      '¿Borrar tu cuenta?',
+      'Se borran tu perfil, comidas, entrenos, peso, medidas y fotos de progreso, en este teléfono y en la nube. No se puede deshacer.',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Borrar todo',
+          style: 'destructive',
+          onPress: async () => {
+            setBusy(true);
+            try {
+              await deleteAccount();
+            } catch {
+              setBusy(false);
+              useUi.getState().showToast('No se pudo borrar: revisa tu conexión e inténtalo otra vez');
+            }
+          },
+        },
+      ],
+    );
+  return (
+    <Card>
+      <Eyebrow style={{ marginBottom: 6 }}>Cuenta y datos</Eyebrow>
+      <T kind="bold" style={{ fontSize: 14 }}>
+        {status}
+      </T>
+      <Small style={{ marginTop: 4 }}>
+        Tu cuenta es anónima: si desinstalas la app o cambias de teléfono, tus datos no se pueden recuperar.
+      </Small>
+      <Pill
+        ghost
+        label={busy ? 'Borrando…' : 'Borrar cuenta y datos'}
+        onPress={busy ? undefined : confirm}
+        style={{ marginTop: 12, alignSelf: 'flex-start' }}
+        textStyle={{ color: c.acc }}
+      />
+    </Card>
+  );
+}
+
+const SOURCES: [string, string][] = [
+  ['Alimentos', 'Tablas Peruanas de Composición de Alimentos (CENAN/INS) y USDA FoodData Central'],
+  ['Productos envasados', 'Open Food Facts, base de datos abierta (licencia ODbL)'],
+  ['Fotos de ejercicios', 'free-exercise-db (dominio público)'],
+  ['Animaciones 3D', 'hechas con Blender y MPFB/MakeHuman (CC0)'],
+];
+
+function AboutCard() {
+  const { c } = useTheme();
+  const link = (label: string, url: string) => (
+    <Tap onPress={() => Linking.openURL(url).catch(() => {})} accessibilityRole="link" style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 10, borderTopWidth: 1, borderTopColor: c.line }}>
+      <T style={{ fontSize: 14 }}>{label}</T>
+      <Text style={{ color: c.mut, fontSize: 18 }}>›</Text>
+    </Tap>
+  );
+  return (
+    <Card>
+      <Eyebrow style={{ marginBottom: 4 }}>Acerca de</Eyebrow>
+      <KV first k="Versión" v={Constants.expoConfig?.version ?? '—'} />
+      {SOURCES.map(([k, v]) => (
+        <View key={k} style={{ paddingVertical: 8, borderTopWidth: 1, borderTopColor: c.line }}>
+          <T kind="bold" style={{ fontSize: 13 }}>
+            {k}
+          </T>
+          <Small>{v}</Small>
+        </View>
+      ))}
+      {!!PRIVACY_URL && link('Política de privacidad', PRIVACY_URL)}
+      {!!CONTACT_EMAIL && link('Contacto', `mailto:${CONTACT_EMAIL}`)}
+    </Card>
   );
 }
 

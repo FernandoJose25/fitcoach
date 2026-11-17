@@ -8,6 +8,7 @@ import { foodFromOff, frequentFoodIds, searchFoods } from '../foodlog';
 import { FOODS } from '../data/foods';
 import { RECIPES } from '../data/recipes';
 import { EXERCISES, exerciseImages } from '../data/exercises';
+import { learnFoods, macroRows, mealShares, weeksPerKg } from '../learn';
 import { achievements, adaptiveAdjust, applyKcalDelta, muscleOf, muscleSets, newRecords, personalRecords, suggestNext, weightTrend } from '../progress';
 
 const base = {
@@ -304,5 +305,32 @@ describe('progreso', () => {
     expect(a.find((x) => x.id === 'primer-entreno')?.progress).toBe(1);
     expect(a.find((x) => x.id === 'entrenos-10')?.progress).toBeCloseTo(0.1);
     expect(a.every((x) => x.progress >= 0 && x.progress <= 1)).toBe(true);
+  });
+});
+
+describe('aprende', () => {
+  const t = computeTargets(base);
+  it('listas sin alimentos vetados y proteína ordenada por g/kcal', () => {
+    const vegan = learnFoods({ allergies: ['Maní'], avoid: ['Vegano'] }, FOODS);
+    const all = [...vegan.protein, ...vegan.carbs, ...vegan.fats];
+    const banned = bannedTags({ allergies: ['Maní'], avoid: ['Vegano'] });
+    expect(all.length).toBeGreaterThan(10);
+    expect(all.some((f) => isBanned(f, banned))).toBe(false);
+    const ratio = vegan.protein.map((f) => f.p / f.kcal);
+    expect(ratio).toEqual([...ratio].sort((a, b) => b - a));
+    expect(learnFoods(base, FOODS).fats.map((f) => f.id)).toContain('mani');
+  });
+  it('reparto por comida suma la meta y macros cuadran con 4/4/9', () => {
+    const shares = mealShares(t, base.mealsPerDay);
+    expect(shares).toHaveLength(4);
+    expect(Math.abs(shares.reduce((a, s) => a + s.kcal, 0) - t.kcal)).toBeLessThanOrEqual(20);
+    expect(Math.abs(shares.reduce((a, s) => a + s.protein, 0) - t.protein)).toBeLessThanOrEqual(2);
+    const rows = macroRows(t);
+    expect(rows.reduce((a, r) => a + r.pct, 0)).toBeGreaterThanOrEqual(99);
+    expect(rows.find((r) => r.key === 'f')?.kcal).toBe(t.fat * 9);
+  });
+  it('semanas por kg: null al mantener', () => {
+    expect(weeksPerKg(t)).toBeGreaterThan(0);
+    expect(weeksPerKg(computeTargets({ ...base, goal: 'maintain' }))).toBeNull();
   });
 });

@@ -85,7 +85,7 @@ export default function Menu() {
                   {done ? `P ${Math.round(s.p)} · C ${Math.round(s.c)} · G ${Math.round(s.f)} g` : `${Math.round(s.kcal)} kcal · P ${Math.round(s.p)} · C ${Math.round(s.c)} · G ${Math.round(s.f)}`}
                 </Small>
               </View>
-              {!done && <Pill label="↻" ghost onPress={() => swapRecipe(i)} style={{ paddingHorizontal: 12 }} />}
+              {!done && <Pill label="↻" a11y={`Cambiar receta de ${m.label.toLowerCase()}`} ghost onPress={() => swapRecipe(i)} style={{ paddingHorizontal: 12, minWidth: 44 }} />}
             </View>
             <Animated.View key={done ? `d-${L.length}` : `${m.recipeId}-${m.items.map((x) => x.grams).join()}`} entering={flipIn} style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 10 }}>
               {(done ? L : m.items).map((x, j) => {

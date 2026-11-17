@@ -103,17 +103,21 @@ export function Pill({
   ghost,
   style,
   textStyle,
+  a11y,
 }: {
   label: string;
   onPress?: () => void;
   ghost?: boolean;
   style?: StyleProp<ViewStyle>;
   textStyle?: StyleProp<TextStyle>;
+  /** Etiqueta para el lector de pantalla cuando `label` es un símbolo (−, ＋, ↻, ✕). */
+  a11y?: string;
 }) {
   const { c } = useTheme();
   return (
     <Tap
       onPress={onPress}
+      accessibilityLabel={a11y}
       style={[
         {
           paddingVertical: 9,
@@ -138,6 +142,7 @@ export function BigButton({ label, onPress, disabled, style }: { label: string; 
     <Tap
       onPress={onPress}
       disabled={disabled}
+      accessibilityState={{ disabled: !!disabled }}
       style={[{ paddingVertical: 14, paddingHorizontal: 18, borderRadius: radius.btn, backgroundColor: c.acc, alignItems: 'center', opacity: disabled ? 0.4 : 1 }, style]}
     >
       <Text style={{ color: c.on, fontFamily: fonts.titleX, fontSize: 19, letterSpacing: 1.6, textTransform: 'uppercase' }}>{label}</Text>

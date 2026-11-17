@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Text, View } from 'react-native';
-import Animated, { Easing, FadeIn, FadeInDown, LinearTransition, useAnimatedStyle, useSharedValue, withDelay, withSpring } from 'react-native-reanimated';
+import Animated, { Easing, FadeIn, FadeInDown, LinearTransition, useAnimatedStyle, useSharedValue, withDelay, withTiming } from 'react-native-reanimated';
 import { useFocusEffect, useRouter } from 'expo-router';
 import {
   LEVELS,
@@ -23,13 +23,14 @@ import { Header } from '@/components/Header';
 import { BarList } from '@/components/LineChart';
 import { Icon } from '@/components/Icon';
 import { Tap } from '@/components/Tap';
-import { BigButton, Card, Eyebrow, H, Num, Screen, Small, T } from '@/components/ui';
+import { BigButton, Card, Eyebrow, H, Num, Screen, Small, T, easeOut } from '@/components/ui';
 import { currentWeek, fmt } from '@/lib/format';
+import { askExactAlarmsOnce } from '@/lib/notify';
 import { useProgram } from '@/lib/useProgram';
 import { ExerciseDemo } from '@/components/ExerciseDemo';
 import { MuscleMap } from '@/components/MuscleMap';
 import { todayKey, useApp } from '@/store/useApp';
-import { alpha, fonts, radius, spring, useTheme } from '@/theme';
+import { alpha, fonts, radius, useTheme } from '@/theme';
 
 const MUSCLE_LABEL: Record<string, string> = { pecho: 'Pecho', espalda: 'Espalda', pierna: 'Pierna', hombro: 'Hombro', triceps: 'Tríceps', biceps: 'Bíceps', core: 'Core' };
 const shortDay = (d: string) => `${Number(d.slice(8))}/${Number(d.slice(5, 7))}`;
@@ -54,7 +55,10 @@ export default function Entreno() {
   const records = personalRecords(allSets).slice(0, 5);
   const split = [...new Set(SPLIT[profile.daysPerWeek] as readonly string[])].map((k) => SESSION_NAMES[k as keyof typeof SESSION_NAMES]).join(' · ');
 
-  const start = (d: number) => router.push({ pathname: '/workout', params: { day: String(d) } });
+  const start = async (d: number) => {
+    await askExactAlarmsOnce();
+    router.push({ pathname: '/workout', params: { day: String(d) } });
+  };
 
   return (
     <Screen header={<Header subtitle="Tu programa" />} animKey={focus}>
@@ -82,7 +86,7 @@ export default function Entreno() {
           ))}
         </View>
         {next === null ? (
-          <T style={{ marginTop: 12, fontSize: 14 }}>🎉 ¡Semana completa! Descansa; la semana {String(week + 1).padStart(2, '0')} empieza el lunes.</T>
+          <T style={{ marginTop: 12, fontSize: 14 }}>¡Semana completa! Descansa; la semana {String(week + 1).padStart(2, '0')} empieza el lunes.</T>
         ) : trainedToday ? (
           <T style={{ marginTop: 12, fontSize: 14 }}>Hoy ya entrenaste. Descansar también construye músculo; mañana toca el Día {next + 1}.</T>
         ) : null}
@@ -145,12 +149,12 @@ export default function Entreno() {
   );
 }
 
-/** Tramo de la barra semanal: se rellena con resorte al completar el día. */
+/** Tramo de la barra semanal: se rellena con curva de salida (sin rebote) al completar el día. */
 function Segment({ on, current, delay }: { on: boolean; current: boolean; delay: number }) {
   const { c } = useTheme();
   const w = useSharedValue(0);
   useEffect(() => {
-    w.value = withDelay(delay, withSpring(on ? 100 : current ? 18 : 0, spring));
+    w.value = withDelay(delay, withTiming(on ? 100 : current ? 18 : 0, { duration: 500, easing: easeOut }));
   }, [on, current, delay, w]);
   const a = useAnimatedStyle(() => ({ width: `${w.value}%` }));
   return (
@@ -205,7 +209,7 @@ function DayCard({ index, day, kind, exercises, recommended, where, minutes, don
           opacity: done && !open ? 0.7 : 1,
         }}
       >
-        <Tap haptic={false} onPress={onToggle} style={{ flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16 }}>
+        <Tap haptic={false} onPress={onToggle} accessibilityState={{ expanded: open }} style={{ flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16 }}>
           <View style={{ width: 48, height: 48, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: done ? c.acc : c.bg, borderWidth: 1, borderColor: done ? c.acc : c.line }}>
             {done ? <Icon name="check" size={22} stroke={2.25} color={c.on} /> : <Text style={{ color: c.ink, fontFamily: fonts.numB, fontSize: 12, letterSpacing: 0.5 }}>{SESSION_ICON[kind]}</Text>}
           </View>
@@ -232,7 +236,7 @@ function DayCard({ index, day, kind, exercises, recommended, where, minutes, don
               const alts = hist === i ? alternativeExercises(e.muscle, where, exercises.map((y) => y.name)).filter((n) => n !== recommended[i]) : [];
               return (
                 <View key={`${i}-${e.name}`} style={{ borderTopWidth: 1, borderTopColor: c.line }}>
-                  <Tap haptic={false} onPress={() => toggleRow(i)} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10 }}>
+                  <Tap haptic={false} onPress={() => toggleRow(i)} accessibilityState={{ expanded: hist === i }} accessibilityHint="Muestra tu progresión y equivalentes" style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10 }}>
                     <ExerciseDemo name={e.name} muscle={e.muscle} size={40} animate={hist === i} />
                     <View style={{ flex: 1 }}>
                       <T kind="bold" style={{ fontSize: 14 }}>

@@ -1,5 +1,7 @@
 import { useEffect } from 'react';
 import { AppState } from 'react-native';
+import * as Notifications from 'expo-notifications';
+import { Directory, Paths } from 'expo-file-system';
 import type { Profile, SetLog } from '@fitcoach/core';
 import { supabase } from './supabase';
 import { allFoods } from './usePlan';
@@ -91,6 +93,8 @@ async function pushDay(uid: string, day: string) {
     if (sets.length) {
       ok(await supabase!.from('workout_sets').insert(sets.map((x) => ({ user_id: uid, day, exercise: x.exercise, set_no: x.setNo, reps: x.reps, weight_kg: x.weightKg }))));
     }
+    const kg = s.weights[day];
+    if (kg != null) ok(await supabase!.from('weight_logs').upsert({ user_id: uid, day, kg }));
   } catch (e) {
     const now = useApp.getState().dirtyDays;
     if (!now.includes(day)) useApp.setState({ dirtyDays: [...now, day] });
@@ -98,7 +102,7 @@ async function pushDay(uid: string, day: string) {
   }
 }
 
-/** Sin perfil local pero con datos en la nube (misma cuenta): recupera perfil, registros, agua y series. */
+/** Sin perfil local pero con datos en la nube (misma cuenta): recupera perfil, registros, agua, series y peso. */
 async function pull(uid: string) {
   const { data: row } = ok(await supabase!.from('profiles').select('*').eq('user_id', uid).maybeSingle());
   if (!row) return;
@@ -121,6 +125,7 @@ async function pull(uid: string) {
   const { data: meals } = ok(await supabase!.from('meal_logs').select('day, slot, meal_log_items(food_id, grams, via)').eq('user_id', uid));
   const { data: water } = ok(await supabase!.from('water_logs').select('day, glasses').eq('user_id', uid));
   const { data: wsets } = ok(await supabase!.from('workout_sets').select('day, exercise, set_no, reps, weight_kg').eq('user_id', uid));
+  const { data: wlogs } = ok(await supabase!.from('weight_logs').select('day, kg').eq('user_id', uid));
   const offIds = [...new Set((meals ?? []).flatMap((m) => m.meal_log_items.map((i) => i.food_id as string)))].filter((id) => id.startsWith('off_'));
   const { data: off } = offIds.length ? ok(await supabase!.from('foods').select('id, name_es, emoji, kcal, p, c, f, role').in('id', offIds)) : { data: [] };
 
@@ -142,6 +147,7 @@ async function pull(uid: string) {
     water: Object.fromEntries((water ?? []).map((w) => [w.day, w.glasses])),
     sets,
     workoutDays: Object.keys(sets), // aproximación: un día con series cuenta como entreno hecho
+    ...(wlogs?.length ? { weights: Object.fromEntries(wlogs.map((w) => [w.day, Number(w.kg)])) } : {}),
     dirtyDays: [],
     profileDirty: false,
   });
@@ -159,6 +165,11 @@ export async function syncNow() {
     // Una vez por sesión aunque no haya cambios: cubre perfiles creados antes de activar la sincronización.
     if (!profileSent || useApp.getState().profileDirty) {
       await pushProfile(uid);
+      if (!profileSent) {
+        // También una vez por sesión: sube los pesajes guardados antes de que el peso se sincronizara.
+        const w = Object.entries(useApp.getState().weights);
+        if (w.length) ok(await supabase.from('weight_logs').upsert(w.map(([day, kg]) => ({ user_id: uid, day, kg }))));
+      }
       profileSent = true;
     }
     for (const day of [...useApp.getState().dirtyDays]) await pushDay(uid, day);
@@ -168,6 +179,42 @@ export async function syncNow() {
     running = false;
   }
 }
+
+/**
+ * Borra la cuenta en Supabase (perfil y registros caen en cascada) y después todo lo del teléfono:
+ * datos, fotos de progreso y recordatorios. Si el servidor no responde lanza el error y no borra nada local,
+ * para no dejar datos huérfanos en la nube.
+ */
+export async function deleteAccount() {
+  running = true;
+  try {
+    if (supabase) {
+      const { data } = await supabase.auth.getSession();
+      if (data.session) {
+        ok(await supabase.rpc('delete_my_account'));
+        await supabase.auth.signOut({ scope: 'local' }).catch(() => {});
+      }
+    }
+    await Notifications.cancelAllScheduledNotificationsAsync().catch(() => {});
+    try {
+      const dir = new Directory(Paths.document, 'progreso');
+      if (dir.exists) dir.delete();
+    } catch {
+      // Sin carpeta de fotos: nada que borrar.
+    }
+    profileSent = false;
+    // Las pantallas asumen perfil: el layout raíz desmonta la navegación (hydrated=false) antes de vaciarlo,
+    // y al volver arranca en index → Welcome.
+    useApp.setState({ hydrated: false });
+    await new Promise((r) => setTimeout(r, 80));
+    useApp.setState({ ...useApp.getInitialState(), hydrated: true });
+  } finally {
+    running = false;
+  }
+}
+
+/** Estado de la copia en la nube para mostrarlo en Perfil. */
+export const cloudEnabled = !!supabase;
 
 /** Sincroniza al abrir, al volver a la app y 2 s después de cada cambio pendiente. */
 export function useSync() {

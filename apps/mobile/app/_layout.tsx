@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
-import { Stack } from 'expo-router';
+import { Pressable, Text, View } from 'react-native';
+import { Stack, type ErrorBoundaryProps } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import { useFonts, BarlowCondensed_600SemiBold, BarlowCondensed_700Bold, BarlowCondensed_800ExtraBold } from '@expo-google-fonts/barlow-condensed';
@@ -14,6 +15,29 @@ import { useApp } from '@/store/useApp';
 import { useTheme } from '@/theme';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
+
+/**
+ * Error inesperado al dibujar una pantalla: en vez de cerrar la app, explica y deja reintentar.
+ * Los datos viven en el teléfono (AsyncStorage), así que no se pierde nada. Sin fuentes propias ni
+ * safe area: puede mostrarse antes de que carguen.
+ */
+export function ErrorBoundary({ retry }: ErrorBoundaryProps) {
+  const { c } = useTheme();
+  SplashScreen.hideAsync().catch(() => {});
+  return (
+    <View style={{ flex: 1, backgroundColor: c.bg, alignItems: 'center', justifyContent: 'center', padding: 28, gap: 12 }}>
+      <Text style={{ color: c.ink, fontSize: 22, fontWeight: '700', textAlign: 'center' }}>Algo salió mal</Text>
+      <Text style={{ color: c.mut, fontSize: 15, textAlign: 'center', lineHeight: 21 }}>Tus datos están a salvo en el teléfono. Vuelve a intentarlo; si se repite, cierra y abre la app.</Text>
+      <Pressable
+        onPress={retry}
+        accessibilityRole="button"
+        style={{ marginTop: 8, minHeight: 48, paddingHorizontal: 28, borderRadius: 10, backgroundColor: c.acc, alignItems: 'center', justifyContent: 'center' }}
+      >
+        <Text style={{ color: c.on, fontSize: 16, fontWeight: '700' }}>Reintentar</Text>
+      </Pressable>
+    </View>
+  );
+}
 
 export default function RootLayout() {
   const { c, scheme } = useTheme();

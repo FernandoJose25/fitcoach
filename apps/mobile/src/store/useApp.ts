@@ -139,7 +139,7 @@ export const useApp = create<AppState>()(
       },
       setVoice: (voice) => set({ voice }),
       setGuide: (guide) => set({ guide }),
-      logWeight: (kg, day = todayKey()) => set({ weights: { ...get().weights, [day]: Math.round(kg * 10) / 10 } }),
+      logWeight: (kg, day = todayKey()) => set({ weights: { ...get().weights, [day]: Math.round(kg * 10) / 10 }, dirtyDays: touch(get().dirtyDays, day) }),
       setMeasures: (patch, day = todayKey()) => set({ measures: { ...get().measures, [day]: { ...get().measures[day], ...patch } } }),
       addPhoto: (ph) => set({ photos: [...get().photos, ph] }),
       removePhoto: (uri) => set({ photos: get().photos.filter((x) => x.uri !== uri) }),

@@ -36,13 +36,13 @@ function Stepper({ label, unit, value, min, max, step = 1, onChange }: { label: 
     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 12, paddingHorizontal: 14, borderRadius: radius.btn, backgroundColor: c.card, borderWidth: 1, borderColor: c.line, marginBottom: 10 }}>
       <T kind="bold">{label}</T>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-        <Tap style={btn} onPress={() => onChange(Math.max(min, value - step))}>
+        <Tap style={btn} onPress={() => onChange(Math.max(min, value - step))} accessibilityLabel={`Restar ${label.toLowerCase()}`}>
           <Text style={{ color: c.ink, fontFamily: fonts.bold, fontSize: 18 }}>−</Text>
         </Tap>
-        <T kind="bold" style={{ minWidth: 70, textAlign: 'center' }}>
+        <T kind="bold" style={{ minWidth: 70, textAlign: 'center' }} accessibilityLabel={`${label}: ${value} ${unit}`}>
           {value} {unit}
         </T>
-        <Tap style={btn} onPress={() => onChange(Math.min(max, value + step))}>
+        <Tap style={btn} onPress={() => onChange(Math.min(max, value + step))} accessibilityLabel={`Sumar ${label.toLowerCase()}`}>
           <Text style={{ color: c.ink, fontFamily: fonts.bold, fontSize: 18 }}>+</Text>
         </Tap>
       </View>
@@ -121,6 +121,7 @@ export default function OnboardingStep() {
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 14 }}>
         <Tap
           onPress={() => router.back()}
+          accessibilityLabel="Atrás"
           style={{ width: 36, height: 36, borderRadius: 8, backgroundColor: c.card, borderWidth: 1, borderColor: c.line, alignItems: 'center', justifyContent: 'center' }}
         >
           <Text style={{ color: c.ink, fontSize: 18 }}>‹</Text>
@@ -144,6 +145,7 @@ export default function OnboardingStep() {
                 onChangeText={(name) => setDraft({ name })}
                 placeholder="¿Cómo te llamas?"
                 placeholderTextColor={c.mut}
+                accessibilityLabel="Tu nombre"
                 maxLength={18}
                 style={{ padding: 13, paddingHorizontal: 14, borderRadius: 10, backgroundColor: c.card, color: c.ink, borderWidth: 1, borderColor: touched && errors.name ? c.f : c.line, fontFamily: fonts.med, fontSize: 15, marginBottom: 8 }}
               />
@@ -171,7 +173,7 @@ export default function OnboardingStep() {
           {meta.id === 'where' && (
             <>
               {PLACES.map((o) => (
-                <OptionCard key={o.value} title={(o.value === 'gym' ? '🏋️ ' : '🏠 ') + o.label} desc={o.desc} on={draft.where === o.value} onPress={() => setDraft({ where: o.value })} />
+                <OptionCard key={o.value} title={o.label} desc={o.desc} on={draft.where === o.value} onPress={() => setDraft({ where: o.value })} />
               ))}
               <Label>Días de entrenamiento por semana</Label>
               <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
@@ -215,10 +217,10 @@ export default function OnboardingStep() {
               </Card>
               <Card>
                 <T>
-                  📍 {PLACES.find((p) => p.value === draft.where)?.label} · {draft.daysPerWeek} días · {LEVELS.find((l) => l.value === draft.level)?.label}
+                  {PLACES.find((p) => p.value === draft.where)?.label} · {draft.daysPerWeek} días · {LEVELS.find((l) => l.value === draft.level)?.label}
                 </T>
-                <T style={{ marginTop: 8 }}>🍽️ {draft.mealsPerDay} comidas al día</T>
-                <T style={{ marginTop: 8 }}>🚫 Sin: {exclusions.length ? exclusions.join(', ') : 'nada excluido'}</T>
+                <T style={{ marginTop: 8 }}>{draft.mealsPerDay} comidas al día</T>
+                <T style={{ marginTop: 8 }}>Sin: {exclusions.length ? exclusions.join(', ') : 'nada excluido'}</T>
               </Card>
               <Small style={{ textAlign: 'center' }}>Orientativo: no reemplaza a un nutricionista ni a un médico.</Small>
             </>

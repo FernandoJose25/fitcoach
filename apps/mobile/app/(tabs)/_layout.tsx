@@ -1,11 +1,12 @@
 import { Text, View } from 'react-native';
 import { Tabs, useRouter } from 'expo-router';
-import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useEffect } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon, type IconName } from '@/components/Icon';
 import { Tap } from '@/components/Tap';
-import { fonts, spring, useTheme } from '@/theme';
+import { easeOut } from '@/components/ui';
+import { fonts, useTheme } from '@/theme';
 
 const TABS: Record<string, { icon: IconName; label: string }> = {
   index: { icon: 'today', label: 'Hoy' },
@@ -19,7 +20,7 @@ function TabButton({ name, on, onPress }: { name: string; on: boolean; onPress: 
   // Indicador de señal: filete bermellón que crece sobre la pestaña activa.
   const w = useSharedValue(on ? 1 : 0);
   useEffect(() => {
-    w.value = withSpring(on ? 1 : 0, spring);
+    w.value = withTiming(on ? 1 : 0, { duration: 220, easing: easeOut });
   }, [on, w]);
   const bar = useAnimatedStyle(() => ({ transform: [{ scaleX: w.value }], opacity: w.value }));
   const t = TABS[name];

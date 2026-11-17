@@ -1,4 +1,6 @@
-import { Platform } from 'react-native';
+import { Alert, Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import Constants, { ExecutionEnvironment } from 'expo-constants';
 import * as Notifications from 'expo-notifications';
 import { TRAIN_DAYS } from '@fitcoach/core';
 import type { Reminders } from '@/store/useApp';
@@ -46,6 +48,38 @@ export async function allowNotifications() {
   } catch {
     return false;
   }
+}
+
+const EXACT_ASKED = 'fitcoach.exactAlarmAsked';
+
+/**
+ * Android 12+: sin el permiso "Alarmas y recordatorios" el aviso de fin del descanso con la pantalla
+ * bloqueada puede llegar hasta ~1 min tarde. Antes del primer entreno guiado se explica una sola vez y
+ * se ofrece abrir el ajuste; se resuelve al volver (o al elegir "Ahora no"). En Expo Go no se puede
+ * conceder, así que se omite. Nunca bloquea el entreno: cualquier fallo se ignora.
+ */
+export async function askExactAlarmsOnce(): Promise<void> {
+  if (Platform.OS !== 'android' || (typeof Platform.Version === 'number' && Platform.Version < 31)) return;
+  if (Constants.executionEnvironment === ExecutionEnvironment.StoreClient) return;
+  try {
+    if (await AsyncStorage.getItem(EXACT_ASKED)) return;
+    const cur = await Notifications.getExactAlarmPermissionsAsync();
+    if (cur.granted || !cur.canAskAgain) return;
+    await AsyncStorage.setItem(EXACT_ASKED, '1');
+  } catch {
+    return;
+  }
+  await new Promise<void>((resolve) =>
+    Alert.alert(
+      'Avisos a tiempo en el descanso',
+      'Si bloqueas el teléfono durante el entreno, Android puede retrasar el aviso de fin del descanso hasta un minuto. Permite "Alarmas y recordatorios" para FitCoach y sonará justo a tiempo.',
+      [
+        { text: 'Ahora no', style: 'cancel', onPress: () => resolve() },
+        { text: 'Permitir', onPress: () => void Notifications.requestExactAlarmPermissionsAsync().catch(() => null).finally(() => resolve()) },
+      ],
+      { cancelable: true, onDismiss: () => resolve() },
+    ),
+  );
 }
 
 async function cancelPrefix(prefix: string) {

@@ -14,6 +14,7 @@ import { BigButton, Card, Eyebrow, H, Num, Pill, Screen, Small, T } from '@/comp
 import { WEEKDAYS, currentWeek, fmt, weekdayIndex } from '@/lib/format';
 import { bestProtein, sum, usePlan } from '@/lib/usePlan';
 import { useProgram } from '@/lib/useProgram';
+import { askExactAlarmsOnce } from '@/lib/notify';
 import { fmtKg, fmtRate, weightPoints } from '@/lib/weight';
 import { todayKey, useApp, type LogItem } from '@/store/useApp';
 import { useUi } from '@/store/useUi';
@@ -188,7 +189,14 @@ export default function Hoy() {
               <MuscleMap groups={days[next].exercises.map((e) => e.muscle)} height={84} />
             </View>
             {trainDays.includes(selWeekday) ? (
-              <BigButton label="Iniciar entreno" onPress={() => router.push({ pathname: '/workout', params: { day: String(next) } })} style={{ marginTop: 14 }} />
+              <BigButton
+                label="Iniciar entreno"
+                onPress={async () => {
+                  await askExactAlarmsOnce();
+                  router.push({ pathname: '/workout', params: { day: String(next) } });
+                }}
+                style={{ marginTop: 14 }}
+              />
             ) : (
               <Small style={{ marginTop: 10 }}>Descansar también es parte del plan. Si quieres adelantar, entra a Entreno.</Small>
             )}
@@ -231,7 +239,8 @@ export default function Hoy() {
             <Tap
               key={i}
               onPress={() => setWater(water === i + 1 ? i : i + 1, sel)}
-              accessibilityLabel={`${(i + 1) * 250} ml`}
+              accessibilityLabel={`${(i + 1) * 250} ml de agua`}
+              accessibilityState={{ selected: i < water }}
               style={{ flex: 1, height: 44, borderRadius: 4, backgroundColor: i < water ? c.water : c.bg, borderWidth: 1, borderColor: i < water ? c.water : c.line }}
             />
           ))}
@@ -312,7 +321,7 @@ function WeightCard({ trend, plan, lastDay }: { trend: number | null; plan: numb
             }}
             style={{ flex: 1, paddingVertical: 13 }}
           />
-          <Pill label="✕" ghost onPress={() => setEdit(null)} style={{ paddingVertical: 13, paddingHorizontal: 14 }} />
+          <Pill label="✕" a11y="Cancelar" ghost onPress={() => setEdit(null)} style={{ paddingVertical: 13, paddingHorizontal: 14 }} />
         </Animated.View>
       ) : (
         <Pill label={stale ? 'Registrar el peso de esta semana' : 'Actualizar peso'} ghost={!stale} onPress={() => setEdit(last)} style={{ marginTop: 10, paddingVertical: 12 }} />

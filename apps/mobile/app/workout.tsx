@@ -36,7 +36,7 @@ import {
   type SetLog,
   type Step,
 } from '@fitcoach/core';
-import { Icon } from '@/components/Icon';
+import { Icon, type IconName } from '@/components/Icon';
 import { Tap } from '@/components/Tap';
 import { BigButton, Small } from '@/components/ui';
 import { fmt } from '@/lib/format';
@@ -152,9 +152,8 @@ export default function Workout() {
     s.done = true;
     cancelAll();
     useApp.getState().finishWorkout(week, dayIdx);
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     say(cue.done(firstName));
-    useUi.getState().confetti();
+    useUi.getState().confetti(); // incluye el háptico de éxito
     render();
   }, [dayIdx, firstName, say, week]);
 
@@ -302,14 +301,14 @@ export default function Workout() {
       <View pointerEvents="none" style={{ position: 'absolute', inset: 0, backgroundColor: alpha(tint, 0.08) }} />
 
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 20 }}>
-        <RoundBtn label="✕" onPress={exit} />
+        <RoundBtn icon="close" a11y="Salir del entreno" onPress={exit} />
         <View style={{ flex: 1 }}>
           <Text style={{ color: c.ink, fontFamily: fonts.title, fontSize: 20 }}>{title}</Text>
           <Small>
             Semana {String(week).padStart(2, '0')} · {doneSets}/{totalSets} series · {mmss(Math.round((now - startedAt.current) / 1000))}
           </Small>
         </View>
-        <RoundBtn label={voice ? '🔊' : '🔇'} onPress={() => useApp.getState().setVoice(!voice)} />
+        <RoundBtn icon={voice ? 'sound' : 'mute'} a11y={voice ? 'Silenciar la voz' : 'Activar la voz'} onPress={() => useApp.getState().setVoice(!voice)} />
       </View>
 
       <View style={{ flexDirection: 'row', gap: 4, paddingHorizontal: 20, marginTop: 14 }}>
@@ -374,14 +373,15 @@ export default function Workout() {
       </View>
 
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 14, paddingHorizontal: 20 }}>
-        <CtrlBtn label="+15 s" onPress={add15} disabled={step.kind === 'work'} />
+        <CtrlBtn label="+15 s" a11y="Sumar 15 segundos" onPress={add15} disabled={step.kind === 'work'} />
         <Tap
           onPress={togglePause}
+          accessibilityLabel={s.paused !== null ? 'Reanudar' : 'Pausar'}
           style={{ width: 76, height: 76, borderRadius: 14, backgroundColor: tint, alignItems: 'center', justifyContent: 'center', shadowColor: tint, shadowOpacity: 0.4, shadowRadius: 12, elevation: 6 }}
         >
           <Text style={{ color: c.on, fontSize: 28, fontFamily: fonts.bold }}>{s.paused !== null ? '▶' : '❚❚'}</Text>
         </Tap>
-        <CtrlBtn label={step.kind === 'work' ? '✓ Hecho' : 'Saltar ⏭'} onPress={skip} />
+        <CtrlBtn label={step.kind === 'work' ? '✓ Hecho' : 'Saltar ⏭'} a11y={step.kind === 'work' ? 'Serie hecha' : 'Saltar'} onPress={skip} />
       </View>
     </View>
   );
@@ -428,47 +428,49 @@ function SetPanel({ ex, setNo, value, note, logged, tint }: { ex: PlannedExercis
       <Small style={{ textAlign: 'center', marginBottom: note && !logged ? 2 : 8 }}>{logged ? `Serie ${setNo} registrada · ajústala si hiciste otra cosa` : `Objetivo de la serie ${setNo}`}</Small>
       {!logged && !!note && <Small style={{ textAlign: 'center', marginBottom: 8, fontSize: 11.5, color: c.ink }}>{note}</Small>}
       <View style={{ flexDirection: 'row', gap: 10 }}>
-        <Stepper label={v.w ? 'kg' : 'peso corporal'} value={v.w ? fmtKg(v.w) : '—'} onMinus={() => update({ w: v.w - 2.5 })} onPlus={() => update({ w: v.w + 2.5 })} tint={tint} />
-        <Stepper label={timed ? 'segundos' : 'reps'} value={String(v.r)} onMinus={() => update({ r: v.r - (timed ? 5 : 1) })} onPlus={() => update({ r: v.r + (timed ? 5 : 1) })} tint={tint} />
+        <Stepper label={v.w ? 'kg' : 'peso corporal'} what="2,5 kilos" value={v.w ? fmtKg(v.w) : '—'} onMinus={() => update({ w: v.w - 2.5 })} onPlus={() => update({ w: v.w + 2.5 })} tint={tint} />
+        <Stepper label={timed ? 'segundos' : 'reps'} what={timed ? '5 segundos' : 'una repetición'} value={String(v.r)} onMinus={() => update({ r: v.r - (timed ? 5 : 1) })} onPlus={() => update({ r: v.r + (timed ? 5 : 1) })} tint={tint} />
       </View>
     </Animated.View>
   );
 }
 
-function Stepper({ label, value, onMinus, onPlus, tint }: { label: string; value: string; onMinus: () => void; onPlus: () => void; tint: string }) {
+function Stepper({ label, what, value, onMinus, onPlus, tint }: { label: string; what: string; value: string; onMinus: () => void; onPlus: () => void; tint: string }) {
   const { c } = useTheme();
   const btn = { width: 38, height: 38, borderRadius: 10, backgroundColor: alpha(tint, 0.18), alignItems: 'center', justifyContent: 'center' } as const;
   return (
     <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: c.bg, borderRadius: 10, padding: 6 }}>
-      <Tap onPress={onMinus} style={btn}>
+      <Tap onPress={onMinus} style={btn} accessibilityLabel={`Restar ${what}`}>
         <Text style={{ color: c.ink, fontFamily: fonts.bold, fontSize: 18 }}>−</Text>
       </Tap>
-      <View style={{ alignItems: 'center' }}>
+      <View style={{ alignItems: 'center' }} accessible accessibilityLabel={`${value} ${label}`}>
         <Text style={{ color: c.ink, fontFamily: fonts.titleX, fontSize: 24 }}>{value}</Text>
         <Small style={{ fontSize: 10 }}>{label}</Small>
       </View>
-      <Tap onPress={onPlus} style={btn}>
+      <Tap onPress={onPlus} style={btn} accessibilityLabel={`Sumar ${what}`}>
         <Text style={{ color: c.ink, fontFamily: fonts.bold, fontSize: 18 }}>＋</Text>
       </Tap>
     </View>
   );
 }
 
-function RoundBtn({ label, onPress }: { label: string; onPress: () => void }) {
+function RoundBtn({ icon, a11y, onPress }: { icon: IconName; a11y: string; onPress: () => void }) {
   const { c } = useTheme();
   return (
-    <Tap onPress={onPress} style={{ width: 42, height: 42, borderRadius: 11, backgroundColor: c.card, borderWidth: 1, borderColor: c.line, alignItems: 'center', justifyContent: 'center' }}>
-      <Text style={{ color: c.ink, fontSize: 16 }}>{label}</Text>
+    <Tap onPress={onPress} accessibilityLabel={a11y} style={{ width: 44, height: 44, borderRadius: 11, backgroundColor: c.card, borderWidth: 1, borderColor: c.line, alignItems: 'center', justifyContent: 'center' }}>
+      <Icon name={icon} size={20} color={c.ink} />
     </Tap>
   );
 }
 
-function CtrlBtn({ label, onPress, disabled }: { label: string; onPress: () => void; disabled?: boolean }) {
+function CtrlBtn({ label, a11y, onPress, disabled }: { label: string; a11y?: string; onPress: () => void; disabled?: boolean }) {
   const { c } = useTheme();
   return (
     <Tap
       onPress={onPress}
       disabled={disabled}
+      accessibilityLabel={a11y}
+      accessibilityState={{ disabled: !!disabled }}
       style={{ flex: 1, height: 54, borderRadius: 10, backgroundColor: c.card, borderWidth: 1, borderColor: c.line, alignItems: 'center', justifyContent: 'center', opacity: disabled ? 0.35 : 1 }}
     >
       <Text style={{ color: c.ink, fontFamily: fonts.bold, fontSize: 15 }}>{label}</Text>

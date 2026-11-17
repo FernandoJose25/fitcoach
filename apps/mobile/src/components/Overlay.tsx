@@ -1,7 +1,8 @@
 import { useEffect, useMemo } from 'react';
-import { Text, View, useWindowDimensions } from 'react-native';
+import { AccessibilityInfo, Text, View, useWindowDimensions } from 'react-native';
 import Animated, { Easing, FadeInUp, FadeOut, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as Haptics from 'expo-haptics';
 import { useUi } from '@/store/useUi';
 import { fonts, useTheme } from '@/theme';
 
@@ -25,13 +26,23 @@ function Dot({ i, seed }: { i: number; seed: number }) {
   return <Animated.View style={[{ position: 'absolute', width: 4, height: 11, borderRadius: 1, backgroundColor: color }, a]} />;
 }
 
-/** Toast + confeti globales (registro exitoso). Se monta una vez en el layout raíz. */
+/**
+ * Toast + confeti globales (registro exitoso). Se monta una vez en el layout raíz.
+ * El confeti lleva el háptico de éxito (un solo lugar para todo "lo registraste") y el toast se anuncia
+ * al lector de pantalla, porque no recibe foco.
+ */
 export function Overlay() {
   const { c } = useTheme();
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
   const toast = useUi((s) => s.toast);
   const burst = useUi((s) => s.burst);
+  useEffect(() => {
+    if (burst > 0) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+  }, [burst]);
+  useEffect(() => {
+    if (toast) AccessibilityInfo.announceForAccessibility(toast);
+  }, [toast]);
   return (
     <View pointerEvents="none" style={{ position: 'absolute', inset: 0 }}>
       {burst > 0 && (

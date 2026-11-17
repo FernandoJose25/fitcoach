@@ -1,0 +1,28 @@
+{
+  "cli": {
+    "version": ">= 20.1.0",
+    "appVersionSource": "local"
+  },
+  "build": {
+    "base": {
+      "pnpm": "11.4.0",
+      "android": { "image": "latest" }
+    },
+    "preview": {
+      "extends": "base",
+      "environment": "preview",
+      "distribution": "internal",
+      "android": { "buildType": "apk" }
+    },
+    "production": {
+      "extends": "base",
+      "environment": "production",
+      "android": { "buildType": "app-bundle" }
+    }
+  },
+  "submit": {
+    "production": {
+      "android": { "track": "internal", "releaseStatus": "draft" }
+    }
+  }
+}

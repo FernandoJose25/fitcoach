@@ -1,8 +1,8 @@
-/** 2990 → "2 990" (separador de miles con espacio, estable en Hermes). */
+/** 2990 → "2 990" (miles separados con espacio de no separación: la cifra no se parte entre líneas). */
 export const fmt = (n: number) =>
   Math.round(n)
     .toString()
-    .replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    .replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
 
 export const grams = (g: number) => (g >= 1000 ? `${(g / 1000).toFixed(1)} kg` : `${Math.round(g)} g`);
 
