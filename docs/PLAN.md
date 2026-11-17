@@ -2,7 +2,7 @@
 
 Objetivo: una sola app gratuita con la lógica de **Fitia** (nutrición) y **Simetri** (gym). La especificación técnica completa está en [SPEC.md](SPEC.md); este documento ordena el trabajo y mide la brecha.
 
-Última actualización: 2026-11-17 (funciones de progreso, recordatorios y animaciones 3D de casa).
+Última actualización: 2026-11-17 (F6 Aprende + Perfil, F7 pulido, F8 primer build de la beta).
 
 ---
 
@@ -11,14 +11,16 @@ Objetivo: una sola app gratuita con la lógica de **Fitia** (nutrición) y **Sim
 | Área | Estado | Dónde |
 |---|---|---|
 | Monorepo, CI, Supabase (esquema + Edge Function) | ✅ | F0 |
-| Motor de calorías/macros, plan con recetas, rutinas, historial de fuerza, veredicto, coach | ✅ 30 tests | `packages/core` |
+| Motor de calorías/macros, plan con recetas, rutinas, historial de fuerza, veredicto, coach, guía Aprende | ✅ 40 tests | `packages/core` |
 | Welcome, onboarding (10 pantallas, auto-avance), Hoy, Plan, Perfil básico | ✅ probado en emulador | F2 |
 | Registro manual, búsqueda, frecuentes, código de barras | ✅ búsqueda probada en emulador; falta escanear un código real en un teléfono | F3 |
-| Sincronización con Supabase (auth anónima, perfil, registros, agua) | 🟡 escrita, sin probar: falta el proyecto Supabase (§7) y aplicar `0002_off_foods.sql` | F3 |
+| Sincronización con Supabase (auth anónima, perfil, registros, agua, series, peso) | ✅ probada en emulador; migraciones 0001–0005 aplicadas y semilla de 303 alimentos cargada | F3 |
 | Recuperar datos al reinstalar | ⬜ la sesión anónima se pierde al desinstalar; requiere vincular email | F3 |
 | Entreno: programa por semanas (Semana 01, Día 1…N) y entreno guiado automático (preparación → serie → descanso) con voz, vibración, pantalla encendida y avisos en segundo plano; historial, cambio de ejercicio, racha | ✅ probado en emulador; `workout_sets` se sincroniza (sin probar, igual que F3) | F5 |
-| Escáner de plato con IA (Groq) | 🟡 código listo y con tests; falta desplegar `scan-food`, la clave de Groq y probar con una foto real | F4 |
-| Aprende, perfil con gráfico de peso | ⬜ | F6 |
+| Escáner de plato con IA (Groq) | 🟡 código listo, con tests y estados de error; falta la clave de Groq, desplegar `scan-food` y probar con una foto real | F4 |
+| Aprende (6 secciones con los números del usuario); Perfil con calorías de 7 días, borrar cuenta y Acerca de | ✅ probado en emulador; borrar cuenta probado en el servidor, falta probarlo en la app | F6 |
+| Pulido: errores y sin conexión, accesibilidad, sin rebotes, permiso de alarmas exactas | ✅ código; falta probar el aviso de alarmas en un build | F7 |
+| Beta: proyecto EAS `@ferrrrr23/fitcoach`, `eas.json`, política de privacidad y ficha de Play (`docs/`) | 🟡 primer APK `preview` lanzado; faltan datos de contacto, push a `main`, Play Console y testers | F8 |
 | Contenido: 303 alimentos (99 platos y productos peruanos), 133 recetas, 109 ejercicios con imagen | ✅ valores por revisar contra CENAN antes de publicar; imágenes sin probar en emulador | Contenido |
 
 ---
@@ -139,6 +141,8 @@ En este orden, cada uno vale por sí solo:
 
 - En el build (F8): pedir el permiso "Alarmas y recordatorios" en Android 12+ para que el fin del descanso suene a tiempo. Ya está declarado en `app.config.ts`; en Expo Go no se puede conceder y el aviso puede llegar hasta ~1 min tarde.
 
-- Crear el proyecto Supabase en la nube y pasar `EXPO_PUBLIC_SUPABASE_URL` y `EXPO_PUBLIC_SUPABASE_ANON_KEY` (ver `supabase/README.md`). Necesario para la sincronización de F3.
+- ~~Proyecto Supabase y claves~~ hecho (2026-11-17).
 - Clave de Groq para F4 (decidido: Groq, gratis).
-- Cuenta Expo para builds EAS en F8.
+- ~~Cuenta Expo para builds EAS~~ hecho: `ferrrrr23`.
+- Nombre y correo de contacto en `docs/privacy-policy.md`, `docs/play-store.md` y `CONTACT_EMAIL` (`src/lib/links.ts`); push a `main` para que `PRIVACY_URL` funcione.
+- Play Console: crear la app, subir el AAB y completar los formularios de `docs/play-store.md`.
