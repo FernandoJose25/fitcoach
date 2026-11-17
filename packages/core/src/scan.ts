@@ -24,22 +24,27 @@ export function verdict(item: { kcal: number; p: number }, eaten: { kcal: number
   return { level: 'ok', text: '✅ Encaja bien con tu día.' };
 }
 
+export type CoachTip = { emoji: string; text: string };
+
 /** Sección 9.7: sugerencia del coach por reglas, sin IA y sin culpa. */
 export function coachMessage(
   eaten: { kcal: number; p: number; logs: number },
   t: Targets,
   best?: { name: string; pPer100: number } | null,
-): string {
-  if (eaten.logs === 0) return 'Empieza registrando tu primera comida.';
+): CoachTip {
+  if (eaten.logs === 0) return { emoji: '👋', text: 'Empieza registrando tu primera comida. Toca ＋ o usa la cámara.' };
   if (eaten.kcal > t.kcal + 100) {
-    return 'En tu siguiente comida prioriza proteína y verduras. Mañana sigues con tu plan.';
+    return { emoji: '🥗', text: 'En tu siguiente comida prioriza proteína y verduras. Mañana sigues con tu plan.' };
   }
   const missingP = t.protein - eaten.p;
   if (missingP > 25 && best && best.pPer100 > 0) {
-    const grams = Math.round((missingP / best.pPer100) * 100 / 5) * 5;
-    return `Te faltan ${Math.round(missingP)} g de proteína: ${grams} g de ${best.name.toLowerCase()} los cubren.`;
+    const grams = Math.min(300, Math.ceil(missingP / (best.pPer100 / 100) / 10) * 10);
+    return {
+      emoji: '🎯',
+      text: `Te faltan ${Math.round(missingP)} g de proteína. ${grams} g de ${best.name.toLowerCase()} los cubren.`,
+    };
   }
   const left = t.kcal - eaten.kcal;
-  if (left < 150) return 'Día casi completo. ¡Buen trabajo!';
-  return `Te quedan ${Math.round(left)} kcal para hoy.`;
+  if (left < 150) return { emoji: '✅', text: 'Día casi completo. Toma agua y descansa bien.' };
+  return { emoji: '💧', text: `Vas bien. Te quedan ${Math.round(left)} kcal para hoy.` };
 }

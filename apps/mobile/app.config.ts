@@ -20,6 +20,7 @@ const config: ExpoConfig = {
   ios: { supportsTablet: false, bundleIdentifier: 'com.fitcoach.app' },
   plugins: [
     'expo-router',
+    'expo-font',
     ['expo-splash-screen', { image: './assets/splash-icon.png', resizeMode: 'contain', backgroundColor: '#0B0F14' }],
   ],
   experiments: { typedRoutes: true },

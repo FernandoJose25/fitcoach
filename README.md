@@ -21,7 +21,7 @@ pnpm --filter mobile start     # Metro / Expo Go
 
 - [x] F0 Setup
 - [x] F1 Core + datos semilla + tests
-- [ ] F2 Onboarding + Hoy + Plan
+- [x] F2 Onboarding + Hoy + Plan
 - [ ] F3 Registro
 - [ ] F4 Escáner IA
 - [ ] F5 Entreno
