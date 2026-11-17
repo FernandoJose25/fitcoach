@@ -24,13 +24,18 @@ export function verdict(item: { kcal: number; p: number }, eaten: { kcal: number
   return { level: 'ok', text: '✅ Encaja bien con tu día.' };
 }
 
-export type CoachTip = { emoji: string; text: string };
+export type CoachTip = {
+  emoji: string;
+  text: string;
+  /** Acción directa: registrar estos gramos de este alimento (solo cuando falta proteína). */
+  action?: { foodId: string; grams: number };
+};
 
 /** Sección 9.7: sugerencia del coach por reglas, sin IA y sin culpa. */
 export function coachMessage(
   eaten: { kcal: number; p: number; logs: number },
   t: Targets,
-  best?: { name: string; pPer100: number } | null,
+  best?: { id?: string; name: string; pPer100: number } | null,
 ): CoachTip {
   if (eaten.logs === 0) return { emoji: '👋', text: 'Empieza registrando tu primera comida. Toca ＋ o usa la cámara.' };
   if (eaten.kcal > t.kcal + 100) {
@@ -42,6 +47,7 @@ export function coachMessage(
     return {
       emoji: '🎯',
       text: `Te faltan ${Math.round(missingP)} g de proteína. ${grams} g de ${best.name.toLowerCase()} los cubren.`,
+      ...(best.id ? { action: { foodId: best.id, grams } } : {}),
     };
   }
   const left = t.kcal - eaten.kcal;

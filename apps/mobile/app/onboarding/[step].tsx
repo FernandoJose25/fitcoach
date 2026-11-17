@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ScrollView, Text, TextInput, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -83,6 +83,19 @@ export default function OnboardingStep() {
   const bar = useAnimatedStyle(() => ({ width: `${progress.value}%` }));
 
   const canContinue = meta.id !== 'basics' || Object.keys(errors).length === 0;
+
+  // Pasos de una sola elección: avanzan solos 300 ms después de elegir (un toque menos por pantalla).
+  const AUTO = new Set<string>(['goal', 'pace', 'level', 'activity', 'meals']);
+  const advancing = useRef(false);
+  const pick = (patch: Partial<Profile>) => {
+    setDraft(patch);
+    if (!AUTO.has(meta.id) || advancing.current) return;
+    advancing.current = true;
+    setTimeout(() => {
+      advancing.current = false;
+      router.push(`/onboarding/${step + 1}`);
+    }, 300);
+  };
   const toggle = (key: 'allergies' | 'avoid', v: string) => {
     const cur = draft[key] ?? [];
     setDraft({ [key]: cur.includes(v) ? cur.filter((x) => x !== v) : [...cur, v] });
@@ -152,9 +165,9 @@ export default function OnboardingStep() {
             </>
           )}
 
-          {meta.id === 'goal' && goalOptions(draft.age ?? 25).map((o) => <OptionCard key={o.value} title={o.label} desc={o.desc} on={draft.goal === o.value} onPress={() => setDraft({ goal: o.value })} />)}
-          {meta.id === 'pace' && paceOptions(draft.age ?? 25).map((o) => <OptionCard key={o.value} title={o.label} desc={o.desc} on={draft.pace === o.value} onPress={() => setDraft({ pace: o.value })} />)}
-          {meta.id === 'level' && LEVELS.map((o) => <OptionCard key={o.value} title={o.label} desc={o.desc} on={draft.level === o.value} onPress={() => setDraft({ level: o.value })} />)}
+          {meta.id === 'goal' && goalOptions(draft.age ?? 25).map((o) => <OptionCard key={o.value} title={o.label} desc={o.desc} on={draft.goal === o.value} onPress={() => pick({ goal: o.value })} />)}
+          {meta.id === 'pace' && paceOptions(draft.age ?? 25).map((o) => <OptionCard key={o.value} title={o.label} desc={o.desc} on={draft.pace === o.value} onPress={() => pick({ pace: o.value })} />)}
+          {meta.id === 'level' && LEVELS.map((o) => <OptionCard key={o.value} title={o.label} desc={o.desc} on={draft.level === o.value} onPress={() => pick({ level: o.value })} />)}
           {meta.id === 'where' && (
             <>
               {PLACES.map((o) => (
@@ -168,7 +181,7 @@ export default function OnboardingStep() {
               </View>
             </>
           )}
-          {meta.id === 'activity' && ACTIVITIES.map((o) => <OptionCard key={o.value} title={o.label} desc={o.desc} on={draft.activity === o.value} onPress={() => setDraft({ activity: o.value })} />)}
+          {meta.id === 'activity' && ACTIVITIES.map((o) => <OptionCard key={o.value} title={o.label} desc={o.desc} on={draft.activity === o.value} onPress={() => pick({ activity: o.value })} />)}
           {meta.id === 'allergies' && (
             <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
               {ALLERGIES.map((a) => (
@@ -185,7 +198,7 @@ export default function OnboardingStep() {
           )}
           {meta.id === 'meals' &&
             MEALS_OPTIONS.map((o) => (
-              <OptionCard key={o.value} title={`${o.label} comidas`} desc={o.desc} on={draft.mealsPerDay === Number(o.value)} onPress={() => setDraft({ mealsPerDay: Number(o.value) as 3 | 4 | 5 })} />
+              <OptionCard key={o.value} title={`${o.label} comidas`} desc={o.desc} on={draft.mealsPerDay === Number(o.value)} onPress={() => pick({ mealsPerDay: Number(o.value) as 3 | 4 | 5 })} />
             ))}
 
           {summary && (

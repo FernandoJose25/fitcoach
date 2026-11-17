@@ -24,5 +24,5 @@ export function bestProtein(p: { allergies: string[]; avoid: string[] }) {
   const list = Object.values(FOODS)
     .filter((f) => f.role === 'P' && (!f.tag || !banned.has(f.tag)))
     .sort((a, b) => b.p / b.kcal - a.p / a.kcal);
-  return list[0] ? { name: list[0].name, pPer100: list[0].p } : null;
+  return list[0] ? { id: list[0].id, name: list[0].name, pPer100: list[0].p } : null;
 }

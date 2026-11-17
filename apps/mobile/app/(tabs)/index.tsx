@@ -69,8 +69,8 @@ export default function Hoy() {
               ['Mantenimiento', t.tdee],
             ].map(([k, v]) => (
               <View key={k} style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                <Small style={{ fontSize: 13 }}>{k}</Small>
-                <Text style={{ fontFamily: fonts.title, fontSize: 13, color: c.ink }}>{fmt(v as number)}</Text>
+                <Small style={{ fontSize: 12 }}>{k}</Small>
+                <Text style={{ fontFamily: fonts.bold, fontSize: 12, color: c.mut }}>{fmt(v as number)}</Text>
               </View>
             ))}
           </View>
@@ -82,9 +82,20 @@ export default function Hoy() {
         </View>
       </Card>
 
-      <Card style={{ flexDirection: 'row', gap: 12, alignItems: 'flex-start', backgroundColor: alpha(c.acc, 0.12) }}>
+      <Card style={{ flexDirection: 'row', gap: 12, alignItems: 'center', backgroundColor: alpha(c.acc, 0.12) }}>
         <Text style={{ fontSize: 24 }}>{tip.emoji}</Text>
         <T style={{ flex: 1 }}>{tip.text}</T>
+        {tip.action && (
+          <Pill
+            label="Añadir"
+            onPress={() => {
+              const slot = next >= 0 ? next : plan.length - 1;
+              addLogs([{ ...tip.action!, slot, via: 'manual' }]);
+              confetti();
+              showToast(`${tip.action!.grams} g de ${FOODS[tip.action!.foodId].name.toLowerCase()} ✓`);
+            }}
+          />
+        )}
       </Card>
 
       {next >= 0 && (
@@ -110,8 +121,10 @@ export default function Hoy() {
         {plan.map((m, i) => {
           const L = logs.filter((l) => l.slot === i);
           const k = sum(L).kcal;
+          // Pendientes atenuadas; la siguiente y las completadas a plena opacidad para guiar el ojo.
+          const dim = !L.length && i !== next;
           return (
-            <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, borderTopWidth: i ? 1 : 0, borderTopColor: c.line }}>
+            <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, borderTopWidth: i ? 1 : 0, borderTopColor: c.line, opacity: dim ? 0.6 : 1 }}>
               <View style={{ flexDirection: 'row' }}>
                 {L.length ? (
                   L.slice(0, 3).map((l, j) => (

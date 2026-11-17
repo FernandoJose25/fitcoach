@@ -62,16 +62,16 @@ export default function Plan() {
         const s = sum(m.items);
         const done = logs.some((l) => l.slot === i);
         return (
-          <Card key={i}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
-              <Small>
-                {SLOT_ICON[m.slot]} {m.label} · {Math.round(s.kcal)} kcal
-              </Small>
-              <Small>
-                P {Math.round(s.p)} · C {Math.round(s.c)} · G {Math.round(s.f)}
-              </Small>
+          <Card key={i} style={{ opacity: done ? 0.75 : 1 }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+              <View style={{ flex: 1 }}>
+                <Small>
+                  {SLOT_ICON[m.slot]} {m.label} · {Math.round(s.kcal)} kcal · P {Math.round(s.p)} · C {Math.round(s.c)} · G {Math.round(s.f)}
+                </Small>
+                <H style={{ marginTop: 2 }}>{m.recipeName}</H>
+              </View>
+              <Pill label="↻" ghost onPress={() => swapRecipe(i)} style={{ paddingHorizontal: 12 }} />
             </View>
-            <H style={{ marginBottom: 10 }}>{m.recipeName}</H>
             <Animated.View key={`${m.recipeId}-${m.items.map((x) => x.grams).join()}`} entering={flipIn} style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 10 }}>
               {m.items.map((x) => (
                 <FoodChip key={x.foodId} emoji={FOODS[x.foodId].emoji} name={FOODS[x.foodId].name} grams={x.grams} />
@@ -80,10 +80,12 @@ export default function Plan() {
             <T kind="mut" style={{ fontSize: 13, marginBottom: 12 }}>
               👩‍🍳 {m.how}
             </T>
-            <View style={{ flexDirection: 'row', gap: 8 }}>
-              <Pill label="↻ Cambiar" ghost style={{ flex: 1 }} onPress={() => swapRecipe(i)} />
-              <Pill label={done ? '✓ Registrado' : 'Registrar'} style={{ flex: 2, backgroundColor: done ? c.hero : c.acc }} textStyle={done ? { color: c.ink } : undefined} onPress={() => toggle(i)} />
-            </View>
+            <Pill
+              label={done ? '✓ Registrado' : 'Registrar'}
+              style={{ paddingVertical: 13, backgroundColor: done ? c.hero : c.acc }}
+              textStyle={done ? { color: c.ink } : { fontSize: 15 }}
+              onPress={() => toggle(i)}
+            />
           </Card>
         );
       })}
