@@ -1,0 +1,32 @@
+id,name_es,emoji,kcal,p,c,f,role,tag,source
+pollo,Pechuga de pollo,🍗,165,31,0,3.6,P,pollo,seed
+huevo,Huevos,🥚,143,13,1,10,P,huevo,seed
+res,Lomo de res,🥩,190,26,0,9,P,res,seed
+atun,Atún en agua,🐟,116,26,0,1,P,pescado,seed
+trucha,Trucha,🐟,148,21,0,7,P,pescado,seed
+camaron,Camarones,🍤,99,24,0,0.3,P,mariscos,seed
+cerdo,Lomo de cerdo,🥓,143,21,0,6,P,cerdo,seed
+yogur,Yogur griego,🥛,97,9,4,5,P,lacteos,seed
+queso,Queso fresco,🧀,264,18,3,20,P,lacteos,seed
+tofu,Tofu,🧈,76,8,2,5,P,soya,seed
+lenteja,Lentejas,🫘,116,9,20,0.4,P,,seed
+leche,Leche,🥛,61,3.2,4.8,3.3,P,lacteos,seed
+jamon,Jamón de pavo,🥪,104,17,2,3,P,pavo,seed
+arroz,Arroz,🍚,130,2.7,28,0.3,C,,seed
+papa,Papa sancochada,🥔,87,1.9,20,0.1,C,,seed
+camote,Camote,🍠,90,2,21,0.1,C,,seed
+quinua,Quinua,🌾,120,4.4,21,1.9,C,,seed
+avena,Avena,🥣,389,17,66,7,C,gluten,seed
+pan,Pan integral,🍞,247,13,41,3.4,C,gluten,seed
+fideo,Fideos,🍝,158,5.8,31,0.9,C,gluten,seed
+yuca,Yuca,🥔,160,1.4,38,0.3,C,,seed
+platano,Plátano,🍌,89,1.1,23,0.3,C,,seed
+ensal,Ensalada,🥗,20,1.2,3.5,0.2,V,,seed
+broc,Brócoli,🥦,34,2.8,7,0.4,V,brocoli,seed
+tomate,Tomate,🍅,18,0.9,3.9,0.2,V,,seed
+manzana,Manzana,🍎,52,0.3,14,0.2,V,,seed
+palta,Palta,🥑,160,2,9,15,F,,seed
+mani,Maní,🥜,567,26,16,49,F,mani,seed
+pbut,Mantequilla de maní,🥜,588,25,20,50,F,mani,seed
+almendra,Almendras,🌰,579,21,22,50,F,frutos,seed
+aceite,Aceite de oliva,🫒,884,0,0,100,F,,seed
