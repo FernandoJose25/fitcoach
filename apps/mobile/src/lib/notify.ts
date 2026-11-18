@@ -9,17 +9,26 @@ import type { Reminders } from '@/store/useApp';
  * Avisos locales. Dos grupos con prefijo propio para que uno no cancele al otro:
  * - `wk-`: entreno guiado. Con la app abierta mandan la voz y la vibración; al salir se programan las
  *   transiciones que faltan (serie, descanso, fin) y al volver se cancelan.
- * - `rem-`: recordatorios diarios/semanales elegidos en Perfil (comidas, agua, entreno, pesaje).
+ * - `rem-`: recordatorios diarios/semanales (comidas, agua, entreno, pesaje). Activados por defecto; se
+ *   apagan uno a uno en Perfil. Son notificaciones del sistema programadas en el teléfono: llegan con la
+ *   app cerrada y sin internet, sin servidor de push.
  */
 const CHANNEL = 'workout';
-const REM_CHANNEL = 'reminders';
+// Android no deja subir la importancia de un canal existente: el canal nuevo (alta = aviso emergente
+// con sonido, como cualquier notificación push) reemplaza al antiguo 'reminders', que se borra.
+const REM_CHANNEL = 'recordatorios';
+const OLD_REM_CHANNEL = 'reminders';
 let channel: Promise<boolean> | null = null;
 let remChannel: Promise<boolean> | null = null;
 let gen = 0;
 
-// En primer plano no se muestra banner: el entreno ya está en pantalla y los recordatorios sobran.
+// En primer plano: los avisos del entreno guiado no se muestran (el entreno ya está en pantalla);
+// los recordatorios sí, como aviso emergente, igual que con la app cerrada.
 Notifications.setNotificationHandler({
-  handleNotification: async () => ({ shouldShowBanner: false, shouldShowList: false, shouldPlaySound: false, shouldSetBadge: false }),
+  handleNotification: async (n) => {
+    const rem = n.request.identifier.startsWith('rem-');
+    return { shouldShowBanner: rem, shouldShowList: rem, shouldPlaySound: rem, shouldSetBadge: false };
+  },
 });
 
 /** Canal con importancia alta; si el sistema lo rechaza (Expo Go) se usa el canal por defecto. */
@@ -33,8 +42,16 @@ function ensureChannel() {
 
 function ensureRemChannel() {
   if (Platform.OS !== 'android') return Promise.resolve(false);
-  remChannel ??= Notifications.setNotificationChannelAsync(REM_CHANNEL, { name: 'Recordatorios', importance: Notifications.AndroidImportance.DEFAULT })
-    .then(() => true)
+  remChannel ??= Notifications.setNotificationChannelAsync(REM_CHANNEL, {
+    name: 'Recordatorios',
+    description: 'Comidas, agua, entreno y pesaje',
+    importance: Notifications.AndroidImportance.HIGH,
+    vibrationPattern: [0, 200, 120, 200],
+  })
+    .then(() => {
+      Notifications.deleteNotificationChannelAsync(OLD_REM_CHANNEL).catch(() => {});
+      return true;
+    })
     .catch(() => false);
   return remChannel;
 }
@@ -143,6 +160,15 @@ export async function syncReminders(r: Reminders, daysPerWeek: number, mealsPerD
       jobs.push({ id: `rem-train-${d}`, title: 'Hoy toca entrenar', body: 'Tu sesión guiada te espera en Entreno.', trigger: weekly(d, 18, 0) });
   if (r.weigh) jobs.push({ id: 'rem-weigh', title: 'Pesaje semanal', body: 'En ayunas y después del baño. Regístralo en Hoy.', trigger: weekly(0, 7, 30) });
   for (const j of jobs)
-    await Notifications.scheduleNotificationAsync({ identifier: j.id, content: { title: j.title, body: j.body }, trigger: j.trigger }).catch(() => null);
+    await Notifications.scheduleNotificationAsync({ identifier: j.id, content: { title: j.title, body: j.body, sound: 'default' }, trigger: j.trigger }).catch(() => null);
   return true;
+}
+
+/** ¿Están permitidas las notificaciones? (Para avisar en Perfil si el usuario las bloqueó.) */
+export async function notificationsAllowed() {
+  try {
+    return (await Notifications.getPermissionsAsync()).granted;
+  } catch {
+    return false;
+  }
 }

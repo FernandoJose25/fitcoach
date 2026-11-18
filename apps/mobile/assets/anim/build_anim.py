@@ -9,7 +9,7 @@ Los PNG por frame se juntan en un WebP animado con `assemble_webp.py`.
 
 Uso (desde la raíz del repo; MPFB instalada en el repo de extensiones `user_default`):
   python .claude/skills/blender-core/scripts/run_in_blender.py --user-prefs \
-    apps/mobile/assets/anim/build_anim.py -- --out <carpeta_frames> [--only slug1,slug2] [--stills 1,30] [--res 360]
+    apps/mobile/assets/anim/build_anim.py -- --out <carpeta_frames> [--only slug1,slug2] [--stills 1,30] [--res 360] [--size 480]
 """
 import json
 import math
@@ -19,17 +19,30 @@ import sys
 import bpy
 from mathutils import Matrix, Quaternion, Vector
 from bl_ext.user_default.mpfb.services.humanservice import HumanService
+from bl_ext.user_default.mpfb.services.targetservice import TargetService
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from exercises import EXERCISES  # noqa: E402
 
 FPS = 24
 RES = (720, 540)
-CLAY = "#C9C1B4"    # hueso (paleta de la app)
-ACCENT = "#FF5A2E"  # bermellón: músculos que trabaja el ejercicio
+SKIN = "#A86F50"    # piel trigueña
+MUSCLE = "#C8341F"  # tejido muscular (rojo bermellón profundo): músculos que trabaja el ejercicio
+SHORTS = "#2A3644"  # short deportivo en acero oscuro (paleta de la app)
+HAIR = "#1C1714"
 PROP = "#6F6B64"    # objetos (silla, mochila, botellas): gris medio, legible sobre el fondo oscuro
 MACRO = {"gender": 1.0, "age": 0.5, "muscle": 1.0, "weight": 0.36, "proportions": 1.0, "height": 0.6,
          "cupsize": 0.5, "firmness": 0.5, "race": {"asian": 0.33, "caucasian": 0.34, "african": 0.33}}
+# Definición muscular de un cuerpo entrenado (targets anatómicos de MakeHuman, 0–1). Se cargan antes del
+# rig para que las articulaciones se calculen sobre la forma final.
+MUSCLE_TARGETS = {
+    "l-upperarm-muscle-incr": 0.8, "r-upperarm-muscle-incr": 0.8,
+    "l-upperarm-shoulder-muscle-incr": 0.7, "r-upperarm-shoulder-muscle-incr": 0.7,
+    "l-lowerarm-muscle-incr": 0.6, "r-lowerarm-muscle-incr": 0.6,
+    "l-upperleg-muscle-incr": 0.7, "r-upperleg-muscle-incr": 0.7,
+    "l-lowerleg-muscle-incr": 0.6, "r-lowerleg-muscle-incr": 0.6,
+    "torso-muscle-pectoral-incr": 0.6, "torso-muscle-dorsi-incr": 0.6, "stomach-tone-incr": 0.9,
+}
 SPINE = (("spine_01", 0.3), ("spine_02", 0.3), ("spine_03", 0.4))
 NECK = (("neck_01", 0.5), ("head", 0.5))
 FINGERS = ("index", "middle", "ring", "pinky")
@@ -97,6 +110,8 @@ class Actor:
     def __init__(self):
         self.body = HumanService.create_human(mask_helpers=True, detailed_helpers=True, extra_vertex_groups=True,
                                               feet_on_ground=True, scale=0.1, macro_detail_dict=MACRO)
+        for name, w in MUSCLE_TARGETS.items():
+            TargetService.load_target(self.body, TargetService.target_full_path(name), weight=w)
         self.rig = HumanService.add_builtin_rig(self.body, "game_engine", import_weights=True)
         for pb in self.rig.pose.bones:
             pb.rotation_mode = "QUATERNION"
@@ -129,6 +144,45 @@ class Actor:
         self.fingers(12)
         self.rest_co = self.shaped_coords()
         self.eyes = [self.add_eye(s) for s in "lr"]
+        self.paint_regions()
+        # Posición de reposo como atributo: las fibras del músculo y la trama de la tela no "nadan" al moverse.
+        self.body.add_rest_position_attribute = True
+
+    def paint_regions(self):
+        """Atributos 'cloth' (short: de la cintura a medio muslo) y 'hair' (cuero cabelludo, corte corto)."""
+        me = self.body.data
+        co = self.rest_co
+        hip = self.rest["thigh_l"].translation
+        knee = self.rest["calf_l"].translation
+        waist_z, hem_z = hip.z + 0.085, knee.z + 0.62 * (hip.z - knee.z)
+        groups = {g.index: g.name for g in self.body.vertex_groups}
+        legs = {i for i, n in groups.items() if n in ("pelvis", "thigh_l", "thigh_r", "spine_01")}
+        arms = {i for i, n in groups.items() if n.startswith(("upperarm", "lowerarm", "hand", "thumb", *FINGERS))}
+        head = next(i for i, n in groups.items() if n == "head")
+        eye_idx = {i for i, n in groups.items() if n in ("joint-l-eye", "joint-r-eye")}
+        eyes = [co[v.index] for v in me.vertices if any(g.group in eye_idx for g in v.groups)]
+        eye = sum(eyes, Vector()) / len(eyes)
+
+        def step(x, w):
+            return max(0.0, min(1.0, 0.5 + x / (2 * w)))
+
+        cloth = me.color_attributes.new("cloth", "FLOAT_COLOR", "POINT")
+        hair = me.color_attributes.new("hair", "FLOAT_COLOR", "POINT")
+        for v in me.vertices:
+            p = co[v.index]
+            gs = {g.group: g.weight for g in v.groups}
+            c = 0.0
+            if any(gs.get(i, 0) > 0.02 for i in legs) and not any(gs.get(i, 0) > 0.02 for i in arms):
+                c = step(waist_z - p.z, 0.006) * step(p.z - hem_z, 0.006)
+            h = 0.0
+            if gs.get(head, 0) > 0.5:
+                # Coronilla y nuca; deja libres cara, orejas y patillas bajas.
+                top = step(p.z - (eye.z + 0.045), 0.008)
+                back = step(p.y - (eye.y + 0.105), 0.01) * step(p.z - (eye.z - 0.05), 0.01)
+                sides = step(p.z - (eye.z + 0.02), 0.008) * step(p.y - (eye.y + 0.035), 0.01)
+                h = max(top, back, sides)
+            cloth.data[v.index].color = (c, c, c, 1)
+            hair.data[v.index].color = (h, h, h, 1)
 
     # -- geometría de reposo ------------------------------------------------------------------
     def shaped_coords(self):
@@ -515,40 +569,104 @@ def setup_scene(actor):
     scene.world = world
     bg = world.node_tree.nodes["Background"]
     bg.inputs["Color"].default_value = (0.4, 0.4, 0.4, 1)
-    bg.inputs["Strength"].default_value = 0.22
+    bg.inputs["Strength"].default_value = 0.14
 
-    # Piel de maniquí: tono hueso satinado con algo de dispersión subsuperficial y micro-relieve.
-    mat = bpy.data.materials.new("Clay")
+    # Piel realista: tono trigueño con dispersión subsuperficial, poros y sombreado de cavidades (AO) que
+    # marca la separación entre músculos. Encima, por atributos: músculo trabajado (tejido rojo con fibras),
+    # short y cabello.
+    mat = bpy.data.materials.new("Skin")
     nt = mat.node_tree
-    bsdf = nt.nodes["Principled BSDF"]
-    bsdf.inputs["Roughness"].default_value = 0.42
-    bsdf.inputs["Specular IOR Level"].default_value = 0.4
-    bsdf.inputs["Subsurface Weight"].default_value = 0.18
-    bsdf.inputs["Subsurface Radius"].default_value = (1.0, 0.45, 0.25)
-    bsdf.inputs["Subsurface Scale"].default_value = 0.012
-    bsdf.inputs["Sheen Weight"].default_value = 0.15
-    attr = nt.nodes.new("ShaderNodeAttribute")
-    attr.attribute_name = "hl"
-    mix = nt.nodes.new("ShaderNodeMix")
-    mix.data_type = "RGBA"
-    col_in = {s.name: s for s in mix.inputs if s.type == "RGBA"}
-    col_in["A"].default_value = lin(CLAY)
-    col_in["B"].default_value = lin(ACCENT)
-    fac = nt.nodes.new("ShaderNodeMath")
-    fac.operation = "MULTIPLY"
-    fac.inputs[1].default_value = 0.92
-    nt.links.new(attr.outputs["Fac"], fac.inputs[0])
-    nt.links.new(fac.outputs[0], mix.inputs["Factor"])
-    nt.links.new(next(s for s in mix.outputs if s.type == "RGBA"), bsdf.inputs["Base Color"])
-    noise = nt.nodes.new("ShaderNodeTexNoise")
-    noise.inputs["Scale"].default_value = 900
-    bump = nt.nodes.new("ShaderNodeBump")
-    bump.inputs["Strength"].default_value = 0.04
-    nt.links.new(noise.outputs["Fac"], bump.inputs["Height"])
-    nt.links.new(bump.outputs["Normal"], bsdf.inputs["Normal"])
-    for ob in (actor.body, *actor.eyes):
+    N, link = nt.nodes, nt.links.new
+    bsdf = N["Principled BSDF"]
+    bsdf.inputs["Specular IOR Level"].default_value = 0.45
+    bsdf.inputs["Subsurface Radius"].default_value = (1.0, 0.4, 0.22)
+    bsdf.inputs["Subsurface Scale"].default_value = 0.01
+
+    def attr(name):
+        a = N.new("ShaderNodeAttribute")
+        a.attribute_name = name
+        return a.outputs["Fac"]
+
+    def op(kind, a, b):
+        m = N.new("ShaderNodeMath")
+        m.operation = kind
+        for i, x in enumerate((a, b)):
+            if isinstance(x, (int, float)):
+                m.inputs[i].default_value = x
+            else:
+                link(x, m.inputs[i])
+        return m.outputs[0]
+
+    def mix_rgb(fac, a, b, blend="MIX"):
+        m = N.new("ShaderNodeMix")
+        m.data_type, m.blend_type = "RGBA", blend
+        if isinstance(fac, float):
+            m.inputs["Factor"].default_value = fac
+        else:
+            link(fac, m.inputs["Factor"])
+        for sock, val in zip([x for x in m.inputs if x.type == "RGBA"], (a, b)):
+            if isinstance(val, list):
+                sock.default_value = val
+            else:
+                link(val, sock)
+        return next(x for x in m.outputs if x.type == "RGBA")
+
+    def mix_f(fac, a, b):
+        return op("ADD", op("MULTIPLY", op("SUBTRACT", 1.0, fac), a), op("MULTIPLY", fac, b))
+
+    hl = op("MULTIPLY", attr("hl"), 0.95)
+    cloth, hair = attr("cloth"), attr("hair")
+    rest = N.new("ShaderNodeAttribute")
+    rest.attribute_name = "rest_position"
+    # Fibras: ruido muy estirado en vertical (eje largo de piernas y tronco en reposo).
+    stretch = N.new("ShaderNodeMapping")
+    stretch.inputs["Scale"].default_value = (90, 90, 9)
+    link(rest.outputs["Vector"], stretch.inputs["Vector"])
+    fib = N.new("ShaderNodeTexNoise")
+    fib.inputs["Scale"].default_value = 1.0
+    fib.inputs["Detail"].default_value = 4
+    link(stretch.outputs["Vector"], fib.inputs["Vector"])
+    pores = N.new("ShaderNodeTexNoise")
+    pores.inputs["Scale"].default_value = 1400
+    weave = N.new("ShaderNodeTexWave")
+    weave.inputs["Scale"].default_value = 260
+    link(rest.outputs["Vector"], weave.inputs["Vector"])
+
+    base = mix_rgb(cloth, lin(SKIN), lin(SHORTS))
+    # Músculo con variación de tono según las fibras; se ve también sobre el short (glúteos, cuádriceps).
+    tissue = mix_rgb(0.35, lin(MUSCLE), mix_rgb(fib.outputs["Fac"], lin("#7E1A10"), lin("#E2553A")))
+    base = mix_rgb(op("MULTIPLY", hl, op("SUBTRACT", 1.0, op("MULTIPLY", cloth, 0.3))), base, tissue)
+    base = mix_rgb(hair, base, lin(HAIR))
+    ao = N.new("ShaderNodeAmbientOcclusion")
+    ao.inputs["Distance"].default_value = 0.05
+    cav = N.new("ShaderNodeMapRange")
+    cav.inputs["To Min"].default_value = 0.42
+    link(ao.outputs["AO"], cav.inputs["Value"])
+    shade = N.new("ShaderNodeCombineColor")
+    for k in ("Red", "Green", "Blue"):
+        link(cav.outputs["Result"], shade.inputs[k])
+    link(mix_rgb(1.0, base, shade.outputs["Color"], "MULTIPLY"), bsdf.inputs["Base Color"])
+
+    skin_only = op("MULTIPLY", op("SUBTRACT", 1.0, cloth), op("SUBTRACT", 1.0, hair))
+    link(op("MULTIPLY", skin_only, mix_f(hl, 0.2, 0.05)), bsdf.inputs["Subsurface Weight"])
+    link(mix_f(hair, mix_f(cloth, mix_f(hl, 0.46, 0.3), 0.82), 0.6), bsdf.inputs["Roughness"])
+    link(op("MULTIPLY", cloth, 0.2), bsdf.inputs["Sheen Weight"])
+    # Relieve: poros en la piel, fibras en el músculo, trama en la tela y mechones en el cabello.
+    height = op("ADD", op("MULTIPLY", pores.outputs["Fac"], op("MULTIPLY", skin_only, 0.15)),
+                op("MULTIPLY", fib.outputs["Fac"], hl))
+    height = op("ADD", height, op("MULTIPLY", weave.outputs["Fac"], op("MULTIPLY", cloth, 0.35)))
+    height = op("ADD", height, op("MULTIPLY", pores.outputs["Fac"], op("MULTIPLY", hair, 0.9)))
+    bump = N.new("ShaderNodeBump")
+    bump.inputs["Strength"].default_value = 0.12
+    bump.inputs["Distance"].default_value = 0.002
+    link(height, bump.inputs["Height"])
+    link(bump.outputs["Normal"], bsdf.inputs["Normal"])
+    actor.body.data.materials.clear()
+    actor.body.data.materials.append(mat)
+    eye_mat = material("Eye", "#17110D", 0.15)
+    for ob in actor.eyes:
         ob.data.materials.clear()
-        ob.data.materials.append(mat)
+        ob.data.materials.append(eye_mat)
 
     # Suelo invisible que solo recibe la sombra (queda como alfa en el PNG).
     bpy.ops.mesh.primitive_plane_add(size=30, location=(0, 0, 0))
@@ -621,6 +739,9 @@ def main():
     props = Props(actor)
     cam = setup_scene(actor)
     scene = bpy.context.scene
+    if "--size" in args:  # resolución final sin bajar las muestras (la app usa 480 px de ancho)
+        w = int(args[args.index("--size") + 1])
+        scene.render.resolution_x, scene.render.resolution_y = w, round(w * RES[1] / RES[0])
     if "--res" in args:  # vista previa rápida
         w = int(args[args.index("--res") + 1])
         scene.render.resolution_x, scene.render.resolution_y = w, round(w * RES[1] / RES[0])

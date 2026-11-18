@@ -4,20 +4,23 @@ import Animated from 'react-native-reanimated';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { FOODS, shoppingList } from '@fitcoach/core';
 import { FoodChip } from '@/components/Chip';
+import { ConsequenceCard } from '@/components/Consequence';
 import { Header } from '@/components/Header';
 import { Icon } from '@/components/Icon';
 import { Card, Eyebrow, H, KV, Pill, Screen, Small, T, flipIn } from '@/components/ui';
 import { fmt, grams } from '@/lib/format';
-import { foodOf, sum, usePlan, useTodayLogs } from '@/lib/usePlan';
+import { foodOf, sum, useConsequence, useDayPlan, usePlan, useTodayLogs } from '@/lib/usePlan';
 import { useApp } from '@/store/useApp';
 import { useUi } from '@/store/useUi';
 import { useTheme } from '@/theme';
 
 const ROLE_ORDER: Record<string, number> = { P: 0, C: 1, V: 2, F: 3, M: 4 };
+const NO_ITEMS: { foodId: string; grams: number }[] = [];
 
 /**
  * Menú = qué comer hoy y registrarlo. Cada comida muestra la sugerencia del plan (receta y porciones)
  * mientras está pendiente, y lo que de verdad comiste cuando ya está registrada.
+ * Si te pasas, se muestra la consecuencia y las comidas pendientes se recortan para compensar.
  */
 export default function Menu() {
   const { c } = useTheme();
@@ -26,8 +29,10 @@ export default function Menu() {
   const t = useApp((s) => s.targets)!;
   const { addLogs, clearSlot, swapRecipe } = useApp.getState();
   const { showToast, confetti } = useUi.getState();
-  const plan = usePlan();
+  const { plan } = useDayPlan();
+  const basePlan = usePlan(); // lista de compras: el plan sin recortes del día
   const logs = useTodayLogs();
+  const consequence = useConsequence(NO_ITEMS);
   const [shop, setShop] = useState(false);
   const [focus, setFocus] = useState(0);
   useFocusEffect(useCallback(() => setFocus((n) => n + 1), []));
@@ -35,7 +40,7 @@ export default function Menu() {
   const total = sum(plan.flatMap((m) => m.items));
   const eaten = sum(logs);
   const exclusions = [...profile.allergies, ...profile.avoid];
-  const list = Object.entries(shoppingList(plan)).sort(([a], [b]) => ROLE_ORDER[FOODS[a].role] - ROLE_ORDER[FOODS[b].role] || FOODS[a].name.localeCompare(FOODS[b].name));
+  const list = Object.entries(shoppingList(basePlan)).sort(([a], [b]) => ROLE_ORDER[FOODS[a].role] - ROLE_ORDER[FOODS[b].role] || FOODS[a].name.localeCompare(FOODS[b].name));
   const next = plan.findIndex((_, i) => !logs.some((l) => l.slot === i));
 
   const register = (i: number) => {
@@ -65,6 +70,8 @@ export default function Menu() {
         )}
       </Card>
 
+      {consequence && <ConsequenceCard x={consequence} goal={profile.goal} title="Consecuencia de hoy" done />}
+
       {plan.map((m, i) => {
         const L = logs.filter((l) => l.slot === i);
         const done = L.length > 0;
@@ -80,6 +87,7 @@ export default function Menu() {
                   </Eyebrow>
                   {done && <Icon name="check" size={13} stroke={2.25} color={c.acc} />}
                 </View>
+                {!done && m.cut ? <Eyebrow style={{ marginTop: 2, fontSize: 9.5 }}>Ajustada −{m.cut} kcal para compensar</Eyebrow> : null}
                 <H style={{ marginTop: 2 }}>{done ? `${Math.round(s.kcal)} de ${target} kcal` : m.recipeName}</H>
                 <Small>
                   {done ? `P ${Math.round(s.p)} · C ${Math.round(s.c)} · G ${Math.round(s.f)} g` : `${Math.round(s.kcal)} kcal · P ${Math.round(s.p)} · C ${Math.round(s.c)} · G ${Math.round(s.f)}`}

@@ -4,7 +4,9 @@ import { computeTargets } from '../nutrition';
 import { buildPlan, bannedTags, isBanned } from '../meals';
 import { buildSession, buildTimeline, exerciseHistory, programWeek, sessionForDay, setSeconds, timelineSeconds, lastSet, alternativeExercises, nextSession, setScore, TRAIN_DAYS, volumeOf } from '../workouts';
 import { matchFood, verdict } from '../scan';
-import { foodFromOff, frequentFoodIds, searchFoods } from '../foodlog';
+import { customFood, foodFromOff, foodsFromOffSearch, frequentFoodIds, searchFoods } from '../foodlog';
+import { compensate, consequence, consequenceLines } from '../consequence';
+import { compareVersions, updateFor } from '../releases';
 import { FOODS } from '../data/foods';
 import { RECIPES } from '../data/recipes';
 import { EXERCISES, exerciseImages } from '../data/exercises';
@@ -269,6 +271,46 @@ describe('registro', () => {
     expect(foodFromOff('1', { product_name: 'Sin datos', nutriments: {} })).toBeNull();
     expect(foodFromOff('1', undefined)).toBeNull();
   });
+  it('Open Food Facts: calcula kcal desde kJ, macros o porción y acepta marcas en lista', () => {
+    expect(foodFromOff('2', { product_name: 'Galleta', nutriments: { energy_100g: 2092, fat_100g: 20 } })?.kcal).toBe(500);
+    expect(foodFromOff('3', { product_name: 'Barra', nutriments: { proteins_100g: 20, carbohydrates_100g: 50, fat_100g: 10 } })?.kcal).toBe(370);
+    const s = foodFromOff('4', { product_name: 'Snack', serving_quantity: 30, serving_size: '1 bolsa (30 g)', nutriments: { 'energy-kcal_serving': 150, fat_serving: 9 } });
+    expect(s).toMatchObject({ kcal: 500, f: 30, serving: { g: 30, label: '1 bolsa (30 g)' } });
+    expect(foodFromOff('5', { brands: ['Inca Kola'], nutriments: { 'energy-kcal_100g': 40 } })?.name).toBe('Inca Kola');
+    expect(foodFromOff('6', { product_name: 'Inca Kola 500 ml', brands: 'Inca Kola', nutriments: { 'energy-kcal_100g': 40 } })?.name).toBe('Inca Kola 500 ml');
+    expect(foodsFromOffSearch([{ code: '7', product_name: 'Sin datos' }, { code: '8', product_name: 'Ok', nutriments: { 'energy-kcal_100g': 100 } }]).map((f) => f.id)).toEqual(['off_8']);
+  });
+  it('alimento propio: kcal desde macros y rechaza datos imposibles', () => {
+    expect(customFood('usr_1', 'Salchipapa', { p: 7, c: 30, f: 15 })).toMatchObject({ kcal: 283, role: 'F', src: 'user' });
+    expect(customFood('usr_2', '', { kcal: 100, p: 1, c: 1, f: 1 })).toBeNull();
+    expect(customFood('usr_3', 'Raro', { p: 80, c: 30, f: 10 })).toBeNull();
+  });
+});
+
+describe('consecuencias', () => {
+  const t = computeTargets({ ...base, goal: 'lose' });
+  const plan = buildPlan(t, { ...base, goal: 'lose' }, FOODS, RECIPES);
+  it('sin exceso no cambia el plan', () => {
+    expect(compensate(plan, 0, new Set(), FOODS, t)).toMatchObject({ plan, cut: 0 });
+  });
+  it('un exceso recorta las comidas pendientes, sin bajar del 60 %', () => {
+    const r = compensate(plan, t.kcal * 0.6, new Set([0]), FOODS, t);
+    expect(r.cut).toBeGreaterThan(0);
+    expect(r.plan[0]).toBe(plan[0]);
+    expect(r.plan[1].cut).toBeGreaterThan(0);
+    const huge = compensate(plan, t.kcal * 3, new Set([0]), FOODS, t);
+    const k = (m: (typeof plan)[number]) => m.items.reduce((s, x) => s + x.grams, 0);
+    expect(k(huge.plan[1]) / k(plan[1])).toBeGreaterThan(0.5);
+  });
+  it('explica el exceso: compensación, retraso de la meta y caminata', () => {
+    const x = consequence({ kcal: t.kcal, p: 100, c: t.carbs, f: t.fat }, 600, t, 'lose', 70)!;
+    expect(x.excess).toBe(600);
+    expect(x.cut).toBe(240);
+    expect(x.rest).toBe(360);
+    expect(x.delayDays).toBeGreaterThan(0);
+    expect(consequenceLines(x, 'lose').join(' ')).toMatch(/compensar.*retrasa tu meta.*caminata/);
+    expect(consequence({ kcal: 500, p: 30, c: 50, f: 10 }, 500, t, 'lose', 70)).toBeNull();
+  });
 });
 
 describe('progreso', () => {
@@ -332,5 +374,25 @@ describe('aprende', () => {
   it('semanas por kg: null al mantener', () => {
     expect(weeksPerKg(t)).toBeGreaterThan(0);
     expect(weeksPerKg(computeTargets({ ...base, goal: 'maintain' }))).toBeNull();
+  });
+});
+
+describe('actualizaciones del APK', () => {
+  const rel = { version: '0.10.0', build_number: 2, mandatory: false, changelog: 'Novedades', apk_url: ' https://x/app.apk ', min_supported_version: null };
+  it('compara versiones semver', () => {
+    expect(compareVersions('0.10.0', '0.9.0')).toBe(1);
+    expect(compareVersions('v1.2.3', '1.2.3')).toBe(0);
+    expect(compareVersions('1.2', '1.2.1')).toBe(-1);
+  });
+  it('avisa si sube la versión o el versionCode, con la URL limpia', () => {
+    expect(updateFor(rel, '0.9.0', 1)).toEqual({ version: '0.10.0', changelog: 'Novedades', apkUrl: 'https://x/app.apk', mandatory: false });
+    expect(updateFor({ ...rel, version: '0.9.0' }, '0.9.0', 1)?.version).toBe('0.9.0');
+    expect(updateFor(rel, '0.10.0', 2)).toBeNull();
+    expect(updateFor(null, '0.9.0', 1)).toBeNull();
+  });
+  it('obligatoria si la release lo marca o si la instalada está bajo el mínimo', () => {
+    expect(updateFor({ ...rel, mandatory: true }, '0.9.0', 1)?.mandatory).toBe(true);
+    expect(updateFor({ ...rel, min_supported_version: '0.10.0' }, '0.9.0', 1)?.mandatory).toBe(true);
+    expect(updateFor({ ...rel, min_supported_version: '0.9.0' }, '0.9.0', 1)?.mandatory).toBe(false);
   });
 });

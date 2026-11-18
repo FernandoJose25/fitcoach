@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { AppState } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { Directory, Paths } from 'expo-file-system';
-import type { Profile, SetLog } from '@fitcoach/core';
+import { FOODS, type Profile, type SetLog } from '@fitcoach/core';
 import { supabase } from './supabase';
 import { allFoods } from './usePlan';
 import { useApp, type LogItem, type Via } from '@/store/useApp';
@@ -66,11 +66,15 @@ async function pushDay(uid: string, day: string) {
   // Se desmarca antes de subir: un cambio hecho durante la subida vuelve a marcar el día.
   useApp.setState({ dirtyDays: s.dirtyDays.filter((d) => d !== day) });
   try {
-    const off = [...new Set(logs.map((l) => l.foodId))].flatMap((id) => (s.customFoods[id] ? [s.customFoods[id]] : []));
-    if (off.length) {
+    // Alimentos propios (Open Food Facts, creados a mano o estimados por IA): deben existir en `foods` para el registro.
+    const own = [...new Set(logs.map((l) => l.foodId))].flatMap((id) => (s.customFoods[id] ? [s.customFoods[id]] : []));
+    if (own.length) {
       ok(
         await supabase!.from('foods').upsert(
-          off.map((f) => ({ id: f.id, name_es: f.name, emoji: f.emoji, kcal: f.kcal, p: f.p, c: f.c, f: f.f, role: f.role, barcode: f.id.slice(4), source: 'off' })),
+          own.map((f) => {
+            const off = f.id.startsWith('off_');
+            return { id: f.id, name_es: f.name, emoji: f.emoji, kcal: f.kcal, p: f.p, c: f.c, f: f.f, role: f.role, barcode: off ? f.id.slice(4) : null, source: off ? 'off' : f.src === 'ai' ? 'ai' : 'user' };
+          }),
           { onConflict: 'id', ignoreDuplicates: true },
         ),
       );
@@ -126,11 +130,11 @@ async function pull(uid: string) {
   const { data: water } = ok(await supabase!.from('water_logs').select('day, glasses').eq('user_id', uid));
   const { data: wsets } = ok(await supabase!.from('workout_sets').select('day, exercise, set_no, reps, weight_kg').eq('user_id', uid));
   const { data: wlogs } = ok(await supabase!.from('weight_logs').select('day, kg').eq('user_id', uid));
-  const offIds = [...new Set((meals ?? []).flatMap((m) => m.meal_log_items.map((i) => i.food_id as string)))].filter((id) => id.startsWith('off_'));
-  const { data: off } = offIds.length ? ok(await supabase!.from('foods').select('id, name_es, emoji, kcal, p, c, f, role').in('id', offIds)) : { data: [] };
+  const ownIds = [...new Set((meals ?? []).flatMap((m) => m.meal_log_items.map((i) => i.food_id as string)))].filter((id) => !FOODS[id]);
+  const { data: own } = ownIds.length ? ok(await supabase!.from('foods').select('id, name_es, emoji, kcal, p, c, f, role, source').in('id', ownIds)) : { data: [] };
 
-  for (const f of off ?? []) {
-    useApp.getState().addFood({ id: f.id, name: f.name_es, emoji: f.emoji ?? '🏷️', kcal: Number(f.kcal), p: Number(f.p), c: Number(f.c), f: Number(f.f), role: f.role });
+  for (const f of own ?? []) {
+    useApp.getState().addFood({ id: f.id, name: f.name_es, emoji: f.emoji ?? '🏷️', kcal: Number(f.kcal), p: Number(f.p), c: Number(f.c), f: Number(f.f), role: f.role, src: f.source === 'off' || f.source === 'ai' ? f.source : 'user' });
   }
   const known = allFoods();
   const logs: Record<string, LogItem[]> = {};

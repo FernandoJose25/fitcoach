@@ -128,7 +128,7 @@ export const useApp = create<AppState>()(
       weights: {},
       measures: {},
       photos: [],
-      reminders: { meals: false, water: false, workout: false, weigh: false },
+      reminders: { meals: true, water: true, workout: true, weigh: true },
       kcalAdjust: 0,
       adjustedAt: null,
       startProgram: () => {
@@ -205,6 +205,13 @@ export const useApp = create<AppState>()(
     {
       name: 'fitcoach',
       storage: createJSONStorage(() => AsyncStorage),
+      // v1: recordatorios activados por defecto también para quien ya tenía la app (antes venían apagados).
+      version: 1,
+      migrate: (state, from) => {
+        const s = state as Partial<AppState>;
+        if (from < 1) s.reminders = { meals: true, water: true, workout: true, weigh: true };
+        return s as AppState;
+      },
       partialize: (s) => ({
         profile: s.profile,
         targets: s.targets,

@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Alert, Linking, Pressable, Switch, Text, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import Constants from 'expo-constants';
 import { GOALS, LEVELS, PLACES, achievements } from '@fitcoach/core';
 import { Chip } from '@/components/Chip';
@@ -9,7 +9,7 @@ import { Tap } from '@/components/Tap';
 import { BigButton, Card, Eyebrow, H, KV, Num, Pill, Screen, Small, T } from '@/components/ui';
 import { WEEKDAYS, fmt, weekdayIndex } from '@/lib/format';
 import { CONTACT_EMAIL, PRIVACY_URL } from '@/lib/links';
-import { syncReminders } from '@/lib/notify';
+import { allowNotifications, notificationsAllowed, syncReminders } from '@/lib/notify';
 import { cloudEnabled, deleteAccount } from '@/lib/sync';
 import { sum } from '@/lib/usePlan';
 import { todayKey, useApp, type GuidePref, type Reminders, type SchemePref } from '@/store/useApp';
@@ -307,11 +307,26 @@ function Achievements() {
   );
 }
 
-/** Recordatorios locales (sin servidor): se reprograman al cambiar cualquier interruptor. */
+/**
+ * Recordatorios: notificaciones del sistema programadas en el teléfono (llegan con la app cerrada).
+ * Vienen activados; se reprograman al cambiar cualquier interruptor. Si el sistema las bloqueó, se avisa.
+ */
 function RemindersCard() {
   const { c } = useTheme();
   const reminders = useApp((s) => s.reminders);
   const profile = useApp((s) => s.profile)!;
+  const [blocked, setBlocked] = useState(false);
+  useFocusEffect(
+    useCallback(() => {
+      notificationsAllowed().then((ok) => setBlocked(!ok));
+    }, []),
+  );
+  const unblock = async () => {
+    if (await allowNotifications()) {
+      setBlocked(false);
+      syncReminders(useApp.getState().reminders, profile.daysPerWeek, profile.mealsPerDay);
+    } else Linking.openSettings();
+  };
   const toggle = async (k: keyof Reminders, on: boolean) => {
     const next = { ...reminders, [k]: on };
     useApp.getState().setReminders({ [k]: on });
@@ -324,6 +339,12 @@ function RemindersCard() {
   return (
     <Card>
       <Eyebrow style={{ marginBottom: 4 }}>Recordatorios</Eyebrow>
+      {blocked && (
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, padding: 10, marginVertical: 6, borderRadius: radius.btn, backgroundColor: alpha(c.acc, 0.12) }}>
+          <T style={{ flex: 1, fontSize: 13, lineHeight: 18 }}>Las notificaciones de FitCoach están bloqueadas en el teléfono: no te llegarán los avisos.</T>
+          <Pill label="Activar" onPress={unblock} />
+        </View>
+      )}
       {REMINDERS.map((r, i) => (
         <View key={r.k} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 8, borderTopWidth: i ? 1 : 0, borderTopColor: c.line }}>
           <View style={{ flex: 1 }}>

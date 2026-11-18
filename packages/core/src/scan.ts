@@ -2,7 +2,7 @@ import type { Food, Goal, Targets } from './types';
 import { normalize } from './foodlog';
 
 /** Lo que devuelve la Edge Function `scan-food` por cada alimento detectado. */
-export type ScanItem = { name: string; grams: number; confidence: number };
+export type ScanItem = { name: string; grams: number; confidence: number; per100?: { kcal: number; p: number; c: number; f: number } | null };
 
 // Palabras que no distinguen un alimento: artículos, preposiciones y formas de cocción.
 const STOP = new Set(
@@ -54,21 +54,21 @@ export function verdict(item: { kcal: number; p: number }, eaten: { kcal: number
   const left = t.kcal - eaten.kcal;
   const pd = item.kcal > 0 ? (item.p * 4) / item.kcal : 0;
   if (after > t.kcal * 1.05) {
-    return { level: 'over', text: `⚠️ Te pasarías ${Math.round(after - t.kcal)} kcal de tu meta de hoy.` };
+    return { level: 'over', text: `Te pasarías ${Math.round(after - t.kcal)} kcal de tu meta de hoy.` };
   }
   if (goal === 'gain' && pd >= 0.25) {
     return {
       level: 'protein',
-      text: `🎯 Muy bueno para ganar masa: ${Math.round(pd * 100)}% de sus calorías son proteína.`,
+      text: `Muy bueno para ganar masa: ${Math.round(pd * 100)}% de sus calorías son proteína.`,
     };
   }
   if (goal === 'lose' && pd >= 0.3) {
-    return { level: 'protein', text: '🎯 Saciante y alto en proteína, ideal para perder grasa.' };
+    return { level: 'protein', text: 'Saciante y alto en proteína, ideal para perder grasa.' };
   }
   if (item.kcal > left * 0.8) {
-    return { level: 'tight', text: '🟠 Ocupa casi todas las calorías que te quedan hoy.' };
+    return { level: 'tight', text: 'Ocupa casi todas las calorías que te quedan hoy.' };
   }
-  return { level: 'ok', text: '✅ Encaja bien con tu día.' };
+  return { level: 'ok', text: 'Encaja bien con tu día.' };
 }
 
 export type CoachTip = {

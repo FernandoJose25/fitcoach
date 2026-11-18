@@ -9,8 +9,10 @@ import { IBMPlexMono_500Medium, IBMPlexMono_600SemiBold } from '@expo-google-fon
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Overlay } from '@/components/Overlay';
+import { UpdateModal } from '@/components/UpdateModal';
 import { syncReminders } from '@/lib/notify';
 import { useSync } from '@/lib/sync';
+import { useUpdateChecks } from '@/lib/updater';
 import { useApp } from '@/store/useApp';
 import { useTheme } from '@/theme';
 
@@ -54,6 +56,8 @@ export default function RootLayout() {
   });
   const ready = fontsLoaded && hydrated;
   useSync();
+  // Revisa si hay un APK nuevo apenas abre la app (en paralelo con las fuentes): el aviso sale de una vez.
+  useUpdateChecks();
   useEffect(() => {
     if (ready) SplashScreen.hideAsync().catch(() => {});
   }, [ready]);
@@ -80,6 +84,7 @@ export default function RootLayout() {
           <Stack.Screen name="workout" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom', gestureEnabled: false }} />
         </Stack>
         <Overlay />
+        <UpdateModal />
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );

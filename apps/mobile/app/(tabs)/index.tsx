@@ -1,6 +1,7 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Text, View } from 'react-native';
-import Animated, { FadeIn } from 'react-native-reanimated';
+import Animated, { FadeIn, useAnimatedProps, useSharedValue, withTiming } from 'react-native-reanimated';
+import Svg, { Circle, Path } from 'react-native-svg';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { FOODS, SESSION_NAMES, TRAIN_DAYS, adaptiveAdjust, coachMessage, weightTrend } from '@fitcoach/core';
 import { Header } from '@/components/Header';
@@ -10,7 +11,7 @@ import { MacroBar } from '@/components/MacroBar';
 import { MuscleMap } from '@/components/MuscleMap';
 import { Ring } from '@/components/Ring';
 import { Tap } from '@/components/Tap';
-import { BigButton, Card, Eyebrow, H, Num, Pill, Screen, Small, T } from '@/components/ui';
+import { BigButton, Card, Eyebrow, H, Num, Pill, Screen, Small, T, easeOut } from '@/components/ui';
 import { WEEKDAYS, currentWeek, fmt, weekdayIndex } from '@/lib/format';
 import { bestProtein, sum, usePlan } from '@/lib/usePlan';
 import { useProgram } from '@/lib/useProgram';
@@ -226,26 +227,7 @@ export default function Hoy() {
       {/* 4 · Peso: último registro, tendencia y registro rápido. */}
       <WeightCard trend={trend?.kgPerWeek ?? null} plan={t.weeklyKg} lastDay={lastWeigh} />
 
-      <Card>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-          <Eyebrow>Agua</Eyebrow>
-          <Num style={{ fontSize: 12 }}>
-            {water * 250}
-            <Num style={{ fontSize: 12, color: c.mut }}> / 2000 ml</Num>
-          </Num>
-        </View>
-        <View style={{ flexDirection: 'row', gap: 4, alignItems: 'flex-end' }}>
-          {Array.from({ length: 8 }, (_, i) => (
-            <Tap
-              key={i}
-              onPress={() => setWater(water === i + 1 ? i : i + 1, sel)}
-              accessibilityLabel={`${(i + 1) * 250} ml de agua`}
-              accessibilityState={{ selected: i < water }}
-              style={{ flex: 1, height: 44, borderRadius: 4, backgroundColor: i < water ? c.water : c.bg, borderWidth: 1, borderColor: i < water ? c.water : c.line }}
-            />
-          ))}
-        </View>
-      </Card>
+      <WaterCard glasses={water} onChange={(g) => setWater(g, sel)} />
     </Screen>
   );
 }
@@ -327,5 +309,79 @@ function WeightCard({ trend, plan, lastDay }: { trend: number | null; plan: numb
         <Pill label={stale ? 'Registrar el peso de esta semana' : 'Actualizar peso'} ghost={!stale} onPress={() => setEdit(last)} style={{ marginTop: 10, paddingVertical: 12 }} />
       )}
     </Card>
+  );
+}
+
+const GLASS_ML = 250;
+const GLASSES = 8;
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
+const R = 21;
+const CIRC = 2 * Math.PI * R;
+
+/**
+ * Agua: cuánto llevas en ml, un botón ＋ que suma un vaso (250 ml) y los 8 vasos de la meta (2 L).
+ * Tocar un vaso marca hasta ahí; tocar el último lleno lo quita.
+ */
+function WaterCard({ glasses, onChange }: { glasses: number; onChange: (g: number) => void }) {
+  const { c } = useTheme();
+  const off = useSharedValue(CIRC);
+  useEffect(() => {
+    off.value = withTiming(CIRC * (1 - glasses / GLASSES), { duration: 400, easing: easeOut });
+  }, [glasses, off]);
+  const ring = useAnimatedProps(() => ({ strokeDashoffset: off.value }));
+  const full = glasses >= GLASSES;
+  return (
+    <Card>
+      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        <View style={{ flex: 1 }}>
+          <Eyebrow>Agua</Eyebrow>
+          <Text style={{ fontFamily: fonts.titleX, fontSize: 38, color: c.ink, marginTop: 2 }}>
+            {fmt(glasses * GLASS_ML)}
+            <Text style={{ fontFamily: fonts.num, fontSize: 14, color: c.mut }}> / 2 000 ml</Text>
+          </Text>
+          <Small>{full ? 'Meta cumplida. Buen trabajo.' : `${glasses} de ${GLASSES} vasos · cada vaso = ${GLASS_ML} ml`}</Small>
+        </View>
+        <Tap
+          onPress={() => onChange(Math.min(GLASSES, glasses + 1))}
+          disabled={full}
+          accessibilityLabel={`Sumar un vaso de agua. Llevas ${glasses * GLASS_ML} mililitros`}
+          style={{ width: 56, height: 56, alignItems: 'center', justifyContent: 'center', opacity: full ? 0.5 : 1 }}
+        >
+          <Svg width={56} height={56} viewBox="0 0 50 50" style={{ position: 'absolute', transform: [{ rotate: '-90deg' }] }}>
+            <Circle cx={25} cy={25} r={R} stroke={alpha(c.ink, 0.1)} strokeWidth={3} fill="none" />
+            <AnimatedCircle cx={25} cy={25} r={R} stroke={c.rest} strokeWidth={3} fill="none" strokeDasharray={`${CIRC} ${CIRC}`} animatedProps={ring} />
+          </Svg>
+          <Icon name="plus" size={24} stroke={2.25} color={c.ink} />
+        </Tap>
+      </View>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 14 }}>
+        {Array.from({ length: GLASSES }, (_, i) => {
+          const on = i < glasses;
+          return (
+            <Tap
+              key={i}
+              haptic={false}
+              onPress={() => onChange(glasses === i + 1 ? i : i + 1)}
+              accessibilityLabel={`${(i + 1) * GLASS_ML} ml de agua`}
+              accessibilityState={{ selected: on }}
+              style={{ paddingVertical: 4, paddingHorizontal: 2 }}
+            >
+              <Glass on={on} />
+            </Tap>
+          );
+        })}
+      </View>
+    </Card>
+  );
+}
+
+/** Vaso de trazo (24×30): lleno en tono agua cuando ya se tomó. */
+function Glass({ on }: { on: boolean }) {
+  const { c } = useTheme();
+  return (
+    <Svg width={28} height={34} viewBox="0 0 24 30">
+      {on && <Path d="M5.2 9.5h13.6l-1.5 16.6a1 1 0 0 1-1 .9H7.7a1 1 0 0 1-1-.9z" fill={c.rest} opacity={0.85} />}
+      <Path d="M3.5 3h17l-2.1 23.6a1.6 1.6 0 0 1-1.6 1.4H7.2a1.6 1.6 0 0 1-1.6-1.4z" stroke={on ? c.rest : alpha(c.ink, 0.35)} strokeWidth={1.6} fill="none" strokeLinejoin="round" />
+    </Svg>
   );
 }

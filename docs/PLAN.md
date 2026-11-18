@@ -2,7 +2,7 @@
 
 Objetivo: una sola app gratuita con la lógica de **Fitia** (nutrición) y **Simetri** (gym). La especificación técnica completa está en [SPEC.md](SPEC.md); este documento ordena el trabajo y mide la brecha.
 
-Última actualización: 2026-11-17 (F6 Aprende + Perfil, F7 pulido, F8 primer build de la beta).
+Última actualización: 2026-11-18 (Registrar rediseñado, código de barras con base compartida, consecuencias, recordatorios activos por defecto, días de entreno en orden, cuerpo 3D realista).
 
 ---
 
@@ -13,7 +13,7 @@ Objetivo: una sola app gratuita con la lógica de **Fitia** (nutrición) y **Sim
 | Monorepo, CI, Supabase (esquema + Edge Function) | ✅ | F0 |
 | Motor de calorías/macros, plan con recetas, rutinas, historial de fuerza, veredicto, coach, guía Aprende | ✅ 40 tests | `packages/core` |
 | Welcome, onboarding (10 pantallas, auto-avance), Hoy, Plan, Perfil básico | ✅ probado en emulador | F2 |
-| Registro manual, búsqueda, frecuentes, código de barras | ✅ búsqueda probada en emulador; falta escanear un código real en un teléfono | F3 |
+| Registrar: foto, código, crear; búsqueda local + productos de marca (Open Food Facts) + estimación con IA; plato con varios alimentos; consecuencia de pasarse | ✅ código; falta escanear un código real en un teléfono | F3 |
 | Sincronización con Supabase (auth anónima, perfil, registros, agua, series, peso) | ✅ probada en emulador; migraciones 0001–0005 aplicadas y semilla de 303 alimentos cargada | F3 |
 | Recuperar datos al reinstalar | ⬜ la sesión anónima se pierde al desinstalar; requiere vincular email | F3 |
 | Entreno: programa por semanas (Semana 01, Día 1…N) y entreno guiado automático (preparación → serie → descanso) con voz, vibración, pantalla encendida y avisos en segundo plano; historial, cambio de ejercicio, racha | ✅ probado en emulador; `workout_sets` se sincroniza (sin probar, igual que F3) | F5 |
@@ -33,13 +33,13 @@ Objetivo: una sola app gratuita con la lógica de **Fitia** (nutrición) y **Sim
 | Plan diario con recetas intercambiables y porciones escaladas | ✅ 133 recetas, 25+ por comida, opciones veganas y sin gluten en todas | — |
 | Base grande de alimentos peruanos | 🟡 303 alimentos con platos típicos; falta revisión con CENAN | Contenido |
 | Búsqueda rápida y alimentos frecuentes | ✅ | — |
-| Código de barras (Open Food Facts) | ✅ falta prueba en teléfono | — |
+| Código de barras (Open Food Facts) | ✅ teléfono → base compartida de FitCoach → Open Food Facts; si nadie lo tiene, se crea con la etiqueta y queda para todos (migración `0006`) | — |
 | Foto del plato con IA | 🟡 falta desplegar y probar | F4 |
 | Agua y lista de compras | ✅ | — |
 | Peso semanal con gráfico | ✅ registro en Hoy, tendencia y proyección en Progreso (local, sin sincronizar aún) | — |
 | Ajuste automático de calorías según progreso | ✅ propuesta semanal ±100–150 kcal con el motivo (`adaptiveAdjust`) | — |
 | Recetas con pasos y foto propia | ⬜ texto en una línea | v1.x (producción de contenido) |
-| Recordatorios (comer, agua, pesarte) | ✅ notificaciones locales en Perfil (comidas, agua, entreno, pesaje) | — |
+| Recordatorios (comer, agua, pesarte) | ✅ notificaciones del sistema activadas por defecto (canal de prioridad alta); se apagan en Perfil | — |
 
 ## 3. Brecha frente a Simetri
 

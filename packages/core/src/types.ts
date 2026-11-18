@@ -45,6 +45,10 @@ export interface Food {
   role: 'P' | 'C' | 'V' | 'F' | 'M';
   /** Etiquetas de alérgeno o preferencia, separadas por coma (p. ej. "res,cebolla"). */
   tag?: string;
+  /** Porción de la etiqueta del producto (Open Food Facts o la que escribió el usuario). */
+  serving?: { g: number; label: string };
+  /** De dónde salen los valores: catálogo (sin campo), producto de marca, creado por el usuario o estimado por IA. */
+  src?: 'off' | 'user' | 'ai';
 }
 
 export interface Item {
@@ -68,4 +72,6 @@ export interface Meal {
   recipeName: string;
   how: string;
   items: Item[];
+  /** kcal recortadas para compensar un exceso del día (ver `compensate`). */
+  cut?: number;
 }

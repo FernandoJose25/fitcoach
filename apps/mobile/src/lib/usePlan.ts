@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { bannedTags, buildPlan, isBanned, FOODS, RECIPES, totals, type Food, type Item } from '@fitcoach/core';
+import { bannedTags, buildPlan, compensate, consequence, isBanned, FOODS, RECIPES, totals, type Food, type Item, type Meal } from '@fitcoach/core';
 import { useApp, todayKey, type LogItem } from '@/store/useApp';
 
 /** Plan del día recalculado desde el core cuando cambian perfil, metas o variantes. */
@@ -34,4 +34,44 @@ export function bestProtein(p: { allergies: string[]; avoid: string[] }) {
     .filter((f) => f.role === 'P' && !isBanned(f, banned))
     .sort((a, b) => b.p / b.kcal - a.p / a.kcal);
   return list[0] ? { id: list[0].id, name: list[0].name, pPer100: list[0].p } : null;
+}
+
+/** kcal planeadas en las comidas que aún no se registran (sin contar `except`, la comida que se está registrando). */
+export function pendingKcal(plan: Meal[], logs: { slot: number }[], except?: number) {
+  const done = new Set(logs.map((l) => l.slot));
+  return plan.reduce((s, m, i) => (done.has(i) || i === except ? s : s + sum(m.items).kcal), 0);
+}
+
+/**
+ * Plan de hoy con la consecuencia de lo registrado: si te pasas, las comidas pendientes se recortan
+ * para compensar (`compensate`). La lista de compras usa `usePlan` (sin recortes).
+ */
+export function useDayPlan() {
+  const plan = usePlan();
+  const logs = useTodayLogs();
+  const t = useApp((s) => s.targets);
+  const custom = useApp((s) => s.customFoods);
+  return useMemo(() => {
+    if (!t) return { plan, cut: 0 };
+    return compensate(plan, sum(logs).kcal, new Set(logs.map((l) => l.slot)), { ...FOODS, ...custom }, t);
+  }, [plan, logs, t, custom]);
+}
+
+/**
+ * Consecuencia de registrar `add` en la comida `slot` (o de lo ya registrado hoy si `add` está vacío).
+ * `extra`: totales de alimentos que aún no están guardados (p. ej. estimados por IA en una foto).
+ */
+export function useConsequence(add: Item[], slot?: number, extra?: { kcal: number; p: number; c: number; f: number }) {
+  const plan = usePlan();
+  const logs = useTodayLogs();
+  const profile = useApp((s) => s.profile);
+  const t = useApp((s) => s.targets);
+  const custom = useApp((s) => s.customFoods);
+  return useMemo(() => {
+    if (!profile || !t) return null;
+    const a = sum([...logs, ...add]);
+    const after = extra ? { kcal: a.kcal + extra.kcal, p: a.p + extra.p, c: a.c + extra.c, f: a.f + extra.f } : a;
+    return consequence(after, pendingKcal(plan, logs, slot), t, profile.goal, profile.weightKg);
+    // custom: los alimentos nuevos (IA, creados) cambian `sum`.
+  }, [add, slot, plan, logs, profile, t, custom, extra?.kcal, extra?.p, extra?.c, extra?.f]);
 }

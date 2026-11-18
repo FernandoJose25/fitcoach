@@ -104,6 +104,7 @@ export default function Entreno() {
           minutes={x.minutes}
           done={doneDays.has(x.d)}
           isNext={x.d === next}
+          locked={!doneDays.has(x.d) && x.d !== next}
           open={expanded === x.d}
           allSets={allSets}
           onToggle={() => setOpen(expanded === x.d ? -1 : x.d)}
@@ -175,6 +176,8 @@ interface DayProps {
   minutes: number;
   done: boolean;
   isNext: boolean;
+  /** Se desbloquea al completar el día anterior: el programa va en orden. */
+  locked: boolean;
   open: boolean;
   allSets: Record<string, SetLog[]>;
   onToggle: () => void;
@@ -182,7 +185,7 @@ interface DayProps {
   onSwap: (exerciseIndex: number, name: string | null) => void;
 }
 
-function DayCard({ index, day, kind, exercises, recommended, where, minutes, done, isNext, open, allSets, onToggle, onStart, onSwap }: DayProps) {
+function DayCard({ index, day, kind, exercises, recommended, where, minutes, done, isNext, locked, open, allSets, onToggle, onStart, onSwap }: DayProps) {
   const { c } = useTheme();
   const [hist, setHist] = useState<number | null>(null);
   const [picking, setPicking] = useState(false);
@@ -206,29 +209,40 @@ function DayCard({ index, day, kind, exercises, recommended, where, minutes, don
           borderWidth: isNext ? 2 : 1,
           borderColor: isNext ? c.acc : c.line,
           overflow: 'hidden',
-          opacity: done && !open ? 0.7 : 1,
+          opacity: (done && !open) || locked ? 0.55 : 1,
         }}
       >
-        <Tap haptic={false} onPress={onToggle} accessibilityState={{ expanded: open }} style={{ flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16 }}>
+        <Tap
+          haptic={false}
+          onPress={onToggle}
+          disabled={locked}
+          accessibilityState={{ expanded: open, disabled: locked }}
+          accessibilityHint={locked ? `Se desbloquea al completar el día ${day}` : undefined}
+          style={{ flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16 }}
+        >
           <View style={{ width: 48, height: 48, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: done ? c.acc : c.bg, borderWidth: 1, borderColor: done ? c.acc : c.line }}>
-            {done ? <Icon name="check" size={22} stroke={2.25} color={c.on} /> : <Text style={{ color: c.ink, fontFamily: fonts.numB, fontSize: 12, letterSpacing: 0.5 }}>{SESSION_ICON[kind]}</Text>}
+            {done ? (
+              <Icon name="check" size={22} stroke={2.25} color={c.on} />
+            ) : locked ? (
+              <Icon name="lock" size={20} color={c.mut} />
+            ) : (
+              <Text style={{ color: c.ink, fontFamily: fonts.numB, fontSize: 12, letterSpacing: 0.5 }}>{SESSION_ICON[kind]}</Text>
+            )}
           </View>
           <View style={{ flex: 1 }}>
             <Small style={{ fontFamily: fonts.num, fontSize: 10.5, letterSpacing: 1.4, color: isNext ? c.acc : c.mut }}>
               DÍA {day + 1}
-              {isNext ? ' · SIGUIENTE' : done ? ' · HECHO' : ''}
+              {isNext ? ' · SIGUIENTE' : done ? ' · HECHO' : locked ? ' · BLOQUEADO' : ''}
             </Small>
             <H size={17} style={{ marginTop: 1 }}>
               {SESSION_NAMES[kind]}
             </H>
-            <Small>
-              {exercises.length} ejercicios · {sets} series · ~{minutes} min
-            </Small>
+            <Small>{locked ? `Completa el Día ${day} para desbloquearlo` : `${exercises.length} ejercicios · ${sets} series · ~${minutes} min`}</Small>
           </View>
-          <Text style={{ color: c.mut, fontSize: 20, transform: [{ rotate: open ? '90deg' : '0deg' }] }}>›</Text>
+          {!locked && <Text style={{ color: c.mut, fontSize: 20, transform: [{ rotate: open ? '90deg' : '0deg' }] }}>›</Text>}
         </Tap>
 
-        {open && (
+        {open && !locked && (
           <Animated.View entering={FadeIn.duration(300)} style={{ paddingHorizontal: 16, paddingBottom: 16 }}>
             <MuscleMap groups={exercises.map((e) => e.muscle)} height={150} style={{ marginBottom: 10 }} />
             {exercises.map((e, i) => {

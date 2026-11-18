@@ -7,6 +7,8 @@ export * from './progress';
 export * from './scan';
 export * from './onboarding';
 export * from './foodlog';
+export * from './consequence';
+export * from './releases';
 export * from './learn';
 export { FOODS } from './data/foods';
 export { RECIPES } from './data/recipes';
