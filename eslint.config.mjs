@@ -6,4 +6,6 @@ export default tseslint.config(
   js.configs.recommended,
   ...tseslint.configs.recommended,
   { rules: { '@typescript-eslint/no-explicit-any': 'off', '@typescript-eslint/no-non-null-assertion': 'off' } },
+  // Scripts de Node (semillas): globals del runtime.
+  { files: ['**/*.mjs'], languageOptions: { globals: { URL: 'readonly', console: 'readonly', process: 'readonly' } } },
 );
