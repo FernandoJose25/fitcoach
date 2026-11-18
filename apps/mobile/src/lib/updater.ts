@@ -55,6 +55,12 @@ export async function checkForUpdate() {
 export function useUpdateChecks() {
   useEffect(() => {
     if (!enabled) return;
+    try {
+      const dir = updatesDir();
+      if (dir.exists) dir.delete(); // APK de una actualización anterior (ya instalada o descartada)
+    } catch {
+      // No impide revisar.
+    }
     checkForUpdate();
     const sub = AppState.addEventListener('change', (s) => s === 'active' && checkForUpdate());
     const channel = supabase!
@@ -73,13 +79,19 @@ export function dismissUpdate() {
   if (update && !update.mandatory) useUpdater.setState({ dismissed: update.version });
 }
 
-/** Descarga el APK a la caché (con progreso) y abre el instalador de Android. */
+/**
+ * Fuera de la caché: con poco espacio Android purga la caché al instante y el instalador ya no encuentra
+ * el APK. El archivo se borra en el siguiente arranque.
+ */
+const updatesDir = () => new Directory(Paths.document, 'updates');
+
+/** Descarga el APK (con progreso) y abre el instalador de Android. */
 export async function installUpdate() {
   const { update } = useUpdater.getState();
   if (!update || useUpdater.getState().downloading) return;
   useUpdater.setState({ downloading: true, progress: 0, error: null });
   try {
-    const dir = new Directory(Paths.cache, 'updates');
+    const dir = updatesDir();
     if (!dir.exists) dir.create({ intermediates: true });
     const dest = new File(dir, 'fitcoach-update.apk');
     if (dest.exists) dest.delete();
