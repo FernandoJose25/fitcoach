@@ -1,13 +1,27 @@
 import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { bannedTags, buildPlan, compensate, consequence, isBanned, FOODS, RECIPES, totals, type Food, type Item, type Meal } from '@fitcoach/core';
+import { bannedTags, buildDays, compensate, consequence, dayNumber, isBanned, FOODS, RECIPES, totals, type Food, type Item, type Meal } from '@fitcoach/core';
 import { useApp, todayKey, type LogItem } from '@/store/useApp';
 
-/** Plan del día recalculado desde el core cuando cambian perfil, metas o variantes. */
-export function usePlan() {
-  const { profile, targets, variants } = useApp(useShallow((s) => ({ profile: s.profile, targets: s.targets, variants: s.variants })));
-  return useMemo(() => (profile && targets ? buildPlan(targets, profile, FOODS, RECIPES, variants) : []), [profile, targets, variants]);
+/** Menús de `count` días desde hoy: rotan cada día; los cambios ↻ solo valen el día en que se hicieron. */
+function useDays(count: number): Meal[][] {
+  const { profile, targets, variants, variantsDay } = useApp(useShallow((s) => ({ profile: s.profile, targets: s.targets, variants: s.variants, variantsDay: s.variantsDay })));
+  const today = todayKey();
+  return useMemo(
+    () => (profile && targets ? buildDays(targets, profile, FOODS, RECIPES, dayNumber(today), count, variantsDay === today ? variants : []) : []),
+    [profile, targets, variants, variantsDay, today, count],
+  );
 }
+
+const NO_MEALS: Meal[] = [];
+
+/** Menú de hoy recalculado desde el core cuando cambian perfil, metas, variantes o el día. */
+export function usePlan(): Meal[] {
+  return useDays(1)[0] ?? NO_MEALS;
+}
+
+/** Menús de los próximos 7 días (desde hoy): base de la lista de compras. */
+export const useWeekPlans = () => useDays(7);
 
 // Referencia estable: devolver `[]` nuevo en cada lectura hace que Zustand re-renderice sin fin.
 const EMPTY: LogItem[] = [];
@@ -44,7 +58,7 @@ export function pendingKcal(plan: Meal[], logs: { slot: number }[], except?: num
 
 /**
  * Plan de hoy con la consecuencia de lo registrado: si te pasas, las comidas pendientes se recortan
- * para compensar (`compensate`). La lista de compras usa `usePlan` (sin recortes).
+ * para compensar (`compensate`). La lista de compras usa `useWeekPlans` (sin recortes).
  */
 export function useDayPlan() {
   const plan = usePlan();

@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import type { Profile } from '../types';
-import { computeTargets } from '../nutrition';
-import { buildPlan, bannedTags, isBanned } from '../meals';
+import { computeTargets, totals } from '../nutrition';
+import { buildDays, buildPlan, bannedTags, dayNumber, isBanned } from '../meals';
+import { shoppingList } from '../shopping';
 import { buildSession, buildTimeline, exerciseHistory, programWeek, sessionForDay, setSeconds, timelineSeconds, lastSet, alternativeExercises, nextSession, setScore, TRAIN_DAYS, volumeOf } from '../workouts';
 import { matchFood, verdict } from '../scan';
 import { customFood, foodFromOff, foodsFromOffSearch, frequentFoodIds, searchFoods } from '../foodlog';
@@ -95,6 +96,123 @@ describe('plan de comidas', () => {
       expect(plan.every((m) => m.recipeId)).toBe(true);
       expect(new Set(plan.map((m) => m.recipeId)).size).toBe(plan.length);
     }
+  });
+});
+
+describe('menú por día', () => {
+  const LUNES = dayNumber('2026-11-16');
+  const profiles: Profile[] = [
+    base,
+    { ...base, goal: 'lose', mealsPerDay: 5 },
+    { ...base, avoid: ['Vegano'] },
+    {
+      ...base,
+      sex: 'female',
+      weightKg: 55,
+      heightCm: 158,
+      goal: 'lose',
+      mealsPerDay: 3,
+      allergies: ['Gluten', 'Lácteos'],
+    },
+  ];
+  it('dayNumber cuenta días locales seguidos', () => {
+    expect(dayNumber('2026-11-17') - dayNumber('2026-11-16')).toBe(1);
+    expect(dayNumber('2026-03-01') - dayNumber('2026-02-28')).toBe(1);
+    expect((dayNumber('2026-11-16') + 3) % 7).toBe(0); // lunes
+  });
+  it('el menú cambia cada día y no repite el desayuno en la semana', () => {
+    const t = computeTargets(base);
+    const week = buildDays(t, base, FOODS, RECIPES, LUNES, 7);
+    expect(new Set(week.map((d) => d[0].recipeId)).size).toBe(7);
+    expect(new Set(week.map((d) => d.map((m) => m.recipeId).join())).size).toBe(7);
+  });
+  it('mismo día, mismo menú; y buildDays coincide con buildPlan de cada día', () => {
+    const t = computeTargets(base);
+    const days = buildDays(t, base, FOODS, RECIPES, LUNES + 4, 7);
+    days.forEach((d, i) => expect(buildPlan(t, base, FOODS, RECIPES, [], LUNES + 4 + i)).toEqual(d));
+  });
+  it('cada día de 4 semanas cubre ±12 % de kcal y proteína, no pide compensar sin registros, no repite receta en el día ni usa el respaldo', () => {
+    for (const p of profiles) {
+      const t = computeTargets(p);
+      buildDays(t, p, FOODS, RECIPES, LUNES, 28).forEach((plan) => {
+        const s = totals(
+          plan.flatMap((m) => m.items),
+          FOODS,
+        );
+        expect(Math.abs(s.kcal - t.kcal) / t.kcal, `${p.goal} kcal`).toBeLessThan(0.12);
+        expect(Math.abs(s.p - t.protein) / t.protein, `${p.goal} ${p.avoid} proteína`).toBeLessThan(0.12);
+        expect(compensate(plan, 0, new Set(), FOODS, t).cut).toBe(0);
+        expect(new Set(plan.map((m) => m.recipeId)).size).toBe(plan.length);
+        expect(plan.every((m) => m.recipeId)).toBe(true);
+      });
+    }
+  });
+  it('↻ solo cambia la comida elegida y solo ese día', () => {
+    const t = computeTargets(base);
+    const [a, next] = buildDays(t, base, FOODS, RECIPES, LUNES, 2);
+    const [b, nextB] = buildDays(t, base, FOODS, RECIPES, LUNES, 2, [0, 1]);
+    expect(b[1].recipeId).not.toBe(a[1].recipeId);
+    expect([b[0], b[2], b[3]]).toEqual([a[0], a[2], a[3]]);
+    expect(nextB).toEqual(next);
+  });
+});
+
+describe('lista de compras', () => {
+  const meal = (items: [string, number][]) => ({
+    slot: 'D' as const,
+    label: 'x',
+    share: 1,
+    recipeId: null,
+    recipeName: 'x',
+    how: '',
+    items: items.map(([foodId, grams]) => ({ foodId, grams })),
+  });
+  it('suma variantes como un solo producto, compra granos en seco y líquidos en litros', () => {
+    const list = shoppingList(
+      [
+        [
+          meal([
+            ['huevo', 100],
+            ['huevo_duro', 50],
+            ['clara', 66],
+            ['arroz', 500],
+          ]),
+        ],
+        [
+          meal([
+            ['leche', 700],
+            ['leche', 600],
+            ['platano', 100],
+            ['pollo', 1050],
+          ]),
+        ],
+      ],
+      FOODS,
+    );
+    const all = Object.fromEntries(list.flatMap((s) => s.items).map((x) => [x.id, x]));
+    expect(all.huevo.qty).toBe('5 unidades');
+    expect(all.arroz).toMatchObject({ qty: '200 g', note: 'peso en seco', name: 'Arroz' });
+    expect(all.leche.qty).toBe('1.3 L');
+    expect(all.platano.qty).toBe('1 unidad');
+    expect(all.pollo.qty).toBe('1.1 kg');
+    expect(all.huevo_duro).toBeUndefined();
+    expect(list.map((s) => s.aisle)).toEqual(['frutas', 'carnes', 'lacteos', 'granos']);
+  });
+  it('todo ingrediente de las recetas entra en la lista con su sección', () => {
+    const ids = [...new Set(RECIPES.flatMap((r) => r.items.map((i) => i.foodId)))];
+    const list = shoppingList([[meal(ids.map((id) => [id, 100]))]], FOODS);
+    const n = list.reduce((s, x) => s + x.items.length, 0);
+    expect(n).toBe(ids.filter((id) => !['huevo_duro', 'huevo_frito', 'clara'].includes(id)).length);
+    expect(Object.fromEntries(list.flatMap((s) => s.items.map((x) => [x.id, s.aisle])))).toMatchObject({
+      lenteja: 'menestras',
+      tofu: 'menestras',
+      yogur: 'lacteos',
+      huevo: 'lacteos',
+      papaya: 'frutas',
+      trucha: 'carnes',
+      atun: 'despensa',
+      quinua: 'granos',
+    });
   });
 });
 

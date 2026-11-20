@@ -195,15 +195,14 @@ Tipos en `packages/core/src/types.ts` (`Sex`, `Goal`, `Pace`, `Activity`, `Level
 
 Reparto por número de comidas (`splits.ts`): 3 → D .28 / A .40 / C .32 · 4 → D .26 / A .36 / S .10 / C .28 · 5 → D .22 / S .10 / A .32 / S .10 / C .26.
 
-Algoritmo por comida (`meals.ts`, `buildPlan`):
+Algoritmo por comida (`meals.ts`, `buildDays` / `buildPlan`); el menú cambia cada día:
 1. Filtrar recetas cuyo `slots` incluya el tipo de comida **y** cuyos ingredientes no estén vetados (alérgenos + evitados, vía `TAGS` → `bannedTags`).
-2. Ordenar por la distancia tras escalar: error relativo de kcal + error relativo de proteína absoluta frente a la meta de esa comida.
-3. Quitar las ya usadas en otras comidas del día (si quedan opciones).
-4. Elegir la posición `variant % n` (el botón *Cambiar* incrementa `variant`).
-5. Escalar: `factor = clamp(kcalMeta / kcalBase, 0.55, 1.9)`; gramos redondeados a 5 g.
-6. Si no hay ninguna receta permitida, usar el generador de respaldo por roles (proteína + carbohidrato + verdura + grasa, con porciones calculadas).
+2. Escalar: `factor = clamp(kcalMeta / kcalBase, 0.55, 1.9)`; gramos redondeados a 5 g. Ordenar por la distancia tras escalar: error relativo de kcal + error relativo de proteína frente a la meta de esa comida.
+3. Rotación semanal (lunes a domingo, `dayNumber`): cada comida recorre sus 20 mejores recetas en un orden barajado propio de esa semana (determinista), sin repetir receta en la semana ni en el día mientras haya opciones, y solo acepta la que deja el día en proteína ±8 % y kcal entre −5 % y +40 kcal (por encima, un día sin registros ya pediría compensar). Si ninguna cumple, la que más se acerca.
+4. El botón *Cambiar* (↻) solo vale el día en que se pulsa (`variants` + `variantsDay`): avanza esa comida a la siguiente receta mejor ajustada sin tocar las demás.
+5. Si no hay ninguna receta permitida, usar el generador de respaldo por roles (proteína + carbohidrato + verdura + grasa, con porciones calculadas).
 
-`shoppingList(plan)`: suma de gramos de todo el plan × 7.
+`shoppingList(días, foods)` (`shopping.ts` + `data/market.ts`): suma los menús reales de los próximos 7 días, por sección del mercado; unidades para lo que se compra por pieza (las variantes de huevo se suman como huevos), ml/L para líquidos y peso seco para granos y menestras. Pantalla `compras.tsx` con casillas de "comprado" que valen una semana.
 
 **Verificación con el catálogo de contenido (133 recetas)** para el perfil de prueba (hombre, 25 años, 70 kg, 175 cm, ganar masa, 4 comidas):
 - Meta: 2 990 kcal y 140 g de proteína. El plan da 3 022 kcal y 140 g.

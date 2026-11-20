@@ -52,7 +52,9 @@ interface AppState {
   hydrated: boolean;
   profile: Profile | null;
   targets: Targets | null;
-  variants: number[];
+  variants: number[]; // cambios ↻ del menú de `variantsDay` (los demás días rotan solos)
+  variantsDay: string;
+  shopDone: Record<string, string>; // lista de compras: producto → fecha en que se marcó como comprado
   logs: Record<string, LogItem[]>; // por día
   water: Record<string, number>; // vasos por día
   streak: number;
@@ -92,6 +94,8 @@ interface AppState {
   resetDraft: (from?: Profile | null) => void;
   commitProfile: (p: Profile) => void;
   swapRecipe: (slot: number) => void;
+  toggleShop: (id: string) => void;
+  clearShop: () => void;
   addLogs: (items: LogItem[], day?: string) => void;
   clearSlot: (slot: number, day?: string) => void;
   setWater: (glasses: number, day?: string) => void;
@@ -110,6 +114,8 @@ export const useApp = create<AppState>()(
       profile: null,
       targets: null,
       variants: [],
+      variantsDay: '',
+      shopDone: {},
       logs: {},
       water: {},
       streak: 0,
@@ -189,11 +195,16 @@ export const useApp = create<AppState>()(
           weights: get().profile?.weightKg === p.weightKg && Object.keys(get().weights).length ? get().weights : { ...get().weights, [todayKey()]: p.weightKg },
         }),
       swapRecipe: (slot) => {
-        const v = [...get().variants];
-        v[slot] = (v[slot] ?? 0) + 1;
         const day = todayKey();
-        set({ variants: v, logs: { ...get().logs, [day]: (get().logs[day] ?? []).filter((l) => l.slot !== slot) }, dirtyDays: touch(get().dirtyDays, day) });
+        const v = get().variantsDay === day ? [...get().variants] : [];
+        v[slot] = (v[slot] ?? 0) + 1;
+        set({ variants: v, variantsDay: day, logs: { ...get().logs, [day]: (get().logs[day] ?? []).filter((l) => l.slot !== slot) }, dirtyDays: touch(get().dirtyDays, day) });
       },
+      toggleShop: (id) => {
+        const { [id]: was, ...rest } = get().shopDone;
+        set({ shopDone: was ? rest : { ...rest, [id]: todayKey() } });
+      },
+      clearShop: () => set({ shopDone: {} }),
       addLogs: (items, day = todayKey()) =>
         set({ logs: { ...get().logs, [day]: [...(get().logs[day] ?? []), ...items] }, dirtyDays: touch(get().dirtyDays, day) }),
       clearSlot: (slot, day = todayKey()) =>
@@ -216,6 +227,8 @@ export const useApp = create<AppState>()(
         profile: s.profile,
         targets: s.targets,
         variants: s.variants,
+        variantsDay: s.variantsDay,
+        shopDone: s.shopDone,
         logs: s.logs,
         water: s.water,
         streak: s.streak,

@@ -2,6 +2,7 @@ export * from './types';
 export * from './nutrition';
 export * from './splits';
 export * from './meals';
+export * from './shopping';
 export * from './workouts';
 export * from './progress';
 export * from './scan';

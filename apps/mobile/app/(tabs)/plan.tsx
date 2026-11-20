@@ -2,24 +2,23 @@ import { useCallback, useState } from 'react';
 import { View } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { FOODS, shoppingList } from '@fitcoach/core';
 import { FoodChip } from '@/components/Chip';
 import { ConsequenceCard } from '@/components/Consequence';
 import { Header } from '@/components/Header';
 import { Icon } from '@/components/Icon';
-import { Card, Eyebrow, H, KV, Pill, Screen, Small, T, flipIn } from '@/components/ui';
-import { fmt, grams } from '@/lib/format';
-import { foodOf, sum, useConsequence, useDayPlan, usePlan, useTodayLogs } from '@/lib/usePlan';
+import { Card, Eyebrow, H, Pill, Screen, Small, T, flipIn } from '@/components/ui';
+import { fmt } from '@/lib/format';
+import { foodOf, sum, useConsequence, useDayPlan, useTodayLogs } from '@/lib/usePlan';
 import { useApp } from '@/store/useApp';
 import { useUi } from '@/store/useUi';
 import { useTheme } from '@/theme';
 
-const ROLE_ORDER: Record<string, number> = { P: 0, C: 1, V: 2, F: 3, M: 4 };
 const NO_ITEMS: { foodId: string; grams: number }[] = [];
 
 /**
- * Menú = qué comer hoy y registrarlo. Cada comida muestra la sugerencia del plan (receta y porciones)
- * mientras está pendiente, y lo que de verdad comiste cuando ya está registrada.
+ * Menú = qué comer hoy y registrarlo. El menú cambia cada día (rota las recetas de la semana). Cada comida
+ * muestra la sugerencia del plan (receta y porciones) mientras está pendiente, y lo que de verdad comiste
+ * cuando ya está registrada.
  * Si te pasas, se muestra la consecuencia y las comidas pendientes se recortan para compensar.
  */
 export default function Menu() {
@@ -30,17 +29,14 @@ export default function Menu() {
   const { addLogs, clearSlot, swapRecipe } = useApp.getState();
   const { showToast, confetti } = useUi.getState();
   const { plan } = useDayPlan();
-  const basePlan = usePlan(); // lista de compras: el plan sin recortes del día
   const logs = useTodayLogs();
   const consequence = useConsequence(NO_ITEMS);
-  const [shop, setShop] = useState(false);
   const [focus, setFocus] = useState(0);
   useFocusEffect(useCallback(() => setFocus((n) => n + 1), []));
 
   const total = sum(plan.flatMap((m) => m.items));
   const eaten = sum(logs);
   const exclusions = [...profile.allergies, ...profile.avoid];
-  const list = Object.entries(shoppingList(basePlan)).sort(([a], [b]) => ROLE_ORDER[FOODS[a].role] - ROLE_ORDER[FOODS[b].role] || FOODS[a].name.localeCompare(FOODS[b].name));
   const next = plan.findIndex((_, i) => !logs.some((l) => l.slot === i));
 
   const register = (i: number) => {
@@ -60,14 +56,7 @@ export default function Menu() {
           Registrado hoy: {fmt(eaten.kcal)} kcal · {logs.length ? `${new Set(logs.map((l) => l.slot)).size} de ${plan.length} comidas` : 'ninguna comida aún'}
         </Small>
         {exclusions.length > 0 && <T style={{ marginTop: 8, fontSize: 13 }}>Sin: {exclusions.join(', ')}</T>}
-        <Pill label={shop ? 'Ocultar lista de compras' : 'Lista de compras (7 días)'} ghost style={{ marginTop: 10, alignSelf: 'flex-start' }} onPress={() => setShop((v) => !v)} />
-        {shop && (
-          <Animated.View entering={flipIn} style={{ marginTop: 10 }}>
-            {list.map(([id, g], i) => (
-              <KV key={id} first={i === 0} k={`${FOODS[id].emoji} ${FOODS[id].name}`} v={grams(g)} />
-            ))}
-          </Animated.View>
-        )}
+        <Pill label="Lista de compras · 7 días" ghost style={{ marginTop: 10, alignSelf: 'flex-start' }} onPress={() => router.push('/compras')} />
       </Card>
 
       {consequence && <ConsequenceCard x={consequence} goal={profile.goal} title="Consecuencia de hoy" done />}
