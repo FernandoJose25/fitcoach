@@ -3,6 +3,8 @@ import type { Profile } from '../types';
 import { computeTargets, totals } from '../nutrition';
 import { buildDays, buildPlan, bannedTags, dayNumber, isBanned } from '../meals';
 import { shoppingList } from '../shopping';
+import { householdMeasure, portionAmount, recipeGuide } from '../guides';
+import { GUIDES } from '../data/guides';
 import { buildSession, buildTimeline, exerciseHistory, programWeek, sessionForDay, setSeconds, timelineSeconds, lastSet, alternativeExercises, nextSession, setScore, TRAIN_DAYS, volumeOf } from '../workouts';
 import { matchFood, verdict } from '../scan';
 import { customFood, foodFromOff, foodsFromOffSearch, frequentFoodIds, searchFoods } from '../foodlog';
@@ -213,6 +215,48 @@ describe('lista de compras', () => {
       atun: 'despensa',
       quinua: 'granos',
     });
+  });
+});
+
+describe('recetas paso a paso', () => {
+  it('todo desayuno y snack tiene guía escrita, y toda guía es de una receta que existe', () => {
+    const ids = new Set(RECIPES.map((r) => r.id));
+    Object.keys(GUIDES).forEach((id) => expect(ids.has(id), id).toBe(true));
+    RECIPES.filter((r) => /[DS]/.test(r.slots)).forEach((r) => expect(GUIDES[r.id], r.id).toBeDefined());
+  });
+  it('cada guía tiene tiempo, utensilios, pasos con texto completo y temporizadores válidos', () => {
+    Object.keys(GUIDES).forEach((id) => {
+      const g = recipeGuide(id, '');
+      expect(g.min, id).toBeGreaterThan(0);
+      expect(g.tools.length, id).toBeGreaterThan(0);
+      expect(g.steps.length, id).toBeGreaterThanOrEqual(2);
+      g.steps.forEach((s) => {
+        expect(s.text, id).toMatch(/^[A-ZÁÉÍÓÚÑ¿].*[.)]$/);
+        if (s.sec !== undefined) expect(Number.isInteger(s.sec) && s.sec > 0, id).toBe(true);
+      });
+    });
+  });
+  it('sin guía escrita: una frase de la preparación por paso, con su dibujo', () => {
+    const g = recipeGuide(null, 'Licúa avena, huevos y plátano; cocina en sartén antiadherente y termina con la miel.');
+    expect(g.steps).toEqual([
+      { action: 'licuar', text: 'Licúa avena, huevos y plátano.' },
+      { action: 'sarten', text: 'Cocina en sartén antiadherente y termina con la miel.' },
+    ]);
+    expect(recipeGuide('pollo-arroz-ensalada', 'Sella el pollo con poca sal y sírvelo con el arroz y la ensalada.').steps[0].action).toBe('sarten');
+  });
+  it('medidas caseras: tazas, cucharadas y unidades redondeadas a fracciones de cocina', () => {
+    expect(householdMeasure('leche', 300)).toBe('1¼ tazas');
+    expect(householdMeasure('avena', 50)).toBe('5 cdas');
+    expect(householdMeasure('yogur', 170)).toBe('⅔ taza');
+    expect(householdMeasure('palta', 60)).toBe('⅓ palta');
+    expect(householdMeasure('platano', 100)).toBe('1 plátano');
+    expect(householdMeasure('huevo', 100)).toBe('2 huevos');
+    expect(householdMeasure('almendra', 15)).toBe('13 almendras');
+    expect(householdMeasure('leche', 235)).toBe('1 taza');
+    expect(householdMeasure('tofu', 150)).toBeNull();
+    expect(householdMeasure('aceite', 0.5)).toBeNull();
+    expect(portionAmount('leche', 300)).toBe('300 ml');
+    expect(portionAmount('pollo', 1200)).toBe('1.2 kg');
   });
 });
 

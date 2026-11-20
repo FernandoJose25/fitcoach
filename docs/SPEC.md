@@ -204,6 +204,8 @@ Algoritmo por comida (`meals.ts`, `buildDays` / `buildPlan`); el menú cambia ca
 
 `shoppingList(días, foods)` (`shopping.ts` + `data/market.ts`): suma los menús reales de los próximos 7 días, por sección del mercado; unidades para lo que se compra por pieza (las variantes de huevo se suman como huevos), ml/L para líquidos y peso seco para granos y menestras. Pantalla `compras.tsx` con casillas de "comprado" que valen una semana.
 
+Receta paso a paso (`guides.ts` + `data/guides.ts` + `data/measures.ts`): la tarjeta de cada comida pendiente abre `receta.tsx` (tiempo, nivel, utensilios, tu porción en g/ml y en medidas caseras —tazas, cucharadas, unidades redondeadas a ¼ ⅓ ½ ⅔ ¾—, pasos con dibujo y temporizador, consejos y sustituciones). "Empezar a cocinar" abre `cocinar.tsx`: alistar ingredientes con casillas → un paso por pantalla con dibujo animado (`StepArt`: licuar, batir, sartén, hervir, cortar, mezclar, tostar, untar, reposar, servir), temporizador con vibración, voz opcional y pantalla siempre encendida → "Listo" con opción de registrar la comida. Guías escritas: los 53 desayunos y snacks; las recetas sin guía arman sus pasos con la preparación de una línea, una frase por paso.
+
 **Verificación con el catálogo de contenido (133 recetas)** para el perfil de prueba (hombre, 25 años, 70 kg, 175 cm, ganar masa, 4 comidas):
 - Meta: 2 990 kcal y 140 g de proteína. El plan da 3 022 kcal y 140 g.
 - Con "Vegano", o con gluten y lácteos vetados, todas las comidas siguen con recetas distintas (sin respaldo).

@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { bannedTags, buildDays, compensate, consequence, dayNumber, isBanned, FOODS, RECIPES, totals, type Food, type Item, type Meal } from '@fitcoach/core';
 import { useApp, todayKey, type LogItem } from '@/store/useApp';
+import { useUi } from '@/store/useUi';
 
 /** Menús de `count` días desde hoy: rotan cada día; los cambios ↻ solo valen el día en que se hicieron. */
 function useDays(count: number): Meal[][] {
@@ -40,6 +41,13 @@ export function useFoods() {
 }
 
 export const sum = (items: Item[]) => totals(items, allFoods());
+
+/** Registra la comida `slot` tal como la propone el plan, con confeti y aviso. */
+export function registerPlanned(meal: Meal, slot: number) {
+  useApp.getState().addLogs(meal.items.map((x) => ({ ...x, slot, via: 'plan' })));
+  useUi.getState().confetti();
+  useUi.getState().showToast(`${meal.label} registrado ✓`);
+}
 
 /** Alimento proteico permitido con mejor proteína por kcal (para el coach). */
 export function bestProtein(p: { allergies: string[]; avoid: string[] }) {

@@ -82,6 +82,8 @@ export default function RootLayout() {
           <Stack.Screen name="perfil" options={{ animation: 'slide_from_right' }} />
           <Stack.Screen name="progreso" options={{ animation: 'slide_from_right' }} />
           <Stack.Screen name="compras" options={{ animation: 'slide_from_right' }} />
+          <Stack.Screen name="receta" options={{ animation: 'slide_from_right' }} />
+          <Stack.Screen name="cocinar" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }} />
           <Stack.Screen name="workout" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom', gestureEnabled: false }} />
         </Stack>
         <Overlay />

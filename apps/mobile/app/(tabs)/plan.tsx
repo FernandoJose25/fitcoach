@@ -2,23 +2,25 @@ import { useCallback, useState } from 'react';
 import { View } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { useFocusEffect, useRouter } from 'expo-router';
+import { recipeGuide } from '@fitcoach/core';
 import { FoodChip } from '@/components/Chip';
 import { ConsequenceCard } from '@/components/Consequence';
 import { Header } from '@/components/Header';
 import { Icon } from '@/components/Icon';
+import { StepArt } from '@/components/StepArt';
+import { Tap } from '@/components/Tap';
 import { Card, Eyebrow, H, Pill, Screen, Small, T, flipIn } from '@/components/ui';
 import { fmt } from '@/lib/format';
-import { foodOf, sum, useConsequence, useDayPlan, useTodayLogs } from '@/lib/usePlan';
+import { foodOf, registerPlanned, sum, useConsequence, useDayPlan, useTodayLogs } from '@/lib/usePlan';
 import { useApp } from '@/store/useApp';
-import { useUi } from '@/store/useUi';
 import { useTheme } from '@/theme';
 
 const NO_ITEMS: { foodId: string; grams: number }[] = [];
 
 /**
  * Menú = qué comer hoy y registrarlo. El menú cambia cada día (rota las recetas de la semana). Cada comida
- * muestra la sugerencia del plan (receta y porciones) mientras está pendiente, y lo que de verdad comiste
- * cuando ya está registrada.
+ * muestra la sugerencia del plan (receta y porciones, con acceso a la receta paso a paso) mientras está
+ * pendiente, y lo que de verdad comiste cuando ya está registrada.
  * Si te pasas, se muestra la consecuencia y las comidas pendientes se recortan para compensar.
  */
 export default function Menu() {
@@ -26,8 +28,7 @@ export default function Menu() {
   const router = useRouter();
   const profile = useApp((s) => s.profile)!;
   const t = useApp((s) => s.targets)!;
-  const { addLogs, clearSlot, swapRecipe } = useApp.getState();
-  const { showToast, confetti } = useUi.getState();
+  const { clearSlot, swapRecipe } = useApp.getState();
   const { plan } = useDayPlan();
   const logs = useTodayLogs();
   const consequence = useConsequence(NO_ITEMS);
@@ -39,11 +40,7 @@ export default function Menu() {
   const exclusions = [...profile.allergies, ...profile.avoid];
   const next = plan.findIndex((_, i) => !logs.some((l) => l.slot === i));
 
-  const register = (i: number) => {
-    addLogs(plan[i].items.map((x) => ({ ...x, slot: i, via: 'plan' })));
-    confetti();
-    showToast(`${plan[i].label} registrado ✓`);
-  };
+  const register = (i: number) => registerPlanned(plan[i], i);
 
   return (
     <Screen header={<Header subtitle="Tu menú" />} animKey={focus}>
@@ -90,11 +87,7 @@ export default function Menu() {
                 return <FoodChip key={`${x.foodId}-${j}`} emoji={f.emoji} name={f.name} grams={x.grams} />;
               })}
             </Animated.View>
-            {!done && (
-              <T kind="mut" style={{ fontSize: 13, marginBottom: 12 }}>
-                {m.how}
-              </T>
-            )}
+            {!done && <RecipeLink how={m.how} recipeId={m.recipeId} onPress={() => router.push({ pathname: '/receta', params: { slot: String(i) } })} />}
             {done ? (
               <View style={{ flexDirection: 'row', gap: 8 }}>
                 <Pill label="Añadir algo más" ghost onPress={() => router.push({ pathname: '/scan', params: { slot: String(i) } })} style={{ flex: 1, paddingVertical: 12 }} />
@@ -110,5 +103,28 @@ export default function Menu() {
         );
       })}
     </Screen>
+  );
+}
+
+/** Acceso a la receta paso a paso de una comida pendiente: dibujo del primer paso, tiempo y número de pasos. */
+function RecipeLink({ recipeId, how, onPress }: { recipeId: string | null; how: string; onPress: () => void }) {
+  const { c } = useTheme();
+  const g = recipeGuide(recipeId, how);
+  return (
+    <Tap
+      onPress={onPress}
+      accessibilityLabel="Ver receta paso a paso"
+      style={{ flexDirection: 'row', alignItems: 'center', gap: 10, padding: 10, borderRadius: 10, borderWidth: 1, borderColor: c.line, marginBottom: 12 }}
+    >
+      <StepArt action={g.steps[0]?.action ?? 'servir'} size={36} still />
+      <View style={{ flex: 1 }}>
+        <T style={{ fontSize: 14 }}>Ver receta paso a paso</T>
+        <Small>
+          {g.min ? `${g.min} min · ` : ''}
+          {g.steps.length} {g.steps.length === 1 ? 'paso' : 'pasos'} · medidas en tazas y cucharadas
+        </Small>
+      </View>
+      <T style={{ color: c.acc, fontSize: 20 }}>›</T>
+    </Tap>
   );
 }

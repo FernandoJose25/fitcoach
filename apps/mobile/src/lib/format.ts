@@ -4,6 +4,9 @@ export const fmt = (n: number) =>
     .toString()
     .replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
 
+/** 90 → "1 min 30 s"; 600 → "10 min"; 45 → "45 s". */
+export const duration = (s: number) => (s < 60 ? `${s} s` : s % 60 ? `${Math.floor(s / 60)} min ${s % 60} s` : `${s / 60} min`);
+
 export const grams = (g: number) => (g >= 1000 ? `${(g / 1000).toFixed(1)} kg` : `${Math.round(g)} g`);
 
 export const WEEKDAYS = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];

@@ -64,6 +64,26 @@ export interface Recipe {
   how: string;
 }
 
+/** Acción de un paso de receta: elige el dibujo animado del modo cocinar. */
+export type StepAction = 'cortar' | 'licuar' | 'batir' | 'sarten' | 'hervir' | 'tostar' | 'mezclar' | 'untar' | 'reposar' | 'servir';
+
+export interface RecipeStep {
+  action: StepAction;
+  text: string;
+  /** Temporizador del paso, en segundos. */
+  sec?: number;
+}
+
+/** Cómo preparar una receta: tiempo, utensilios, pasos y consejos (sustituciones, trucos). */
+export interface RecipeGuide {
+  /** Minutos de preparación; sin dato en las recetas que aún no tienen guía escrita. */
+  min?: number;
+  level: 'Fácil' | 'Media';
+  tools: string[];
+  steps: RecipeStep[];
+  tips: string[];
+}
+
 export interface Meal {
   slot: SlotType;
   label: string;
