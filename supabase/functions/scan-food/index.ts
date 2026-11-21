@@ -8,12 +8,21 @@ const MODEL = Deno.env.get('VISION_MODEL') ?? 'qwen/qwen3.8-27b';
 const KEY = Deno.env.get('VISION_API_KEY');
 
 const PER100 = '"kcal":<kcal por 100 g>,"p":<proteína g por 100 g>,"c":<carbohidratos g por 100 g>,"f":<grasa g por 100 g>';
+// Un plato mezclado (chaufa, saltado…) se pide desglosado: si no, el modelo lo devuelve como un solo item.
 const PHOTO = `Eres un asistente de nutrición. Analiza la foto de una comida y responde SOLO con JSON válido:
 {"items":[{"name":"nombre del alimento en español, genérico y simple","grams":<número>,"confidence":<0 a 1>,${PER100}}]}
-Reglas: separa cada alimento del plato; estima el peso en gramos de la porción visible; usa nombres como
-"arroz blanco cocido", "pechuga de pollo a la plancha", "ensalada mixta", "huevo frito". Los valores
-nutricionales son por 100 g del alimento tal como se ve (cocido, frito...), según tablas de referencia
-(USDA, CENAN). Sin explicaciones. Si no hay comida en la imagen responde {"items":[]}`;
+Reglas:
+- Desglosa el plato: un item por cada ingrediente o componente que se vea, aunque vengan mezclados. Nunca
+  devuelvas un plato preparado como un solo item. Ejemplos: arroz chaufa → "arroz frito", "pollo", "huevo
+  revuelto", "cebolla china"; tallarín saltado → "fideos cocidos", "carne de res salteada", "cebolla", "tomate";
+  lomo saltado → "carne de res salteada", "papas fritas", "arroz blanco cocido", "cebolla", "tomate";
+  aeropuerto → "arroz frito", "fideos salteados", "pollo", "brotes de soya", "cebolla china".
+- Mira bien las mezclas: si entre el arroz hay fideos, huevo o carne, cada uno va como item aparte.
+- Incluye lo que aporte calorías aunque sea poco (salsas, aceite, queso, palta). Omite adornos sin calorías.
+- Estima los gramos de cada componente según la porción visible; la suma debe ser el peso total del plato.
+- Nombres genéricos y simples, como "arroz blanco cocido", "pechuga de pollo a la plancha", "huevo frito".
+Los valores nutricionales son por 100 g del componente tal como se ve (cocido, frito...), según tablas de
+referencia (USDA, CENAN). Sin explicaciones. Si no hay comida en la imagen responde {"items":[]}`;
 const NAME = `Eres un asistente de nutrición. Te doy el nombre de una comida, bebida o producto (puede ser un plato
 peruano o latinoamericano). Responde SOLO con JSON válido:
 {"name":"nombre corregido en español","emoji":"un emoji de comida","serving_g":<gramos de una porción típica>,"serving":"descripción corta de la porción (p. ej. 1 plato, 1 vaso, 1 unidad)",${PER100}}
@@ -43,6 +52,9 @@ async function ask(content: unknown, system: string) {
     body: JSON.stringify({
       model: MODEL,
       temperature: 0.2,
+      // El plan gratis de Groq rechaza (429) pedidos que podrían pasar de 1000 tokens de salida por minuto;
+      // un desglose usa ~150-300.
+      max_tokens: 700,
       response_format: { type: 'json_object' },
       messages: [
         { role: 'system', content: system },
