@@ -74,8 +74,14 @@ export interface RecipeStep {
   sec?: number;
 }
 
-/** Cómo preparar una receta: tiempo, utensilios, pasos y consejos (sustituciones, trucos). */
+/** Tipo de preparación, para elegir cómo quieres tu desayuno o snack (botones del Menú). */
+export type MealFormat = 'batido' | 'panqueques' | 'dulce' | 'salado' | 'airfryer';
+
+/** Una forma de preparar una receta: tiempo, utensilios, pasos y consejos (sustituciones, trucos). */
 export interface RecipeGuide {
+  name: string;
+  /** Sin dato en las recetas que aún no tienen guía escrita. */
+  format?: MealFormat;
   /** Minutos de preparación; sin dato en las recetas que aún no tienen guía escrita. */
   min?: number;
   level: 'Fácil' | 'Media';

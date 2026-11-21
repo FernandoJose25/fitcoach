@@ -1,9 +1,9 @@
-import { useCallback, useState } from 'react';
-import { View } from 'react-native';
+import { useCallback, useMemo, useState } from 'react';
+import { ScrollView, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { recipeGuide } from '@fitcoach/core';
-import { FoodChip } from '@/components/Chip';
+import { FOODS, FORMAT_LABEL, RECIPES, formatsFor, type MealFormat, type RecipeGuide } from '@fitcoach/core';
+import { Chip, FoodChip } from '@/components/Chip';
 import { ConsequenceCard } from '@/components/Consequence';
 import { Header } from '@/components/Header';
 import { Icon } from '@/components/Icon';
@@ -11,7 +11,7 @@ import { StepArt } from '@/components/StepArt';
 import { Tap } from '@/components/Tap';
 import { Card, Eyebrow, H, Pill, Screen, Small, T, flipIn } from '@/components/ui';
 import { fmt } from '@/lib/format';
-import { foodOf, registerPlanned, sum, useConsequence, useDayPlan, useTodayLogs } from '@/lib/usePlan';
+import { foodOf, pickGuide, registerPlanned, sum, useConsequence, useDayPlan, useDayPrefs, useTodayLogs } from '@/lib/usePlan';
 import { useApp } from '@/store/useApp';
 import { useTheme } from '@/theme';
 
@@ -28,7 +28,10 @@ export default function Menu() {
   const router = useRouter();
   const profile = useApp((s) => s.profile)!;
   const t = useApp((s) => s.targets)!;
-  const { clearSlot, swapRecipe } = useApp.getState();
+  const { clearSlot, swapRecipe, setFormat } = useApp.getState();
+  const prefs = useDayPrefs();
+  // Tipos que ofrecen las recetas permitidas (botones Batido, Panqueques… en desayunos y snacks).
+  const avail = useMemo(() => ({ D: formatsFor(profile, 'D', FOODS, RECIPES), S: formatsFor(profile, 'S', FOODS, RECIPES) }), [profile]);
   const { plan } = useDayPlan();
   const logs = useTodayLogs();
   const consequence = useConsequence(NO_ITEMS);
@@ -63,6 +66,8 @@ export default function Menu() {
         const done = L.length > 0;
         const s = done ? sum(L) : sum(m.items);
         const target = Math.round(t.kcal * m.share);
+        const { guide, versions, format } = pickGuide(m, i, prefs);
+        const types = !done && (m.slot === 'D' || m.slot === 'S') ? avail[m.slot] : [];
         return (
           <Card key={i} style={{ borderWidth: i === next ? 2 : 1, borderColor: i === next ? c.acc : c.line }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
@@ -74,20 +79,21 @@ export default function Menu() {
                   {done && <Icon name="check" size={13} stroke={2.25} color={c.acc} />}
                 </View>
                 {!done && m.cut ? <Eyebrow style={{ marginTop: 2, fontSize: 9.5 }}>Ajustada −{m.cut} kcal para compensar</Eyebrow> : null}
-                <H style={{ marginTop: 2 }}>{done ? `${Math.round(s.kcal)} de ${target} kcal` : m.recipeName}</H>
+                <H style={{ marginTop: 2 }}>{done ? `${Math.round(s.kcal)} de ${target} kcal` : guide.name}</H>
                 <Small>
                   {done ? `P ${Math.round(s.p)} · C ${Math.round(s.c)} · G ${Math.round(s.f)} g` : `${Math.round(s.kcal)} kcal · P ${Math.round(s.p)} · C ${Math.round(s.c)} · G ${Math.round(s.f)}`}
                 </Small>
               </View>
               {!done && <Pill label="↻" a11y={`Cambiar receta de ${m.label.toLowerCase()}`} ghost onPress={() => swapRecipe(i)} style={{ paddingHorizontal: 12, minWidth: 44 }} />}
             </View>
+            {types.length > 1 && <FormatChips types={types} on={format} onPick={(f) => setFormat(i, f)} />}
             <Animated.View key={done ? `d-${L.length}` : `${m.recipeId}-${m.items.map((x) => x.grams).join()}`} entering={flipIn} style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 10 }}>
               {(done ? L : m.items).map((x, j) => {
                 const f = foodOf(x.foodId);
                 return <FoodChip key={`${x.foodId}-${j}`} emoji={f.emoji} name={f.name} grams={x.grams} />;
               })}
             </Animated.View>
-            {!done && <RecipeLink how={m.how} recipeId={m.recipeId} onPress={() => router.push({ pathname: '/receta', params: { slot: String(i) } })} />}
+            {!done && <RecipeLink guide={guide} forms={versions.length} onPress={() => router.push({ pathname: '/receta', params: { slot: String(i) } })} />}
             {done ? (
               <View style={{ flexDirection: 'row', gap: 8 }}>
                 <Pill label="Añadir algo más" ghost onPress={() => router.push({ pathname: '/scan', params: { slot: String(i) } })} style={{ flex: 1, paddingVertical: 12 }} />
@@ -106,10 +112,20 @@ export default function Menu() {
   );
 }
 
-/** Acceso a la receta paso a paso de una comida pendiente: dibujo del primer paso, tiempo y número de pasos. */
-function RecipeLink({ recipeId, how, onPress }: { recipeId: string | null; how: string; onPress: () => void }) {
+/** ¿Cómo lo quieres? Elegir un tipo cambia a una receta que se pueda preparar así (la de hoy, si se puede). */
+function FormatChips({ types, on, onPick }: { types: MealFormat[]; on: MealFormat | null; onPick: (f: MealFormat | null) => void }) {
+  return (
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -16, marginBottom: 10 }} contentContainerStyle={{ gap: 6, paddingHorizontal: 16 }}>
+      {[null, ...types].map((f) => (
+        <Chip key={f ?? 'todo'} small label={f ? FORMAT_LABEL[f] : 'Cualquiera'} on={on === f} onPress={() => onPick(f)} />
+      ))}
+    </ScrollView>
+  );
+}
+
+/** Acceso a la receta paso a paso de una comida pendiente: dibujo del primer paso, tiempo, pasos y formas de prepararla. */
+function RecipeLink({ guide: g, forms, onPress }: { guide: RecipeGuide; forms: number; onPress: () => void }) {
   const { c } = useTheme();
-  const g = recipeGuide(recipeId, how);
   return (
     <Tap
       onPress={onPress}
@@ -121,7 +137,7 @@ function RecipeLink({ recipeId, how, onPress }: { recipeId: string | null; how: 
         <T style={{ fontSize: 14 }}>Ver receta paso a paso</T>
         <Small>
           {g.min ? `${g.min} min · ` : ''}
-          {g.steps.length} {g.steps.length === 1 ? 'paso' : 'pasos'} · medidas en tazas y cucharadas
+          {g.steps.length} {g.steps.length === 1 ? 'paso' : 'pasos'} · {forms > 1 ? `${forms} formas de prepararlo` : 'medidas en tazas y cucharadas'}
         </Small>
       </View>
       <T style={{ color: c.acc, fontSize: 20 }}>›</T>

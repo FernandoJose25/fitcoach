@@ -1,10 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import type { Profile } from '../types';
 import { computeTargets, totals } from '../nutrition';
-import { buildDays, buildPlan, bannedTags, dayNumber, isBanned } from '../meals';
+import { buildDays, buildPlan, bannedTags, dayNumber, formatsFor, isBanned } from '../meals';
 import { shoppingList } from '../shopping';
-import { householdMeasure, portionAmount, recipeGuide } from '../guides';
+import { FORMATS, householdMeasure, portionAmount, recipeFormats, recipeVersions, versionIndex } from '../guides';
 import { GUIDES } from '../data/guides';
+import { MEAL_GUIDES } from '../data/guides-meals';
+import { VERSIONS } from '../data/versions';
 import { buildSession, buildTimeline, exerciseHistory, programWeek, sessionForDay, setSeconds, timelineSeconds, lastSet, alternativeExercises, nextSession, setScore, TRAIN_DAYS, volumeOf } from '../workouts';
 import { matchFood, verdict } from '../scan';
 import { customFood, foodFromOff, foodsFromOffSearch, frequentFoodIds, searchFoods } from '../foodlog';
@@ -219,14 +221,15 @@ describe('lista de compras', () => {
 });
 
 describe('recetas paso a paso', () => {
-  it('todo desayuno y snack tiene guía escrita, y toda guía es de una receta que existe', () => {
+  it('toda receta tiene guía escrita (una sola vez), y toda guía es de una receta que existe', () => {
     const ids = new Set(RECIPES.map((r) => r.id));
-    Object.keys(GUIDES).forEach((id) => expect(ids.has(id), id).toBe(true));
-    RECIPES.filter((r) => /[DS]/.test(r.slots)).forEach((r) => expect(GUIDES[r.id], r.id).toBeDefined());
+    [...Object.keys(GUIDES), ...Object.keys(MEAL_GUIDES)].forEach((id) => expect(ids.has(id), id).toBe(true));
+    Object.keys(MEAL_GUIDES).forEach((id) => expect(GUIDES[id], id).toBeUndefined());
+    RECIPES.forEach((r) => expect(GUIDES[r.id] ?? MEAL_GUIDES[r.id], r.id).toBeDefined());
   });
   it('cada guía tiene tiempo, utensilios, pasos con texto completo y temporizadores válidos', () => {
-    Object.keys(GUIDES).forEach((id) => {
-      const g = recipeGuide(id, '');
+    [...Object.keys(GUIDES), ...Object.keys(MEAL_GUIDES)].forEach((id) => {
+      const g = recipeVersions(id, id, '')[0];
       expect(g.min, id).toBeGreaterThan(0);
       expect(g.tools.length, id).toBeGreaterThan(0);
       expect(g.steps.length, id).toBeGreaterThanOrEqual(2);
@@ -237,12 +240,48 @@ describe('recetas paso a paso', () => {
     });
   });
   it('sin guía escrita: una frase de la preparación por paso, con su dibujo', () => {
-    const g = recipeGuide(null, 'Licúa avena, huevos y plátano; cocina en sartén antiadherente y termina con la miel.');
+    const [g] = recipeVersions(null, 'x', 'Licúa avena, huevos y plátano; cocina en sartén antiadherente y termina con la miel.');
     expect(g.steps).toEqual([
       { action: 'licuar', text: 'Licúa avena, huevos y plátano.' },
       { action: 'sarten', text: 'Cocina en sartén antiadherente y termina con la miel.' },
     ]);
-    expect(recipeGuide('pollo-arroz-ensalada', 'Sella el pollo con poca sal y sírvelo con el arroz y la ensalada.').steps[0].action).toBe('sarten');
+    expect(recipeVersions(null, 'x', 'Sella el pollo con poca sal y sírvelo con el arroz y la ensalada.')[0].steps[0].action).toBe('sarten');
+  });
+  it('otras formas de preparar: receta existente, nombre propio, tipo válido y pasos completos', () => {
+    Object.entries(VERSIONS).forEach(([id, vs]) => {
+      expect(GUIDES[id] ?? MEAL_GUIDES[id], id).toBeDefined();
+      const all = recipeVersions(id, 'principal', '');
+      expect(all.length).toBe(vs.length + 1);
+      expect(new Set(all.map((v) => v.name)).size, id).toBe(all.length);
+      all.forEach((v) => {
+        expect(FORMATS).toContain(v.format);
+        expect(v.steps.length, v.name).toBeGreaterThanOrEqual(2);
+        v.steps.forEach((st) => expect(st.text, v.name).toMatch(/^[A-ZÁÉÍÓÚÑ¿].*[.)]$/));
+      });
+    });
+    expect(recipeVersions('papaya-yogur-kiwicha', 'Papaya con yogur y kiwicha pop', '').map((v) => v.format)).toEqual(['dulce', 'batido', 'dulce', 'dulce']);
+  });
+  it('la forma que se muestra: la elegida, si no la del tipo, si no la principal', () => {
+    const vs = recipeVersions('papaya-yogur-kiwicha', 'x', '');
+    expect(versionIndex(vs)).toBe(0);
+    expect(versionIndex(vs, 'batido')).toBe(1);
+    expect(versionIndex(vs, 'batido', 2)).toBe(2);
+    expect(versionIndex(vs, 'airfryer')).toBe(0);
+  });
+  it('desayunos: hay de los 5 tipos; elegir uno deja la receta de hoy si se puede preparar así', () => {
+    expect(formatsFor(base, 'D', FOODS, RECIPES)).toEqual(FORMATS);
+    const t = computeTargets(base);
+    const LUNES = dayNumber('2026-11-16');
+    for (const f of FORMATS) {
+      const [plan] = buildDays(t, base, FOODS, RECIPES, LUNES, 1, [], [f]);
+      expect(recipeFormats(plan[0].recipeId!), f).toContain(f);
+      const [next] = buildDays(t, base, FOODS, RECIPES, LUNES, 1, [1], [f]);
+      if (recipeFormats(plan[0].recipeId!).length) expect(recipeFormats(next[0].recipeId!), f).toContain(f);
+    }
+    const [hoy] = buildDays(t, base, FOODS, RECIPES, LUNES, 1);
+    const propio = recipeFormats(hoy[0].recipeId!)[0];
+    expect(buildDays(t, base, FOODS, RECIPES, LUNES, 1, [], [propio])[0][0].recipeId).toBe(hoy[0].recipeId);
+    expect(buildDays(t, base, FOODS, RECIPES, LUNES, 1, [], ['panqueques'])[0].slice(1)).toEqual(hoy.slice(1));
   });
   it('medidas caseras: tazas, cucharadas y unidades redondeadas a fracciones de cocina', () => {
     expect(householdMeasure('leche', 300)).toBe('1¼ tazas');

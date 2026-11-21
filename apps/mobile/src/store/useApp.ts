@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { applyKcalDelta, computeTargets, type Food, type Item, type Profile, type SetLog, type Targets } from '@fitcoach/core';
+import { applyKcalDelta, computeTargets, type Food, type Item, type MealFormat, type Profile, type SetLog, type Targets } from '@fitcoach/core';
 
 export type Via = 'plan' | 'manual' | 'scan' | 'barcode';
 export interface LogItem extends Item {
@@ -54,6 +54,8 @@ interface AppState {
   targets: Targets | null;
   variants: number[]; // cambios ↻ del menú de `variantsDay` (los demás días rotan solos)
   variantsDay: string;
+  formats: (MealFormat | null)[]; // tipo elegido por comida (batido, panqueques…) en `variantsDay`
+  versions: Record<string, number>; // forma de preparar elegida por receta en `variantsDay`
   shopDone: Record<string, string>; // lista de compras: producto → fecha en que se marcó como comprado
   logs: Record<string, LogItem[]>; // por día
   water: Record<string, number>; // vasos por día
@@ -94,6 +96,8 @@ interface AppState {
   resetDraft: (from?: Profile | null) => void;
   commitProfile: (p: Profile) => void;
   swapRecipe: (slot: number) => void;
+  setFormat: (slot: number, f: MealFormat | null) => void;
+  setVersion: (recipeId: string, v: number) => void;
   toggleShop: (id: string) => void;
   clearShop: () => void;
   addLogs: (items: LogItem[], day?: string) => void;
@@ -107,6 +111,10 @@ export type GuidePref = '3d' | 'foto';
 
 const touch = (days: string[], day: string) => (days.includes(day) ? days : [...days, day]);
 
+/** Cambios del menú de hoy (↻, tipo y forma de preparar); los de otro día ya no valen. */
+const dayPrefs = (s: Pick<AppState, 'variants' | 'variantsDay' | 'formats' | 'versions'>) =>
+  s.variantsDay === todayKey() ? { variants: s.variants, formats: s.formats, versions: s.versions } : { variants: [] as number[], formats: [] as (MealFormat | null)[], versions: {} };
+
 export const useApp = create<AppState>()(
   persist(
     (set, get) => ({
@@ -115,6 +123,8 @@ export const useApp = create<AppState>()(
       targets: null,
       variants: [],
       variantsDay: '',
+      formats: [],
+      versions: {},
       shopDone: {},
       logs: {},
       water: {},
@@ -196,9 +206,23 @@ export const useApp = create<AppState>()(
         }),
       swapRecipe: (slot) => {
         const day = todayKey();
-        const v = get().variantsDay === day ? [...get().variants] : [];
+        const d = dayPrefs(get());
+        const v = [...d.variants];
         v[slot] = (v[slot] ?? 0) + 1;
-        set({ variants: v, variantsDay: day, logs: { ...get().logs, [day]: (get().logs[day] ?? []).filter((l) => l.slot !== slot) }, dirtyDays: touch(get().dirtyDays, day) });
+        set({ ...d, variants: v, variantsDay: day, logs: { ...get().logs, [day]: (get().logs[day] ?? []).filter((l) => l.slot !== slot) }, dirtyDays: touch(get().dirtyDays, day) });
+      },
+      // Elegir tipo vuelve a la mejor receta de ese tipo y a su forma de preparar de ese tipo.
+      setFormat: (slot, f) => {
+        const d = dayPrefs(get());
+        const formats = [...d.formats];
+        formats[slot] = f;
+        const variants = [...d.variants];
+        variants[slot] = 0;
+        set({ variants, formats, versions: {}, variantsDay: todayKey() });
+      },
+      setVersion: (recipeId, v) => {
+        const d = dayPrefs(get());
+        set({ ...d, versions: { ...d.versions, [recipeId]: v }, variantsDay: todayKey() });
       },
       toggleShop: (id) => {
         const { [id]: was, ...rest } = get().shopDone;
@@ -228,6 +252,8 @@ export const useApp = create<AppState>()(
         targets: s.targets,
         variants: s.variants,
         variantsDay: s.variantsDay,
+        formats: s.formats,
+        versions: s.versions,
         shopDone: s.shopDone,
         logs: s.logs,
         water: s.water,

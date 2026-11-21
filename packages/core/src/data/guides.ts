@@ -1,27 +1,28 @@
-import type { StepAction } from '../types';
+import type { MealFormat, StepAction } from '../types';
 
 /**
- * Guías de preparación por id de receta: [minutos, nivel (1 fácil · 2 media), utensilios, pasos, consejos].
+ * Guías de preparación por id de receta: [tipo, minutos, nivel (1 fácil · 2 media), utensilios, pasos, consejos].
  * Paso: [acción (dibujo animado), texto, segundos del temporizador]. Los textos nombran los ingredientes
  * sin cantidades: la porción depende de las metas de cada persona y se muestra en la lista de ingredientes.
- * Por ahora: desayunos y snacks.
+ * Aquí: desayunos y snacks; almuerzos y cenas en `guides-meals.ts`.
  */
-type Step = [StepAction, string, number?];
-type Row = [number, 1 | 2, string, Step[], string[]];
+export type Step = [StepAction, string, number?];
+export type Row = [MealFormat, number, 1 | 2, string, Step[], string[]];
 
-const QUINUA =
+export const QUINUA =
   'Si no tienes quinua cocida: lávala bien para quitarle el amargor, hiérvela con el doble de agua 15 minutos y guárdala en la refri hasta 4 días.';
-const HUEVO_DURO: Step[] = [
+export const HUEVO_DURO: Step[] = [
   ['hervir', 'Pon los huevos en una olla con agua fría que los cubra y llévala a hervir.'],
   ['hervir', 'Desde que hierve, cuenta 10 minutos.', 600],
   ['reposar', 'Pásalos a agua fría para que se pelen fácil, y pélalos.', 120],
 ];
-const SIN_ACEITE =
+export const SIN_ACEITE =
   'Sin aceite: la sartén antiadherente basta; si algo se pega, pásale un papel con unas gotas de aceite.';
 
 export const GUIDES: Record<string, Row> = {
   // ── Batidos ──
   'batido-avena-platano-yogur': [
+    'batido',
     5,
     1,
     'Licuadora,Vaso',
@@ -37,6 +38,7 @@ export const GUIDES: Record<string, Row> = {
     ],
   ],
   'batido-platano-pbut': [
+    'batido',
     5,
     1,
     'Licuadora',
@@ -51,6 +53,7 @@ export const GUIDES: Record<string, Row> = {
     ],
   ],
   'batido-whey-avena': [
+    'batido',
     5,
     1,
     'Licuadora',
@@ -62,6 +65,7 @@ export const GUIDES: Record<string, Row> = {
     ['Poner el líquido primero evita que la proteína se pegue al fondo.', 'Ideal después de entrenar.'],
   ],
   'batido-verde-proteina': [
+    'batido',
     5,
     1,
     'Licuadora',
@@ -73,6 +77,7 @@ export const GUIDES: Record<string, Row> = {
     ['La piña tapa el sabor de la espinaca: no se siente.', 'Con piña congelada no necesitas hielo.'],
   ],
   'batido-fresa-yogur': [
+    'batido',
     5,
     1,
     'Licuadora',
@@ -84,6 +89,7 @@ export const GUIDES: Record<string, Row> = {
     ['Con fresas congeladas queda espeso como helado.'],
   ],
   'batido-soya-mani': [
+    'batido',
     5,
     1,
     'Licuadora',
@@ -95,6 +101,7 @@ export const GUIDES: Record<string, Row> = {
     ['Si tu licuadora no tritura bien el maní, déjalo remojando en la bebida 10 minutos antes.'],
   ],
   'avena-leche-bebida': [
+    'batido',
     10,
     1,
     'Olla,Licuadora',
@@ -112,6 +119,7 @@ export const GUIDES: Record<string, Row> = {
 
   // ── Avenas, quinuas y bowls ──
   'avena-cocida-pbut': [
+    'dulce',
     10,
     1,
     'Olla pequeña,Cuchara',
@@ -127,6 +135,7 @@ export const GUIDES: Record<string, Row> = {
     ],
   ],
   'avena-claras-fresas': [
+    'dulce',
     10,
     2,
     'Olla pequeña,Batidor o tenedor',
@@ -142,6 +151,7 @@ export const GUIDES: Record<string, Row> = {
     ],
   ],
   'avena-soya-linaza': [
+    'dulce',
     10,
     1,
     'Olla pequeña',
@@ -153,6 +163,7 @@ export const GUIDES: Record<string, Row> = {
     ['La linaza molida se aprovecha mejor que entera.'],
   ],
   'avena-fria-almendras': [
+    'dulce',
     5,
     1,
     'Frasco o táper,Cuchillo',
@@ -168,6 +179,7 @@ export const GUIDES: Record<string, Row> = {
     ],
   ],
   'pudin-chia-mango': [
+    'dulce',
     5,
     1,
     'Frasco o táper,Cuchara',
@@ -180,6 +192,7 @@ export const GUIDES: Record<string, Row> = {
     ['Unas gotas de vainilla en la leche le dan sabor de postre.', 'Dura 3 días en la refri.'],
   ],
   'bowl-yogur-avena': [
+    'dulce',
     5,
     1,
     'Bowl,Cuchillo',
@@ -194,6 +207,7 @@ export const GUIDES: Record<string, Row> = {
     ],
   ],
   'yogur-platano-almendras': [
+    'dulce',
     3,
     1,
     'Bowl,Cuchillo',
@@ -205,6 +219,7 @@ export const GUIDES: Record<string, Row> = {
     ['Unas gotas de vainilla o canela le dan sabor de postre sin azúcar.'],
   ],
   'yogur-granola-arandanos': [
+    'dulce',
     3,
     1,
     'Bowl',
@@ -215,6 +230,7 @@ export const GUIDES: Record<string, Row> = {
     ['La granola va al final para que siga crocante.', 'Sin arándanos: fresas o plátano funcionan igual.'],
   ],
   'papaya-yogur-kiwicha': [
+    'dulce',
     5,
     1,
     'Cuchillo,Bowl',
@@ -230,6 +246,7 @@ export const GUIDES: Record<string, Row> = {
     ],
   ],
   'quinua-leche-manzana': [
+    'dulce',
     10,
     1,
     'Olla pequeña,Cuchillo',
@@ -241,6 +258,7 @@ export const GUIDES: Record<string, Row> = {
     [QUINUA, 'Si cocinas la manzana con la quinua 2 minutos, queda tipo compota.'],
   ],
   'quinua-soya-manzana': [
+    'dulce',
     10,
     1,
     'Olla pequeña,Cuchillo',
@@ -252,6 +270,7 @@ export const GUIDES: Record<string, Row> = {
     [QUINUA, 'Canela y clavo de olor le dan el sabor de la quinua de desayuno de siempre.'],
   ],
   'quinua-yogur-mango': [
+    'dulce',
     5,
     1,
     'Bowl,Cuchillo',
@@ -265,6 +284,7 @@ export const GUIDES: Record<string, Row> = {
 
   // ── Huevos ──
   'tortilla-pan-jamon': [
+    'salado',
     10,
     1,
     'Sartén antiadherente,Bowl,Tenedor',
@@ -278,6 +298,7 @@ export const GUIDES: Record<string, Row> = {
     [SIN_ACEITE, 'Mete la tortilla dentro del pan y llévala como sándwich.'],
   ],
   'pan-palta-huevos': [
+    'salado',
     10,
     1,
     'Sartén antiadherente,Tostadora (opcional),Tenedor',
@@ -294,6 +315,7 @@ export const GUIDES: Record<string, Row> = {
     ],
   ],
   'omelette-espinaca-queso': [
+    'salado',
     10,
     2,
     'Sartén antiadherente,Bowl,Espátula',
@@ -307,6 +329,7 @@ export const GUIDES: Record<string, Row> = {
     ['Tapa la sartén en el último minuto para que cuaje parejo sin quemarse.', SIN_ACEITE],
   ],
   'panqueques-avena-platano': [
+    'panqueques',
     15,
     2,
     'Licuadora,Sartén antiadherente,Espátula',
@@ -324,6 +347,7 @@ export const GUIDES: Record<string, Row> = {
     ],
   ],
   'wrap-huevo-jamon': [
+    'salado',
     10,
     1,
     'Sartén antiadherente,Bowl',
@@ -336,6 +360,7 @@ export const GUIDES: Record<string, Row> = {
     ['Para llevar: envuélvelo en papel aluminio y se mantiene tibio.'],
   ],
   'camote-huevos-revueltos': [
+    'salado',
     25,
     1,
     'Olla,Sartén antiadherente',
@@ -352,6 +377,7 @@ export const GUIDES: Record<string, Row> = {
     ],
   ],
   'huevos-rancheros': [
+    'salado',
     15,
     2,
     'Sartén antiadherente,Olla pequeña',
@@ -368,6 +394,7 @@ export const GUIDES: Record<string, Row> = {
     ],
   ],
   'quinua-huevo-verduras': [
+    'salado',
     15,
     1,
     'Sartén grande',
@@ -380,6 +407,7 @@ export const GUIDES: Record<string, Row> = {
     ['Un chorrito de sillao al final le da sabor de chaufa.', QUINUA],
   ],
   'huevos-duros-manzana': [
+    'salado',
     15,
     1,
     'Olla pequeña,Cuchillo',
@@ -387,6 +415,7 @@ export const GUIDES: Record<string, Row> = {
     ['Sancocha varios de una vez: con cáscara duran 5 días en la refri.', 'Para yema cremosa, 7 minutos en vez de 10.'],
   ],
   'pan-frances-huevo-palta': [
+    'salado',
     15,
     1,
     'Olla pequeña,Cuchillo',
@@ -398,6 +427,7 @@ export const GUIDES: Record<string, Row> = {
     ['Un toque de ají o sal de Maras y queda como el clásico pan con palta y huevo.'],
   ],
   'yuca-queso-huevo': [
+    'salado',
     30,
     1,
     'Olla',
@@ -410,6 +440,7 @@ export const GUIDES: Record<string, Row> = {
     ['En airfryer: la yuca ya sancochada, 10 minutos a 200 °C, queda dorada sin freír.'],
   ],
   'codorniz-tomate': [
+    'salado',
     10,
     1,
     'Olla pequeña',
@@ -422,6 +453,7 @@ export const GUIDES: Record<string, Row> = {
     ['Rueda el huevo sobre la mesa presionando un poco: la cáscara sale más fácil.'],
   ],
   'sandwich-huevo': [
+    'salado',
     15,
     1,
     'Olla pequeña,Cuchillo',
@@ -435,6 +467,7 @@ export const GUIDES: Record<string, Row> = {
 
   // ── Panes, tostadas y sándwiches ──
   'sandwich-queso-jamon': [
+    'salado',
     5,
     1,
     'Cuchillo,Sartén (opcional)',
@@ -451,6 +484,7 @@ export const GUIDES: Record<string, Row> = {
     ['Tomate y lechuga suman volumen casi sin calorías.'],
   ],
   'pan-queso-tomate-leche': [
+    'salado',
     5,
     1,
     'Cuchillo',
@@ -462,6 +496,7 @@ export const GUIDES: Record<string, Row> = {
     ['Calienta el pan relleno en la sartén para que el queso se ablande.'],
   ],
   'pan-pollo-lechuga': [
+    'salado',
     10,
     1,
     'Bowl,Tenedor',
@@ -476,6 +511,7 @@ export const GUIDES: Record<string, Row> = {
     ],
   ],
   'sandwich-atun': [
+    'salado',
     5,
     1,
     'Bowl,Tenedor,Cuchillo',
@@ -490,6 +526,7 @@ export const GUIDES: Record<string, Row> = {
     ],
   ],
   'sandwich-pavo-palta': [
+    'salado',
     15,
     1,
     'Sartén antiadherente,Cuchillo',
@@ -502,6 +539,7 @@ export const GUIDES: Record<string, Row> = {
     ['Filetes delgados se cocinan rápido y quedan jugosos.', 'Cocina pavo para 2 o 3 días y guárdalo en la refri.'],
   ],
   'tofu-pan-palta': [
+    'salado',
     10,
     1,
     'Sartén antiadherente,Tenedor',
@@ -514,6 +552,7 @@ export const GUIDES: Record<string, Row> = {
     ['La cúrcuma le da el color amarillo del huevo revuelto.', 'Espinaca o tomate al final suman volumen.'],
   ],
   'tofu-revuelto-tortilla': [
+    'salado',
     15,
     1,
     'Sartén antiadherente,Tenedor',
@@ -527,6 +566,7 @@ export const GUIDES: Record<string, Row> = {
     ['Un poco de comino o ají panca le da sabor de desayuno mexicano.'],
   ],
   'pan-pbut-platano': [
+    'dulce',
     3,
     1,
     'Cuchillo,Tostadora (opcional)',
@@ -538,6 +578,7 @@ export const GUIDES: Record<string, Row> = {
     ['Una pizca de canela encima combina muy bien.'],
   ],
   'tostadas-cottage-fresas': [
+    'dulce',
     5,
     1,
     'Cuchillo',
@@ -552,6 +593,7 @@ export const GUIDES: Record<string, Row> = {
     ],
   ],
   'tostadas-palta-edamame': [
+    'salado',
     10,
     1,
     'Olla pequeña,Tenedor',
@@ -564,6 +606,7 @@ export const GUIDES: Record<string, Row> = {
     ['El edamame congelado ya viene precocido: solo necesita 3 a 5 minutos.'],
   ],
   'tostadas-atun': [
+    'salado',
     5,
     1,
     'Bowl,Cuchillo',
@@ -575,6 +618,7 @@ export const GUIDES: Record<string, Row> = {
     ['Cebolla y culantro picados le dan un toque de ceviche.'],
   ],
   'galletas-arroz-palta-pavo': [
+    'salado',
     10,
     1,
     'Sartén antiadherente,Tenedor',
@@ -592,6 +636,7 @@ export const GUIDES: Record<string, Row> = {
 
   // ── Tubérculos y granos andinos ──
   'mote-queso': [
+    'salado',
     5,
     1,
     'Olla o microondas,Cuchillo',
@@ -603,6 +648,7 @@ export const GUIDES: Record<string, Row> = {
     ['Con ají o huacatay queda como en la sierra.'],
   ],
   'choclo-queso': [
+    'salado',
     20,
     1,
     'Olla',
@@ -616,6 +662,7 @@ export const GUIDES: Record<string, Row> = {
 
   // ── Snacks ──
   'manzana-pbut': [
+    'dulce',
     3,
     1,
     'Cuchillo',
@@ -626,6 +673,7 @@ export const GUIDES: Record<string, Row> = {
     ['Unas gotas de limón evitan que la manzana se oscurezca si la llevas.'],
   ],
   'mix-frutos-secos': [
+    'dulce',
     2,
     1,
     'Táper o bolsita',
@@ -636,6 +684,7 @@ export const GUIDES: Record<string, Row> = {
     ['Arma las porciones de la semana de una vez: comiendo del paquete es fácil pasarse.'],
   ],
   'edamame-limon': [
+    'salado',
     8,
     1,
     'Olla',
@@ -649,6 +698,7 @@ export const GUIDES: Record<string, Row> = {
     ],
   ],
   'hummus-bastones': [
+    'salado',
     10,
     1,
     'Licuadora o procesador,Cuchillo',
@@ -661,6 +711,7 @@ export const GUIDES: Record<string, Row> = {
     ['Un diente de ajo y comino le dan el sabor clásico.', 'Dura 4 días en la refri, tapado.'],
   ],
   'cottage-pina': [
+    'dulce',
     3,
     1,
     'Cuchillo,Bowl',
@@ -671,6 +722,7 @@ export const GUIDES: Record<string, Row> = {
     ['Con canela o unas hojas de menta queda más fresco.'],
   ],
   'ceviche-chocho': [
+    'salado',
     10,
     1,
     'Bowl,Cuchillo',
@@ -684,6 +736,7 @@ export const GUIDES: Record<string, Row> = {
     ['Lava la cebolla en agua con sal para quitarle lo fuerte.', 'Compra el chocho ya cocido y desamargado.'],
   ],
   'fruta-nueces': [
+    'dulce',
     5,
     1,
     'Cuchillo,Bowl',

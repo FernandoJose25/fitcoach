@@ -5,14 +5,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useKeepAwake } from 'expo-keep-awake';
-import { householdMeasure, portionAmount, recipeGuide, type RecipeStep } from '@fitcoach/core';
+import { householdMeasure, portionAmount, type RecipeStep } from '@fitcoach/core';
 import { Icon } from '@/components/Icon';
 import { StepArt } from '@/components/StepArt';
 import { Tap } from '@/components/Tap';
 import { BigButton, Eyebrow, H, Pill, Small } from '@/components/ui';
 import { prepareVoice, speak, stopVoice } from '@/lib/coachVoice';
 import { fmt } from '@/lib/format';
-import { foodOf, registerPlanned, sum, useDayPlan, useTodayLogs } from '@/lib/usePlan';
+import { foodOf, registerPlanned, sum, useDayPlan, useMealGuide, useTodayLogs } from '@/lib/usePlan';
 import { useApp } from '@/store/useApp';
 import { alpha, fonts, useTheme } from '@/theme';
 
@@ -41,7 +41,8 @@ export default function Cocinar() {
   const { plan } = useDayPlan();
   // Se congela al abrir: si el plan cambia mientras cocinas, los pasos no se mueven.
   const [meal] = useState(() => plan[slot]);
-  const [guide] = useState(() => (meal ? recipeGuide(meal.recipeId, meal.how) : null));
+  const mg = useMealGuide(slot, plan[slot]);
+  const [guide] = useState(() => mg?.guide ?? null);
   const logs = useTodayLogs();
   const voice = useApp((s) => s.voice);
   // 0 = alistar ingredientes · 1…n = pasos · n + 1 = listo.
@@ -165,7 +166,7 @@ export default function Cocinar() {
       <Animated.View key={i} entering={slideIn(dir)} style={{ flex: 1 }}>
         {i === 0 ? (
           <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 24, paddingBottom: 16 }}>
-            <Eyebrow>{meal.recipeName}</Eyebrow>
+            <Eyebrow>{guide.name}</Eyebrow>
             <H size={28} style={{ marginTop: 6 }}>
               Alista los ingredientes
             </H>
@@ -285,7 +286,7 @@ export default function Cocinar() {
               ¡Listo! Buen provecho
             </H>
             <Small style={{ marginTop: 8, fontSize: 13, textAlign: 'center' }}>
-              {meal.recipeName} · {fmt(s.kcal)} kcal · P {Math.round(s.p)} g
+              {guide.name} · {fmt(s.kcal)} kcal · P {Math.round(s.p)} g
             </Small>
           </View>
         )}

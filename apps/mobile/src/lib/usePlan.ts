@@ -1,17 +1,20 @@
 import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { bannedTags, buildDays, compensate, consequence, dayNumber, isBanned, FOODS, RECIPES, totals, type Food, type Item, type Meal } from '@fitcoach/core';
+import { bannedTags, buildDays, compensate, consequence, dayNumber, isBanned, recipeVersions, versionIndex, FOODS, RECIPES, totals, type Food, type Item, type Meal, type MealFormat } from '@fitcoach/core';
 import { useApp, todayKey, type LogItem } from '@/store/useApp';
 import { useUi } from '@/store/useUi';
 
 /** Menús de `count` días desde hoy: rotan cada día; los cambios ↻ solo valen el día en que se hicieron. */
 function useDays(count: number): Meal[][] {
-  const { profile, targets, variants, variantsDay } = useApp(useShallow((s) => ({ profile: s.profile, targets: s.targets, variants: s.variants, variantsDay: s.variantsDay })));
-  const today = todayKey();
-  return useMemo(
-    () => (profile && targets ? buildDays(targets, profile, FOODS, RECIPES, dayNumber(today), count, variantsDay === today ? variants : []) : []),
-    [profile, targets, variants, variantsDay, today, count],
+  const { profile, targets, variants, formats, variantsDay } = useApp(
+    useShallow((s) => ({ profile: s.profile, targets: s.targets, variants: s.variants, formats: s.formats, variantsDay: s.variantsDay })),
   );
+  const today = todayKey();
+  return useMemo(() => {
+    if (!profile || !targets) return [];
+    const mine = variantsDay === today;
+    return buildDays(targets, profile, FOODS, RECIPES, dayNumber(today), count, mine ? variants : [], mine ? formats : []);
+  }, [profile, targets, variants, formats, variantsDay, today, count]);
 }
 
 const NO_MEALS: Meal[] = [];
@@ -23,6 +26,27 @@ export function usePlan(): Meal[] {
 
 /** Menús de los próximos 7 días (desde hoy): base de la lista de compras. */
 export const useWeekPlans = () => useDays(7);
+
+type DayPrefs = { formats: (MealFormat | null)[]; versions: Record<string, number>; variantsDay: string };
+
+/**
+ * Formas de preparar la comida `slot` de hoy y cuál se muestra: la elegida en la receta, si no la del tipo
+ * elegido en el Menú (batido, panqueques…), si no la principal.
+ */
+export function pickGuide(meal: Meal, slot: number, s: DayPrefs) {
+  const mine = s.variantsDay === todayKey();
+  const format = mine ? (s.formats[slot] ?? null) : null;
+  const versions = recipeVersions(meal.recipeId, meal.recipeName, meal.how);
+  const index = versionIndex(versions, format, mine && meal.recipeId ? s.versions[meal.recipeId] : undefined);
+  return { versions, index, guide: versions[index], format };
+}
+
+export const useDayPrefs = (): DayPrefs => useApp(useShallow((s) => ({ formats: s.formats, versions: s.versions, variantsDay: s.variantsDay })));
+
+export function useMealGuide(slot: number, meal: Meal | undefined) {
+  const prefs = useDayPrefs();
+  return useMemo(() => (meal ? pickGuide(meal, slot, prefs) : null), [meal, slot, prefs]);
+}
 
 // Referencia estable: devolver `[]` nuevo en cada lectura hace que Zustand re-renderice sin fin.
 const EMPTY: LogItem[] = [];

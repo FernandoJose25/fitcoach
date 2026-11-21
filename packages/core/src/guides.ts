@@ -1,5 +1,7 @@
-import type { RecipeGuide, StepAction } from './types';
-import { GUIDES } from './data/guides';
+import type { MealFormat, RecipeGuide, StepAction } from './types';
+import { GUIDES, type Row } from './data/guides';
+import { MEAL_GUIDES } from './data/guides-meals';
+import { VERSIONS } from './data/versions';
 import { LIQUIDS } from './data/market';
 import { MEASURES } from './data/measures';
 
@@ -18,28 +20,59 @@ const ACTION_WORDS: [RegExp, StepAction][] = [
 
 const actionOf = (text: string): StepAction => ACTION_WORDS.find(([re]) => re.test(text))?.[1] ?? 'servir';
 
+export const FORMATS: MealFormat[] = ['batido', 'panqueques', 'dulce', 'salado', 'airfryer'];
+export const FORMAT_LABEL: Record<MealFormat, string> = {
+  batido: 'Batido',
+  panqueques: 'Panqueques',
+  dulce: 'Dulce',
+  salado: 'Salado',
+  airfryer: 'Airfryer',
+};
+
+/** Guías escritas de todas las recetas: desayunos y snacks + almuerzos y cenas. */
+const ALL: Record<string, Row> = { ...GUIDES, ...MEAL_GUIDES };
+const toGuide = (name: string, [format, min, level, tools, steps, tips]: Row): RecipeGuide => ({
+  name,
+  format,
+  min,
+  level: level === 2 ? 'Media' : 'Fácil',
+  tools: tools.split(','),
+  steps: steps.map(([action, text, sec]) => ({ action, text, sec })),
+  tips,
+});
+
 /**
- * Cómo preparar la receta. Las que aún no tienen guía escrita (almuerzos y cenas) se arman con su
- * preparación de una línea, una frase por paso.
+ * Formas de preparar la receta con los mismos ingredientes: la principal primero y luego sus alternativas
+ * (batido, panqueques, airfryer…). Una receta sin guía escrita (p. ej. una nueva del catálogo) da una sola
+ * forma, armada con su preparación de una línea, una frase por paso.
  */
-export function recipeGuide(recipeId: string | null, how: string): RecipeGuide {
-  const g = recipeId ? GUIDES[recipeId] : undefined;
-  if (g) {
-    const [min, level, tools, steps, tips] = g;
-    return {
-      min,
-      level: level === 2 ? 'Media' : 'Fácil',
-      tools: tools.split(','),
-      steps: steps.map(([action, text, sec]) => ({ action, text, sec })),
-      tips,
-    };
-  }
+export function recipeVersions(recipeId: string | null, name: string, how: string): RecipeGuide[] {
+  const g = recipeId ? ALL[recipeId] : undefined;
+  if (g) return [toGuide(name, g), ...(VERSIONS[recipeId!] ?? []).map(([f, n, ...rest]) => toGuide(n, [f, ...rest]))];
   const steps = how
     .split(/[.;]\s+/)
     .map((s) => s.trim().replace(/\.$/, ''))
     .filter(Boolean)
     .map((s) => ({ action: actionOf(s), text: `${s[0].toUpperCase()}${s.slice(1)}.` }));
-  return { level: 'Fácil', tools: [], steps, tips: [] };
+  return [{ name, level: 'Fácil', tools: [], steps, tips: [] }];
+}
+
+/** Tipos en los que se puede preparar la receta (su forma principal y sus alternativas). */
+export function recipeFormats(recipeId: string): MealFormat[] {
+  const g = ALL[recipeId];
+  return g ? [...new Set([g[0], ...(VERSIONS[recipeId] ?? []).map((v) => v[0])])] : [];
+}
+
+/**
+ * Forma de preparar que se muestra: la que eligió la persona en la receta (`chosen`); si no, la primera del
+ * tipo elegido con los botones del Menú (`format`); si no, la principal.
+ */
+export function versionIndex(versions: RecipeGuide[], format?: MealFormat | null, chosen?: number): number {
+  if (chosen !== undefined && chosen < versions.length) return chosen;
+  return Math.max(
+    0,
+    versions.findIndex((v) => v.format === format),
+  );
 }
 
 const FRACTIONS: [number, string][] = [

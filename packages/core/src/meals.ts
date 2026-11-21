@@ -1,4 +1,5 @@
-import type { Food, Item, Meal, Profile, Recipe, SlotType, Targets } from './types';
+import type { Food, Item, Meal, MealFormat, Profile, Recipe, SlotType, Targets } from './types';
+import { FORMATS, recipeFormats } from './guides';
 import { totals } from './nutrition';
 import { SPLITS } from './splits';
 
@@ -100,8 +101,10 @@ function weekPicks(ranked: Cand[][], t: Targets, week: number): (Cand | null)[][
 
 /**
  * Menús de `count` días seguidos desde `day` (ver `dayNumber`): cambian cada día y no repiten receta en
- * la semana mientras haya opciones (ver `weekPicks`). `variants` (botón ↻) solo se aplica al primer día:
- * avanza esa comida a la siguiente receta mejor ajustada sin tocar las demás.
+ * la semana mientras haya opciones (ver `weekPicks`). `variants` (botón ↻) y `formats` (botones de tipo:
+ * batido, panqueques…) solo se aplican al primer día y sin tocar las demás comidas: el tipo deja la receta
+ * de hoy si se puede preparar así, o pasa a la mejor ajustada que sí; ↻ avanza a la siguiente (del tipo
+ * elegido, si hay uno).
  */
 export function buildDays(
   t: Targets,
@@ -111,6 +114,7 @@ export function buildDays(
   day: number,
   count: number,
   variants: number[] = [],
+  formats: (MealFormat | null | undefined)[] = [],
 ): Meal[][] {
   const banned = bannedTags(p);
   const ok = (id: string) => !!foods[id] && !isBanned(foods[id], banned);
@@ -142,11 +146,14 @@ export function buildDays(
     if (!weeks.has(week)) weeks.set(week, weekPicks(ranked, t, week));
     const picks = [...weeks.get(week)![d + 3 - week * 7]];
     if (n === 0)
-      variants.forEach((v, i) => {
-        const base = picks[i];
-        if (!v || !base) return;
+      picks.forEach((base, i) => {
+        const v = variants[i] ?? 0;
+        const f = formats[i];
+        if ((!v && !f) || !base) return;
         const others = new Set(picks.filter((_, j) => j !== i).map((x) => x?.r.id));
-        const list = ranked[i].filter((c) => !others.has(c.r.id));
+        const free = ranked[i].filter((c) => !others.has(c.r.id));
+        const typed = f ? free.filter((c) => recipeFormats(c.r.id).includes(f)) : free;
+        const list = typed.length ? typed : free;
         if (list.length) picks[i] = list[(Math.max(0, list.indexOf(base)) + v) % list.length];
       });
     return split.map(([label, slot, share], i): Meal => {
@@ -163,6 +170,17 @@ export function buildDays(
       };
     });
   });
+}
+
+/** Tipos de preparación que ofrecen las recetas permitidas para un tipo de comida (botones del Menú). */
+export function formatsFor(p: Pick<Profile, 'allergies' | 'avoid'>, slot: SlotType, foods: Record<string, Food>, recipes: Recipe[]): MealFormat[] {
+  const banned = bannedTags(p);
+  const have = new Set(
+    recipes
+      .filter((r) => r.slots.includes(slot) && r.items.every((x) => !!foods[x.foodId] && !isBanned(foods[x.foodId], banned)))
+      .flatMap((r) => recipeFormats(r.id)),
+  );
+  return FORMATS.filter((f) => have.has(f));
 }
 
 /** Menú de un día (ver `buildDays`). */

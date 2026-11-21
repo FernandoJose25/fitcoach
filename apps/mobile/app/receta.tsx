@@ -1,16 +1,18 @@
 import { Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { householdMeasure, portionAmount, recipeGuide } from '@fitcoach/core';
+import { FORMAT_LABEL, householdMeasure, portionAmount } from '@fitcoach/core';
 import { StepArt } from '@/components/StepArt';
 import { Tap } from '@/components/Tap';
 import { BigButton, Card, Em, Eyebrow, H, Num, Pill, Screen, Small, T } from '@/components/ui';
 import { duration, fmt } from '@/lib/format';
-import { foodOf, registerPlanned, sum, useDayPlan, useTodayLogs } from '@/lib/usePlan';
+import { foodOf, registerPlanned, sum, useDayPlan, useMealGuide, useTodayLogs } from '@/lib/usePlan';
+import { useApp } from '@/store/useApp';
 import { fonts, useTheme } from '@/theme';
 
 /**
- * Receta de una comida del menú de hoy: tu porción en gramos y en medidas caseras, utensilios, pasos con
- * su dibujo y temporizador, y consejos. Desde aquí se entra al modo cocinar.
+ * Receta de una comida del menú de hoy: formas de prepararla con los mismos ingredientes, tu porción en
+ * gramos y en medidas caseras, utensilios, pasos con su dibujo y temporizador, y consejos. Desde aquí se
+ * entra al modo cocinar.
  */
 export default function Receta() {
   const { c } = useTheme();
@@ -19,8 +21,9 @@ export default function Receta() {
   const { plan } = useDayPlan();
   const logs = useTodayLogs();
   const meal = plan[slot];
-  if (!meal) return null;
-  const g = recipeGuide(meal.recipeId, meal.how);
+  const mg = useMealGuide(slot, meal);
+  if (!meal || !mg) return null;
+  const { guide: g, versions, index } = mg;
   const s = sum(meal.items);
   const done = logs.some((l) => l.slot === slot);
 
@@ -54,7 +57,7 @@ export default function Receta() {
       <View style={{ flex: 1 }}>
         <Eyebrow>{meal.label} · Receta</Eyebrow>
         <H size={20} numberOfLines={2}>
-          {meal.recipeName}
+          {g.name}
         </H>
       </View>
     </View>
@@ -110,6 +113,51 @@ export default function Receta() {
           />
         )}
       </Card>
+
+      {versions.length > 1 && (
+        <Card>
+          <Eyebrow>Formas de prepararlo · mismos ingredientes</Eyebrow>
+          {versions.map((v, k) => (
+            <Tap
+              key={v.name}
+              onPress={() => meal.recipeId && useApp.getState().setVersion(meal.recipeId, k)}
+              accessibilityRole="radio"
+              accessibilityState={{ selected: k === index }}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 10,
+                paddingVertical: 10,
+                marginTop: k === 0 ? 6 : 0,
+                borderTopWidth: k === 0 ? 0 : 1,
+                borderTopColor: c.line,
+              }}
+            >
+              <View
+                style={{
+                  width: 20,
+                  height: 20,
+                  borderRadius: 10,
+                  borderWidth: 1.5,
+                  borderColor: k === index ? c.acc : c.mut,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                {k === index && <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: c.acc }} />}
+              </View>
+              <StepArt action={v.steps[0]?.action ?? 'servir'} size={32} still />
+              <View style={{ flex: 1 }}>
+                <T style={{ fontSize: 14, fontFamily: k === index ? fonts.bold : fonts.body }}>{v.name}</T>
+                <Small>
+                  {v.format ? FORMAT_LABEL[v.format] : ''}
+                  {v.min ? ` · ${v.min} min` : ''}
+                </Small>
+              </View>
+            </Tap>
+          ))}
+        </Card>
+      )}
 
       {g.tools.length > 0 && (
         <Card>
