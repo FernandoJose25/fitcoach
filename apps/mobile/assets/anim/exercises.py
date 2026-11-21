@@ -205,8 +205,9 @@ def pullup(supine):
     hx = 0.2 if supine else 0.33
     bot = {"hips": (0, -0.06, 0.22), "hand": {"pos": (hx, -0.1, 2.26), "palm": palm, "fingers": (0, 0, 1)},
            "elbow": (0.6, 0.1, 1.5) if not supine else (0.35, -0.4, 1.5),
-           "foot": {"off": (0, 0.16, 0.3), "rot": (35, 0, 0)}, "knee": (0.2, -1.0, 0.8)}
-    top = {**bot, "hips": (0, 0.03, 0.52), "spine": (-8, 0, 0), "head": (-10, 0, 0), "foot": {"off": (0, 0.16, 0.6), "rot": (35, 0, 0)}}
+           # Piernas juntas colgando, rodillas al frente y pies un poco atrás (no abiertas hacia los lados).
+           "foot": {"off": (-0.05, 0.16, 0.3), "rot": (35, 0, 0)}, "knee": (0.04, -1.0, 0.8)}
+    top = {**bot, "hips": (0, 0.03, 0.52), "spine": (-8, 0, 0), "head": (-10, 0, 0), "foot": {"off": (-0.05, 0.16, 0.6), "rot": (35, 0, 0)}}
     return bot, top
 
 

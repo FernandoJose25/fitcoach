@@ -1,0 +1,5 @@
+# Animaciones FBX de Mixamo: no se redistribuyen (licencia de Adobe) y el repo es público.
+# Solo se versionan este archivo y la lista.
+*
+!.gitignore
+!LEEME.md

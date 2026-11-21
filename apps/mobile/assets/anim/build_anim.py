@@ -43,6 +43,10 @@ MUSCLE_TARGETS = {
     "l-lowerleg-muscle-incr": 0.6, "r-lowerleg-muscle-incr": 0.6,
     "torso-muscle-pectoral-incr": 0.6, "torso-muscle-dorsi-incr": 0.6, "stomach-tone-incr": 0.9,
 }
+# Prueba `--look v2`: cuerpo de gimnasio en vez de delgado (más masa, brazos, piernas y espalda en V).
+MACRO_V2 = {**MACRO, "weight": 0.55}
+MUSCLE_TARGETS_V2 = {**{k: min(1.0, v + 0.3) for k, v in MUSCLE_TARGETS.items()},
+                     "torso-vshape-incr": 0.6, "measure-neck-circ-incr": 0.4}
 SPINE = (("spine_01", 0.3), ("spine_02", 0.3), ("spine_03", 0.4))
 NECK = (("neck_01", 0.5), ("head", 0.5))
 FINGERS = ("index", "middle", "ring", "pinky")
@@ -107,10 +111,10 @@ def material(name, hexstr, rough=0.5):
 
 
 class Actor:
-    def __init__(self):
+    def __init__(self, macro=MACRO, targets=MUSCLE_TARGETS):
         self.body = HumanService.create_human(mask_helpers=True, detailed_helpers=True, extra_vertex_groups=True,
-                                              feet_on_ground=True, scale=0.1, macro_detail_dict=MACRO)
-        for name, w in MUSCLE_TARGETS.items():
+                                              feet_on_ground=True, scale=0.1, macro_detail_dict=macro)
+        for name, w in targets.items():
             TargetService.load_target(self.body, TargetService.target_full_path(name), weight=w)
         self.rig = HumanService.add_builtin_rig(self.body, "game_engine", import_weights=True)
         for pb in self.rig.pose.bones:
@@ -440,7 +444,8 @@ class Props:
     def in_hand(self, s, kind):
         """Objeto en la palma, rígido al hueso de la mano (botella o mancuerna)."""
         a = self.actor
-        r = a.rest[f"hand_{s}"]
+        # En mundo: con movimiento capturado el rig ya no está en el origen (mocap.ground lo apoya en el suelo).
+        r = a.rig.matrix_world @ a.rest[f"hand_{s}"]
         ax = a.hand_axes[s]  # columnas: dedos, palma, transversal (espacio local de la mano)
         center = r @ (ax.col[0] * 0.075 + ax.col[1] * 0.025)
         across = (r.to_3x3() @ ax.col[2]).normalized()
@@ -481,7 +486,7 @@ class Props:
 
     def backpack_on_back(self):
         a = self.actor
-        r = a.rest["spine_03"]
+        r = a.rig.matrix_world @ a.rest["spine_03"]
         ob = self.box((0.32, 0.16, 0.42), r.translation + Vector((0, 0.17, 0.02)), mat=self.soft)
         bpy.ops.object.select_all(action="DESELECT")
         ob.select_set(True)
@@ -735,7 +740,10 @@ def main():
 
     for ob in list(bpy.data.objects):
         bpy.data.objects.remove(ob)
-    actor = Actor()
+    look = args[args.index("--look") + 1] if "--look" in args else "v1"
+    # --mocap <archivo.fbx>: animación de Mixamo (ver mocap.py) para el ejercicio de --only.
+    mocap = os.path.abspath(args[args.index("--mocap") + 1]) if "--mocap" in args else None
+    actor = Actor(MACRO_V2, MUSCLE_TARGETS_V2) if look == "v2" else Actor()
     props = Props(actor)
     cam = setup_scene(actor)
     scene = bpy.context.scene
@@ -755,23 +763,31 @@ def main():
         actor.hand_rotation(ex.get("hand_rot", False))
         actor.fingers(ex.get("grip", 12), ex.get("thumb"))
         issues = []
-        for frame, pose in ex["keys"]:
-            actor.apply(pose)
-            actor.key(frame)
-            low, miss = actor.check()
-            bad = {k: v for k, v in miss.items() if v > 0.03}
-            if low < -0.015 or bad:
-                issues.append({"frame": frame, "below_floor": low, "ik_miss": bad})
+        if mocap:  # movimiento capturado (Mixamo) en lugar de poses clave
+            from mocap import bake
+            last = bake(actor, mocap) + 1
+        else:
+            for frame, pose in ex["keys"]:
+                actor.apply(pose)
+                actor.key(frame)
+                low, miss = actor.check()
+                bad = {k: v for k, v in miss.items() if v > 0.03}
+                if low < -0.015 or bad:
+                    issues.append({"frame": frame, "below_floor": low, "ik_miss": bad})
+            last = ex["keys"][-1][0]
         props.build(ex.get("props", []))
-        last = ex["keys"][-1][0]
         scene.frame_start, scene.frame_end = 1, last - 1
         actor.highlight(ex.get("highlight", []))
         cam_spec = ex.get("camera", {})
+        if "--camera" in args:  # prueba de encuadre: --camera az,el
+            az, el = (float(v) for v in args[args.index("--camera") + 1].split(","))
+            cam_spec = {**cam_spec, "az": az, "el": el}
         bbox = fit_camera(actor, props, cam, range(1, last, 4), cam_spec.get("az", 38), cam_spec.get("el", 6), cam_spec.get("pad", 1.04))
         folder = os.path.join(out, slug)
         os.makedirs(folder, exist_ok=True)
         if stills:
-            frames = [1, ex.get("peak", ex["keys"][len(ex["keys"]) // 2][0])] if stills == "auto" else [int(x) for x in stills.split(",")]
+            peak = last // 2 if mocap else ex.get("peak", ex["keys"][len(ex["keys"]) // 2][0])
+            frames = [1, peak] if stills == "auto" else [int(x) for x in stills.split(",")]
             for f in frames:
                 scene.frame_set(min(f, last - 1))
                 scene.render.filepath = os.path.join(folder, f"still_{f:04d}.png")
@@ -782,7 +798,8 @@ def main():
                     os.remove(os.path.join(folder, f))
             scene.render.filepath = os.path.join(folder, "")
             bpy.ops.render.render(animation=True)
-        result["exercises"][slug] = {"frames": last - 1, "bbox": bbox, **({"issues": issues} if issues else {})}
+        result["exercises"][slug] = {"frames": last - 1, "bbox": bbox, **({"issues": issues} if issues else {}),
+                                     **(actor.mocap_info if mocap else {})}
 
     if blend:
         bpy.ops.wm.save_as_mainfile(filepath=os.path.abspath(blend))
