@@ -31,9 +31,9 @@ export interface Reminders {
 export const todayKey = (d = new Date()) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
+// Sin sexo por defecto: es la primera pregunta del onboarding y no se avanza sin elegirlo.
 export const DRAFT_DEFAULT: Partial<Profile> = {
   name: '',
-  sex: 'male',
   age: 25,
   weightKg: 70,
   heightCm: 175,

@@ -35,7 +35,7 @@ import { MuscleMap } from '@/components/MuscleMap';
 import { todayKey, useApp } from '@/store/useApp';
 import { alpha, fonts, radius, useTheme } from '@/theme';
 
-const MUSCLE_LABEL: Record<string, string> = { pecho: 'Pecho', espalda: 'Espalda', pierna: 'Pierna', hombro: 'Hombro', triceps: 'Tríceps', biceps: 'Bíceps', core: 'Core' };
+const MUSCLE_LABEL: Record<string, string> = { pecho: 'Pecho', espalda: 'Espalda', pierna: 'Pierna', gluteo: 'Glúteo', hombro: 'Hombro', triceps: 'Tríceps', biceps: 'Bíceps', core: 'Core' };
 const shortDay = (d: string) => `${Number(d.slice(8))}/${Number(d.slice(5, 7))}`;
 const fmtSet = (s: SetLog) => (s.weightKg ? `${s.weightKg} kg × ${s.reps}` : `${s.reps} reps`);
 // Código de sesión en lugar de emoji: lectura técnica tipo planilla de entrenamiento.

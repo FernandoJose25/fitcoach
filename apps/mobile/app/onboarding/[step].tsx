@@ -13,6 +13,7 @@ import {
   MEALS_OPTIONS,
   MINOR_NOTICE,
   PLACES,
+  SEXES,
   STEPS,
   computeTargets,
   focusLabel,
@@ -86,10 +87,10 @@ export default function OnboardingStep() {
   }, [step, progress]);
   const bar = useAnimatedStyle(() => ({ width: `${progress.value}%` }));
 
-  const canContinue = meta.id !== 'basics' || Object.keys(errors).length === 0;
+  const canContinue = meta.id === 'sex' ? !!draft.sex : meta.id !== 'basics' || Object.keys(errors).length === 0;
 
   // Pasos de una sola elección: avanzan solos 300 ms después de elegir (un toque menos por pantalla).
-  const AUTO = new Set<string>(['goal', 'pace', 'level', 'activity', 'meals']);
+  const AUTO = new Set<string>(['sex', 'goal', 'pace', 'level', 'activity', 'meals']);
   const advancing = useRef(false);
   const pick = (patch: Partial<Profile>) => {
     setDraft(patch);
@@ -154,11 +155,6 @@ export default function OnboardingStep() {
                 style={{ padding: 13, paddingHorizontal: 14, borderRadius: 10, backgroundColor: c.card, color: c.ink, borderWidth: 1, borderColor: touched && errors.name ? c.f : c.line, fontFamily: fonts.med, fontSize: 15, marginBottom: 8 }}
               />
               {touched && errors.name && <Small style={{ color: c.f, marginBottom: 8 }}>{errors.name}</Small>}
-              <Label>Sexo biológico</Label>
-              <View style={{ flexDirection: 'row', gap: 8, marginBottom: 6 }}>
-                <Chip label="Hombre" on={draft.sex === 'male'} onPress={() => setDraft({ sex: 'male' })} />
-                <Chip label="Mujer" on={draft.sex === 'female'} onPress={() => setDraft({ sex: 'female' })} />
-              </View>
               <Label>Tu cuerpo</Label>
               <Stepper label="Edad" unit="años" value={draft.age ?? 25} min={14} max={80} onChange={(age) => setDraft({ age })} />
               <Stepper label="Peso actual" unit="kg" value={draft.weightKg ?? 70} min={35} max={250} onChange={(weightKg) => setDraft({ weightKg })} />
@@ -171,8 +167,12 @@ export default function OnboardingStep() {
             </>
           )}
 
+          {meta.id === 'sex' && SEXES.map((o) => <OptionCard key={o.value} title={o.label} desc={o.desc} on={draft.sex === o.value} onPress={() => pick({ sex: o.value })} />)}
+          {/* Las fotos de referencia son de hombres (free-exercise-db casi no tiene de mujeres). */}
           {meta.id === 'goal' &&
-            goalOptions(draft.age ?? 25).map((o) => <OptionCard key={o.value} title={o.label} desc={o.desc} image={GOAL_IMAGE[o.value]} on={draft.goal === o.value} onPress={() => pick({ goal: o.value })} />)}
+            goalOptions(draft.age ?? 25).map((o) => (
+              <OptionCard key={o.value} title={o.label} desc={o.desc} image={draft.sex === 'female' ? undefined : GOAL_IMAGE[o.value]} on={draft.goal === o.value} onPress={() => pick({ goal: o.value })} />
+            ))}
           {meta.id === 'focus' && <FocusPicker value={draft.focus ?? []} onChange={(focus) => setDraft({ focus })} sex={draft.sex} />}
           {meta.id === 'pace' && paceOptions(draft.age ?? 25).map((o) => <OptionCard key={o.value} title={o.label} desc={o.desc} on={draft.pace === o.value} onPress={() => pick({ pace: o.value })} />)}
           {meta.id === 'level' && LEVELS.map((o) => <OptionCard key={o.value} title={o.label} desc={o.desc} on={draft.level === o.value} onPress={() => pick({ level: o.value })} />)}
@@ -237,7 +237,7 @@ export default function OnboardingStep() {
         </ScrollView>
       </Animated.View>
 
-      <BigButton label={step === LAST ? 'Empezar' : step === LAST - 1 ? 'Calcular mi plan' : 'Continuar'} onPress={next} disabled={meta.id === 'basics' && touched && !canContinue} />
+      <BigButton label={step === LAST ? 'Empezar' : step === LAST - 1 ? 'Calcular mi plan' : 'Continuar'} onPress={next} disabled={(meta.id === 'sex' || (meta.id === 'basics' && touched)) && !canContinue} />
     </View>
   );
 }

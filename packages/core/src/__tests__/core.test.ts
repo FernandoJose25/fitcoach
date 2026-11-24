@@ -95,6 +95,14 @@ describe('plan de comidas', () => {
     expect(Math.abs(p - t.protein) / t.protein).toBeLessThan(0.12);
     expect(plan.every((m) => m.recipeId)).toBe(true);
   });
+  it('predomina la cocina peruana: menos de 1 de cada 4 recetas del mes son de otra cocina', () => {
+    const LUNES = dayNumber('2026-11-23');
+    for (const p of [base, { ...base, sex: 'female' as const, weightKg: 58, heightCm: 160, goal: 'lose' as const, mealsPerDay: 3 as const }]) {
+      const ids = buildDays(computeTargets(p), p, FOODS, RECIPES, LUNES, 28).flatMap((d) => d.map((m) => m.recipeId));
+      const foreign = ids.filter((id) => RECIPES.find((r) => r.id === id)?.foreign).length;
+      expect(foreign / ids.length).toBeLessThan(0.25);
+    }
+  });
   it('vegano y sin gluten siguen con recetas en todas las comidas', () => {
     for (const extra of [{ avoid: ['Vegano'] }, { allergies: ['Gluten', 'Lácteos'] }]) {
       const p = { ...base, mealsPerDay: 5 as const, ...extra };
@@ -447,8 +455,25 @@ describe('entreno guiado', () => {
     expect(applySwaps(s, { 0: 'Curl con barra' })[0].name).toBe(s[0].name);
     expect(applySwaps(s, { 0: alternativeExercises(s[0].muscle, 'gym', [s[0].name])[0] })[0].name).not.toBe(s[0].name);
   });
-  it('el onboarding empieza por el objetivo y la zona a trabajar', () => {
-    expect(STEPS.slice(0, 3).map((s) => s.id)).toEqual(['goal', 'focus', 'basics']);
+  it('el onboarding empieza por quién entrena, luego el objetivo y la zona a trabajar', () => {
+    expect(STEPS.slice(0, 4).map((s) => s.id)).toEqual(['sex', 'goal', 'focus', 'basics']);
+  });
+  it('mujeres: los días de pierna reparten pierna y glúteo; el tren superior es igual', () => {
+    const woman = { ...base, sex: 'female' as const };
+    for (const where of ['gym', 'home'] as const) {
+      const lower = buildSession('lower', 0, { ...woman, where });
+      expect(lower.filter((e) => e.muscle === 'gluteo')).toHaveLength(2);
+      expect(lower.filter((e) => e.muscle === 'pierna')).toHaveLength(2);
+      expect(new Set(lower.map((e) => e.name)).size).toBe(lower.length);
+      expect(buildSession('full', 0, { ...woman, where }).some((e) => e.muscle === 'gluteo')).toBe(true);
+    }
+    expect(buildSession('upper', 0, woman)).toEqual(buildSession('upper', 0, base));
+    expect(buildSession('lower', 0, base).some((e) => e.muscle === 'gluteo')).toBe(false);
+  });
+  it('zona "Piernas y glúteos": suma glúteo si la sesión no lo trabaja', () => {
+    const full = buildSession('full', 0, { ...base, focus: ['pierna'] });
+    expect(full.find((e) => e.muscle === 'gluteo')?.focus).toBe(true);
+    expect(muscleOf('Hip thrust con barra')).toBe('gluteo');
   });
 });
 

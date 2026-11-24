@@ -9,8 +9,9 @@ import { FOCUS_IMAGE } from '@/lib/refImages';
 import { alpha, fonts, radius, useTheme } from '@/theme';
 
 /**
- * Zona prioritaria: cuerpo con las zonas elegidas resaltadas, "equilibrado" y una tarjeta con foto de
- * referencia por zona. Hasta dos zonas: elegir una tercera reemplaza a la más antigua.
+ * Zona prioritaria: cuerpo con las zonas elegidas resaltadas, "equilibrado" y una tarjeta por zona: foto de
+ * referencia (son de hombres) o, para mujeres, el cuerpo femenino con la zona resaltada. Hasta dos zonas:
+ * elegir una tercera reemplaza a la más antigua.
  */
 export function FocusPicker({ value, onChange, sex }: { value: Focus[]; onChange: (v: Focus[]) => void; sex?: 'male' | 'female' }) {
   const { c } = useTheme();
@@ -41,7 +42,13 @@ export function FocusPicker({ value, onChange, sex }: { value: Focus[]; onChange
               accessibilityLabel={`${o.label}. ${o.desc}`}
               style={{ width: '48%', flexGrow: 1, borderRadius: radius.btn, overflow: 'hidden', backgroundColor: on ? c.hero : c.card, borderWidth: on ? 2 : 1, borderColor: on ? c.acc : c.line }}
             >
-              <Image source={FOCUS_IMAGE[o.value]} contentFit="cover" style={{ width: '100%', aspectRatio: 3 / 2 }} accessibilityIgnoresInvertColors />
+              {sex === 'female' ? (
+                <View style={{ width: '100%', aspectRatio: 3 / 2, alignItems: 'center', justifyContent: 'center', backgroundColor: alpha(c.ink, 0.04) }}>
+                  <MuscleMap groups={FOCUS_MUSCLES[o.value]} height={92} sex="female" />
+                </View>
+              ) : (
+                <Image source={FOCUS_IMAGE[o.value]} contentFit="cover" style={{ width: '100%', aspectRatio: 3 / 2 }} accessibilityIgnoresInvertColors />
+              )}
               {on && (
                 <View style={{ position: 'absolute', top: 8, right: 8, width: 26, height: 26, borderRadius: 13, backgroundColor: c.acc, alignItems: 'center', justifyContent: 'center' }}>
                   <Icon name="check" size={16} stroke={2.5} color={c.on} />

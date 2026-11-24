@@ -45,6 +45,7 @@ const withName = (name: string | undefined, p = 0.35) => (name && Math.random() 
 /** Consejo técnico corto por grupo muscular, para la mitad de la serie. */
 const TECHNIQUE: Record<string, string[]> = {
   pierna: ['Empuja con los talones.', 'Rodillas hacia afuera, pecho arriba.', 'Baja controlado, sube con fuerza.'],
+  gluteo: ['Aprieta los glúteos arriba un segundo.', 'Empuja con los talones.', 'Sube la cadera sin arquear la espalda.'],
   pecho: ['Baja lento, controla el movimiento.', 'Codos a cuarenta y cinco grados.', 'Aprieta el pecho al subir.'],
   espalda: ['Lleva los codos atrás.', 'Junta las escápulas, aprieta la espalda.', 'Sin impulso, tira con la espalda.'],
   hombro: ['Abdomen firme, no arquees la espalda.', 'Sube controlado, sin encoger los hombros.'],

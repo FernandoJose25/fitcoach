@@ -37,6 +37,11 @@ const DAY_TOL = 0.08;
 const KCAL_UNDER = 0.05;
 /** kcal que el menú puede pasar la meta: menos que el margen de `compensate`, o un día sin registros ya pediría compensar. */
 const KCAL_OVER = 40;
+/**
+ * Desvío que se suma a una receta `foreign` al ordenar: la cocina peruana llena las mejores opciones de cada
+ * comida y las demás entran solo si se ajustan claramente mejor (p. ej. tofu para quien no come carne).
+ */
+const FOREIGN_PENALTY = 0.3;
 
 /** Día local como número (días desde 1970-01-01) a partir de una fecha 'YYYY-MM-DD'. */
 export const dayNumber = (key: string) =>
@@ -49,6 +54,8 @@ interface Cand {
   dk: number;
   dp: number;
 }
+
+const score = (c: Cand, tk: number, tp: number) => Math.abs(c.dk) / tk + Math.abs(c.dp) / tp + (c.r.foreign ? FOREIGN_PENALTY : 0);
 
 /** Barajado determinista (mulberry32): el mismo orden en cualquier teléfono para la misma semana y comida. */
 function shuffle<T>(a: T[], seed: number): T[] {
@@ -134,8 +141,9 @@ export function buildDays(
           const b = totals(items, foods);
           return { r, items, dk: b.kcal - tk, dp: b.p - tp };
         })
-        // Distancia tras escalar la receta: error relativo de kcal + error relativo de proteína.
-        .sort((a, b) => Math.abs(a.dk) / tk + Math.abs(a.dp) / tp - (Math.abs(b.dk) / tk + Math.abs(b.dp) / tp))
+        // Distancia tras escalar la receta: error relativo de kcal + error relativo de proteína (+ la
+        // penalización de las recetas que no son de aquí).
+        .sort((a, b) => score(a, tk, tp) - score(b, tk, tp))
     );
   });
   const weeks = new Map<number, (Cand | null)[][]>();

@@ -13,7 +13,7 @@ export const AISLES: ReadonlyArray<readonly [Aisle, string]> = [
   ['despensa', 'Despensa'],
 ];
 
-export const FRUITS = new Set(['platano', 'manzana', 'palta', 'fresa', 'papaya', 'pina', 'mango', 'arandano', 'limon']);
+export const FRUITS = new Set(['platano', 'manzana', 'palta', 'fresa', 'papaya', 'pina', 'mango', 'arandano', 'limon', 'lucuma', 'chirimoya', 'granadilla']);
 
 /** Secciones que no se deducen del rol y las etiquetas del alimento (ver `aisleOf`). */
 export const AISLE_OF: Record<string, Aisle> = {

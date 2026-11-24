@@ -76,6 +76,28 @@ const CATALOG: Record<string, { gym: Entry[]; home: Entry[] }> = {
       ['Elevación de talones', 'Standing_Dumbbell_Calf_Raise'],
     ],
   },
+  // Glúteo: las sesiones de pierna de las mujeres llevan dos ejercicios de glúteo; también lo suma la zona
+  // "Piernas y glúteos". Algunos nombres también están en pierna (los hacía antes): conservan su historial.
+  gluteo: {
+    gym: [
+      ['Hip thrust con barra', 'Barbell_Hip_Thrust'],
+      ['Peso muerto sumo', 'Sumo_Deadlift'],
+      ['Patada de glúteo en polea', 'One-Legged_Cable_Kickback'],
+      ['Puente de glúteo con barra', 'Barbell_Glute_Bridge'],
+      ['Abducción de cadera en máquina', 'Thigh_Abductor'],
+      ['Sentadilla sumo con mancuerna', 'Plie_Dumbbell_Squat'],
+      ['Subida al cajón con barra', 'Barbell_Step_Ups'],
+    ],
+    home: [
+      ['Puente de glúteo', 'Butt_Lift_Bridge'],
+      ['Hip thrust con mochila', 'Barbell_Hip_Thrust'],
+      ['Sentadilla sumo con mochila', 'Plie_Dumbbell_Squat'],
+      ['Patada de glúteo', 'Glute_Kickback'],
+      ['Puente de glúteo a una pierna', 'Single_Leg_Glute_Bridge'],
+      ['Abducción de cadera acostada', 'Side_Leg_Raises'],
+      ['Caminata lateral con banda', 'Monster_Walk'],
+    ],
+  },
   hombro: {
     gym: [
       ['Press militar', 'Standing_Military_Press'],

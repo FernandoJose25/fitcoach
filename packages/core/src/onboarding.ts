@@ -1,4 +1,4 @@
-import type { Activity, Focus, Goal, Level, Pace, Where } from './types';
+import type { Activity, Focus, Goal, Level, Pace, Sex, Where } from './types';
 
 export interface Option<T extends string = string> {
   value: T;
@@ -11,6 +11,10 @@ export const MINOR_NOTICE =
   'A tu edad lo mejor es comer bien y entrenar con técnica; consulta con un profesional de salud.';
 export const isMinor = (age: number) => age < 18;
 
+export const SEXES: Option<Sex>[] = [
+  { value: 'female', label: 'Mujer', desc: 'Días de pierna con más glúteo, calorías e imágenes para tu cuerpo' },
+  { value: 'male', label: 'Hombre', desc: 'Rutina, calorías e imágenes para tu cuerpo' },
+];
 export const GOALS: Option<Goal>[] = [
   { value: 'gain', label: 'Ganar masa muscular', desc: 'Más calorías, proteína alta y circuitos de fuerza pesados' },
   { value: 'lose', label: 'Perder grasa', desc: 'Déficit moderado y circuitos con más repeticiones para quemar más' },
@@ -58,8 +62,10 @@ export const MEALS_OPTIONS: Option<'3' | '4' | '5'>[] = [
   { value: '5', label: '5', desc: 'Dos colaciones, ideal si te cuesta comer mucho' },
 ];
 
-// Primero el objetivo y la zona a trabajar: es lo que el usuario viene a decir.
+// Primero quién entrena (cambia la rutina, las calorías y el cuerpo que se muestra), luego el objetivo y la
+// zona a trabajar: es lo que el usuario viene a decir.
 export const STEPS = [
+  { id: 'sex', title: '¿Quién va a entrenar?', subtitle: 'Tu rutina, tus calorías y las imágenes de la app se ajustan a tu cuerpo.' },
   { id: 'goal', title: '¿Qué quieres lograr?', subtitle: 'Define tus calorías y cómo entrenas: más fuerza para ganar músculo, más repeticiones para quemar grasa.' },
   { id: 'focus', title: '¿Qué zona quieres trabajar más?', subtitle: 'Le damos más ejercicios y series sin descuidar el resto. Elige hasta dos, o ninguna para un plan equilibrado.' },
   { id: 'basics', title: 'Tus datos básicos', subtitle: 'Los usamos para estimar cuántas calorías gasta tu cuerpo en reposo.' },

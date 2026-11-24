@@ -14,7 +14,7 @@ export const FOCUS_MUSCLES: Record<Focus, string[]> = {
   hombro: ['hombro'],
   brazos: ['biceps', 'triceps'],
   core: ['core'],
-  pierna: ['pierna'],
+  pierna: ['pierna', 'gluteo'],
 };
 
 export const TRAIN_DAYS = { 3: [0, 2, 4], 4: [0, 1, 3, 4], 5: [0, 1, 2, 4, 5], 6: [0, 1, 2, 3, 4, 5] } as const; // 0 = lunes
@@ -40,6 +40,15 @@ const MUSCLES = {
   lower: ['pierna', 'pierna', 'pierna', 'pierna', 'core', 'core'],
   full: ['pierna', 'pecho', 'espalda', 'hombro', 'pierna', 'core'],
 } as const;
+/**
+ * Mujeres: mismo volumen y rangos (responden al entreno igual que los hombres), pero los días con pierna
+ * reparten la pierna entre cuádriceps/femorales y glúteo, la zona que más suelen querer trabajar.
+ */
+const MUSCLES_FEMALE: Partial<Record<SessionKind, readonly string[]>> = {
+  legs: ['pierna', 'gluteo', 'pierna', 'gluteo', 'core', 'core'],
+  lower: ['pierna', 'gluteo', 'pierna', 'gluteo', 'core', 'core'],
+  full: ['pierna', 'espalda', 'gluteo', 'pecho', 'hombro', 'core'],
+};
 
 export type SessionKind = keyof typeof MUSCLES;
 
@@ -60,17 +69,21 @@ type Draft = Omit<PlannedExercise, 'block'>;
 
 /**
  * Sesión del split: ejercicios del lugar (rotan con `occurrence`), series según nivel, repeticiones según
- * objetivo (ganar músculo: pesado; perder grasa: más repeticiones). La zona prioritaria suma una serie a
- * sus dos primeros ejercicios y, si la sesión la trabaja poco, un ejercicio más. Sale ordenada en circuitos.
+ * objetivo (ganar músculo: pesado; perder grasa: más repeticiones). En mujeres, los días con pierna incluyen
+ * glúteo (ver `MUSCLES_FEMALE`). La zona prioritaria suma una serie a sus dos primeros ejercicios y, si la
+ * sesión la trabaja poco, un ejercicio más. Sale ordenada en circuitos.
  */
 export function buildSession(kind: SessionKind, occurrence: number, p: Profile): PlannedExercise[] {
   const where = p.where === 'home' ? 'home' : 'gym';
-  const slots: { m: string; extra: boolean }[] = MUSCLES[kind].map((m) => ({ m, extra: false }));
+  const muscles = (p.sex === 'female' && MUSCLES_FEMALE[kind]) || MUSCLES[kind];
+  const slots: { m: string; extra: boolean }[] = muscles.map((m) => ({ m, extra: false }));
   const countOf = (m: string) => slots.filter((s) => s.m === m).length;
   for (const f of (p.focus ?? []).slice(0, 2)) {
-    // Brazos: el de los dos que menos aparece en la sesión (bíceps en empuje, tríceps en tirón).
-    const m = [...(FOCUS_MUSCLES[f] ?? [])].sort((a, b) => countOf(a) - countOf(b))[0];
-    if (m && countOf(m) < 3) slots.push({ m, extra: true });
+    // Zonas de dos grupos (brazos, piernas y glúteos): suma el que menos aparece en la sesión (bíceps en
+    // empuje, tríceps en tirón), y nada si la zona ya tiene 3 ejercicios entre los dos.
+    const group = FOCUS_MUSCLES[f] ?? [];
+    const m = [...group].sort((a, b) => countOf(a) - countOf(b))[0];
+    if (m && group.reduce((n, g) => n + countOf(g), 0) < 3) slots.push({ m, extra: true });
   }
   const focusMuscles = new Set((p.focus ?? []).flatMap((f) => FOCUS_MUSCLES[f] ?? []));
   const used = new Set<string>();

@@ -68,6 +68,8 @@ export interface Recipe {
   slots: string;
   items: Item[];
   how: string;
+  /** Plato de otra cocina o con ingredientes difíciles de conseguir en el Perú: el menú lo elige menos. */
+  foreign?: boolean;
 }
 
 /** Acción de un paso de receta: elige el dibujo animado del modo cocinar. */

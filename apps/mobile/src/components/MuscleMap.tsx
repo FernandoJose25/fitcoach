@@ -9,6 +9,7 @@ const SLUGS: Record<string, Slug[]> = {
   pecho: ['chest'],
   espalda: ['upper-back', 'lower-back', 'trapezius'],
   pierna: ['quadriceps', 'hamstring', 'gluteal', 'calves', 'adductors'],
+  gluteo: ['gluteal'],
   hombro: ['deltoids'],
   triceps: ['triceps'],
   biceps: ['biceps'],
