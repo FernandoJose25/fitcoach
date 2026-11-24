@@ -19,3 +19,5 @@ npx supabase functions deploy scan-food
 ```
 
 El proveedor es Groq (gratis, crea la clave en https://console.groq.com/keys). Por defecto usa `https://api.groq.com/openai/v1` y el modelo `qwen/qwen3.8-27b`, que Groq marca como preview: si lo retiran, define `VISION_MODEL` con el modelo con visión vigente (https://console.groq.com/docs/vision) sin redesplegar.
+
+`scan-food` atiende cuatro pedidos: `imageBase64` (foto del plato), `imageBase64` + `label: true` (tabla nutricional del empaque), `barcode` (producto en los catálogos de Plaza Vea, Wong y Metro; no son APIs oficiales) y `name` (estimación por nombre). Solo las fotos cuentan en el límite de 30 por día.

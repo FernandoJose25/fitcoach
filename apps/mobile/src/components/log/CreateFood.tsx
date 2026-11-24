@@ -1,9 +1,11 @@
-import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, TextInput, View, type TextInputProps } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, TextInput, View, type TextInputProps } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { barcodeId, customFood, type Food } from '@fitcoach/core';
 import { Chip } from '@/components/Chip';
-import { BigButton, Card, Eyebrow, H, Small, T } from '@/components/ui';
-import { newUserFoodId } from '@/lib/foodApi';
+import { BigButton, Card, Eyebrow, H, Pill, Small, T } from '@/components/ui';
+import { AI_ERRORS, newUserFoodId, readLabel } from '@/lib/foodApi';
+import { prepareShot } from '@/lib/photo';
 import { useApp } from '@/store/useApp';
 import { fonts, radius, useTheme } from '@/theme';
 
@@ -15,14 +17,49 @@ const n = (t: string) => {
 /**
  * Alimento propio con los valores de la etiqueta (por 100 g o por porción). Con `barcode` es un producto
  * que no está en ninguna base: se guarda con ese código y la próxima vez —tuya o de otra persona— sale solo.
+ * La tabla se puede leer de una foto (`photo`: abre la cámara al entrar); los valores quedan para revisarlos.
  */
-export function CreateFood({ initialName = '', barcode, onSaved }: { initialName?: string; barcode?: string; onSaved: (f: Food) => void }) {
+export function CreateFood({ initialName = '', barcode, photo, onSaved }: { initialName?: string; barcode?: string; photo?: boolean; onSaved: (f: Food) => void }) {
   const { c } = useTheme();
   const [name, setName] = useState(initialName);
   const [per, setPer] = useState<'100' | 'portion'>(barcode ? 'portion' : '100');
   const [portion, setPortion] = useState('');
   const [v, setV] = useState({ kcal: '', p: '', c: '', f: '' });
   const [error, setError] = useState<string | null>(null);
+  const [reading, setReading] = useState(false);
+  const [read, setRead] = useState(false); // los valores vienen de una foto: hay que revisarlos
+
+  const readTable = async (from: 'camera' | 'gallery') => {
+    setError(null);
+    try {
+      if (from === 'camera' && !(await ImagePicker.requestCameraPermissionsAsync()).granted) return setError('La cámara está bloqueada para FitCoach. Elige una foto de la galería o copia los valores.');
+      const res = await (from === 'camera' ? ImagePicker.launchCameraAsync({ quality: 0.9 }) : ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.9 }));
+      const uri = res.canceled ? null : res.assets?.[0]?.uri;
+      if (!uri) return;
+      setReading(true);
+      // La letra de la tabla es pequeña: más ancho que la foto del plato.
+      const r = await readLabel((await prepareShot(uri, 1400)).base64);
+      if ('error' in r) return setError(AI_ERRORS[r.error] ?? AI_ERRORS.provider);
+      const l = r.label;
+      if (!l) return setError('No se ve una tabla nutricional en la foto. Acércate a la tabla, con luz y sin reflejos.');
+      const s = (x: number | null) => (x === null ? '' : String(x));
+      setPer(l.per);
+      if (l.per === 'portion') setPortion(s(l.portion));
+      setV({ kcal: s(l.kcal), p: s(l.p), c: s(l.c), f: s(l.f) });
+      if (l.name) setName((x) => x || l.name);
+      setRead(true);
+    } catch {
+      setError('No pudimos leer la foto. Inténtalo de nuevo o copia los valores.');
+    } finally {
+      setReading(false);
+    }
+  };
+  const opened = useRef(false);
+  useEffect(() => {
+    if (!photo || opened.current) return;
+    opened.current = true;
+    readTable('camera');
+  });
 
   const save = () => {
     const g = n(portion);
@@ -47,12 +84,24 @@ export function CreateFood({ initialName = '', barcode, onSaved }: { initialName
           <H size={19}>{barcode ? 'Producto nuevo' : 'Crear alimento'}</H>
           <Small style={{ marginTop: 4, lineHeight: 17 }}>
             {barcode
-              ? `El código ${barcode} no está en ninguna base. Copia los datos de la tabla nutricional del empaque: lo guardamos para que la próxima vez salga solo, también para otras personas.`
+              ? `Código ${barcode}. Lo guardamos con los datos de la tabla nutricional para que la próxima vez salga solo, también para otras personas.`
               : 'Copia los valores de la etiqueta o de una tabla nutricional. Las calorías se calculan solas si las dejas vacías.'}
           </Small>
+          {reading ? (
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 12 }}>
+              <ActivityIndicator color={c.acc} />
+              <T kind="bold">Leyendo la tabla…</T>
+            </View>
+          ) : (
+            <View style={{ flexDirection: 'row', gap: 8, marginTop: 12 }}>
+              <Pill label={read ? 'Tomar otra foto' : 'Foto de la tabla'} onPress={() => readTable('camera')} />
+              <Pill label="Galería" ghost onPress={() => readTable('gallery')} />
+            </View>
+          )}
+          {read && !reading && <Small style={{ marginTop: 10, color: c.acc }}>Revisa que los números coincidan con el empaque antes de guardar.</Small>}
         </Card>
 
-        <Field label="Nombre" value={name} onChangeText={setName} placeholder={barcode ? 'p. ej. Galletas de soda (marca)' : 'p. ej. Salchipapa'} autoFocus={!initialName} />
+        <Field label="Nombre" value={name} onChangeText={setName} placeholder={barcode ? 'p. ej. Galletas de soda (marca)' : 'p. ej. Salchipapa'} autoFocus={!initialName && !photo} />
 
         <Eyebrow style={{ marginTop: 6, marginBottom: 8 }}>Los valores son por</Eyebrow>
         <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>

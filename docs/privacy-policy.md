@@ -29,6 +29,7 @@ FitCoach es una app gratuita de nutrición y entrenamiento. Esta política expli
 | Medidas corporales | Mostrar tu progreso | Solo en tu teléfono |
 | Fotos de progreso | Comparar tu cambio físico | Solo en tu teléfono, dentro del almacenamiento de la app |
 | Foto de un plato que escaneas | Identificar los alimentos y estimar los gramos | No se guarda (ver punto 3) |
+| Foto de la tabla nutricional de un empaque | Leer sus valores | No se guarda (ver punto 3) |
 | Código de barras de un producto | Buscar su información nutricional | El producto encontrado se guarda en la base de alimentos compartida, sin datos tuyos |
 | Número de escaneos de platos por día | Aplicar el límite diario gratuito | Servidor |
 | Preferencias de la app (tema, recordatorios, voz) | Configurar la app | Solo en tu teléfono |
@@ -40,8 +41,9 @@ Los datos de peso, medidas y hábitos de alimentación y entrenamiento son datos
 Usamos estos proveedores para que la app funcione. Solo reciben lo necesario para su tarea:
 
 - **Supabase** (servidor y base de datos). Aloja tu sesión anónima y los datos marcados como "servidor" en la tabla anterior. Los servidores están en Estados Unidos (región us-east-2). Cada usuario solo puede leer y modificar sus propios datos: el acceso está restringido por reglas de seguridad a nivel de fila.
-- **Groq** (inteligencia artificial para reconocer alimentos). Cuando escaneas un plato, la foto, reducida y comprimida, va a nuestro servidor y de ahí a Groq. Groq **no recibe tu nombre ni tu identificador**, solo la imagen. Devuelve una lista de alimentos con gramos estimados y nuestro servidor no guarda la foto. Groq procesa la imagen en Estados Unidos según sus propias políticas.
+- **Groq** (inteligencia artificial para reconocer alimentos). Cuando escaneas un plato o la tabla nutricional de un empaque, la foto, reducida y comprimida, va a nuestro servidor y de ahí a Groq. Groq **no recibe tu nombre ni tu identificador**, solo la imagen. Devuelve una lista de alimentos con gramos estimados y nuestro servidor no guarda la foto. Groq procesa la imagen en Estados Unidos según sus propias políticas.
 - **Open Food Facts** (base abierta de productos). Cuando lees un código de barras, la app envía ese número a Open Food Facts para obtener los datos del producto. No envía ningún dato tuyo.
+- **Catálogos públicos de supermercados** (Plaza Vea, Wong y Metro). Si el producto no está en Open Food Facts, nuestro servidor busca ese número de código en sus catálogos. Solo reciben el código: la consulta sale de nuestro servidor, no de tu teléfono, y no lleva ningún dato tuyo. Si ninguno publica la tabla nutricional, Groq estima los valores a partir del nombre del producto.
 - **GitHub** (imágenes de ejercicios del proyecto free-exercise-db). La app descarga desde ahí las fotos de algunos ejercicios. Como en cualquier descarga de internet, estos servicios ven la dirección IP de tu conexión.
 
 Las indicaciones por voz del entrenamiento usan el motor de voz de tu teléfono. Los recordatorios son notificaciones locales programadas en tu teléfono, sin servidor.

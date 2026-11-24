@@ -33,7 +33,7 @@ Objetivo: una sola app gratuita con la lógica de **Fitia** (nutrición) y **Sim
 | Plan diario con recetas intercambiables y porciones escaladas | ✅ 133 recetas, 25+ por comida, opciones veganas y sin gluten en todas | — |
 | Base grande de alimentos peruanos | 🟡 303 alimentos con platos típicos; falta revisión con CENAN | Contenido |
 | Búsqueda rápida y alimentos frecuentes | ✅ | — |
-| Código de barras (Open Food Facts) | ✅ teléfono → base compartida de FitCoach → Open Food Facts; si nadie lo tiene, se crea con la etiqueta y queda para todos (migración `0006`) | — |
+| Código de barras (Open Food Facts) | ✅ catálogo de la app → teléfono → base compartida → Open Food Facts → supermercados peruanos (tabla real) o estimación de la IA por el nombre; si nadie lo tiene, se lee la etiqueta con una foto y queda para todos (migraciones `0006` y `0009`) | — |
 | Foto del plato con IA | 🟡 falta desplegar y probar | F4 |
 | Agua y lista de compras | ✅ | — |
 | Peso semanal con gráfico | ✅ registro en Hoy, tendencia y proyección en Progreso (local, sin sincronizar aún) | — |

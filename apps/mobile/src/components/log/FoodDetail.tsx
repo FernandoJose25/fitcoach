@@ -14,7 +14,7 @@ const PRESETS = [50, 100, 150, 200, 300];
 
 /** Origen de los valores, para que el usuario sepa cuánto fiarse. */
 export const sourceLabel = (f: Food) =>
-  f.src === 'off' ? 'Producto · Open Food Facts' : f.src === 'ai' ? 'Estimado por IA' : f.id.startsWith('bc_') ? 'Producto creado en FitCoach' : f.src === 'user' ? 'Creado por ti' : 'Base FitCoach';
+  f.src === 'off' ? 'Producto · Open Food Facts' : f.src === 'ai' ? 'Estimado por IA' : f.id.startsWith('bc_') ? 'Producto · tabla del empaque' : f.src === 'user' ? 'Creado por ti' : 'Base FitCoach';
 
 /**
  * Un alimento: porción (de la etiqueta o rápida), gramos, macros, veredicto y consecuencia.
@@ -27,6 +27,7 @@ export function FoodDetail({
   cart,
   onAdd,
   onRegister,
+  onFix,
 }: {
   food: Food;
   slot: number;
@@ -35,6 +36,8 @@ export function FoodDetail({
   cart: Item[];
   onAdd: (grams: number) => void;
   onRegister: (grams: number) => void;
+  /** Producto estimado por IA: leer su tabla nutricional para dejar los valores exactos. */
+  onFix?: () => void;
 }) {
   const { c } = useTheme();
   const profile = useApp((s) => s.profile)!;
@@ -107,6 +110,13 @@ export function FoodDetail({
           ))}
         </View>
       </Card>
+
+      {onFix && (
+        <Card>
+          <T style={{ fontSize: 14, lineHeight: 20 }}>No encontramos la tabla de este producto: estos valores son una estimación por su nombre.</T>
+          <Pill label="Corregir con una foto de la etiqueta" ghost style={{ marginTop: 10 }} onPress={onFix} />
+        </Card>
+      )}
 
       {/* Con exceso manda la consecuencia (cuenta las comidas que faltan); el veredicto solo mira lo comido. */}
       {x && x.excess > 0 ? null : (

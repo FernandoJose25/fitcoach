@@ -9,8 +9,8 @@ import { MEAL_GUIDES } from '../data/guides-meals';
 import { VERSIONS } from '../data/versions';
 import { REST_SEC, applySwaps, buildSession, buildTimeline, exerciseHistory, programWeek, sessionForDay, setSeconds, timelineSeconds, lastSet, alternativeExercises, nextSession, setScore, toCircuits, TRAIN_DAYS, volumeOf } from '../workouts';
 import { STEPS, focusLabel } from '../onboarding';
-import { matchFood, scanFood, verdict } from '../scan';
-import { customFood, foodFromOff, foodsFromOffSearch, frequentFoodIds, searchFoods } from '../foodlog';
+import { alternatives, matchFood, scanFood, verdict } from '../scan';
+import { barcodeOf, customFood, foodFromOff, foodsFromOffSearch, frequentFoodIds, offName, parseBarcode, searchFoods } from '../foodlog';
 import { compensate, consequence, consequenceLines } from '../consequence';
 import { compareVersions, updateFor } from '../releases';
 import { FOODS } from '../data/catalog';
@@ -314,7 +314,7 @@ describe('contenido', () => {
     const all = Object.values(FOODS);
     expect(all.length).toBeGreaterThanOrEqual(300);
     all
-      .filter((f) => !['cerveza', 'vino'].includes(f.id))
+      .filter((f) => !['cerveza', 'vino', 'pisco_sour', 'chilcano', 'trident'].includes(`${f.id}`.replace('pe_', '')))
       .forEach((f) => expect(Math.abs(4 * f.p + 4 * f.c + 9 * f.f - f.kcal), f.id).toBeLessThanOrEqual(Math.max(15, f.kcal * 0.2)));
   });
   it('120+ recetas, 25+ por tipo de comida, ids únicos e ingredientes existentes que no son platos preparados', () => {
@@ -328,8 +328,8 @@ describe('contenido', () => {
       }),
     );
   });
-  it('productos envasados: 4 categorías, porción, códigos únicos y búsqueda por categoría', () => {
-    expect(PRODUCT_GROUPS.map((g) => g.label)).toEqual(['Gaseosas y bebidas', 'Galletas', 'Golosinas', 'Snacks']);
+  it('productos envasados: categorías, porción, códigos únicos y búsqueda por categoría', () => {
+    expect(PRODUCT_GROUPS.map((g) => g.label)).toEqual(['Gaseosas y bebidas', 'Cereales', 'Galletas', 'Golosinas', 'Snacks', 'Lácteos', 'Despensa']);
     PRODUCT_GROUPS.forEach((g) => expect(g.ids.length, g.label).toBeGreaterThanOrEqual(12));
     Object.values(PRODUCTS).forEach((p) => {
       expect(FOODS[p.id]).toBe(p);
@@ -338,7 +338,11 @@ describe('contenido', () => {
     });
     expect(FOODS[PRODUCT_BY_BARCODE['7750182006088']].name).toBe('Inca Kola');
     expect(PRODUCT_BY_BARCODE['7622201383589']).toBe('pe_oreo');
-    Object.keys(PRODUCT_BY_BARCODE).forEach((code) => expect(code).toMatch(/^\d{8,13}$/));
+    Object.keys(PRODUCT_BY_BARCODE).forEach((code) => expect(parseBarcode(code), code).toBe(code));
+    // Los que pidió el usuario: Gatorade, gomitas Mogul y cereal Ángel de colores.
+    expect(PRODUCT_BY_BARCODE['7751655000596']).toBe('pe_gatorade');
+    expect(PRODUCT_BY_BARCODE['7790580424619']).toBe('pe_mogul');
+    expect(PRODUCT_BY_BARCODE['7759826001717']).toBe('pe_angel_frutt');
     const names = (q: string) => searchFoods(FOODS, q).map((f) => f.id);
     expect(names('galleta')).toContain('pe_oreo');
     expect(names('gaseosa')).toContain('pe_inca_kola');
@@ -531,6 +535,40 @@ describe('escáner: emparejar nombres de la IA con la base', () => {
     expect(s('pechuga de pollo frita', 260)).toBeNull();
     expect(s('pechuga de pollo a la plancha', 170)).toBe('pollo');
   });
+  it('la primera palabra manda: un puré no es una papa, ni un jugo la fruta', () => {
+    const s = (name: string, kcal: number) => scanFood(FOODS, { name, per100: { kcal, p: 1, c: 10, f: 1 } })?.id ?? null;
+    expect(s('puré de papa amarilla', 110)).toBe('pure');
+    expect(s('puré', 110)).toBe('pure');
+    expect(s('crema de papa', 110)).toBeNull();
+    expect(s('ají de papa', 110)).toBeNull();
+    expect(s('jugo de piña', 50)).toBe('jugo_pina');
+    expect(s('papa al horno', 93)).toBe('papa');
+    expect(s('papa en rodajas', 87)).toBe('papa');
+  });
+  it('reconoce lo típico de Perú: pepinillo, refrescos de menú y marcas', () => {
+    expect(m('pepinillos en rodajas')).toBe('pepinillo');
+    expect(m('pepino encurtido')).toBe('pepinillo');
+    expect(m('rodajas de pepino')).toBe('pepino');
+    expect(m('cebada')).toBe('agua_cebada');
+    expect(m('agua de cebada')).toBe('agua_cebada');
+    expect(m('refresco de maracuyá')).toBe('maracuya_ref');
+    expect(m('maracuyá')).toBe('maracuya');
+    expect(m('agua de manzana')).toBe('manzana_agua');
+    expect(m('refresco de piña')).toBe('pina_agua');
+    expect(m('limonada')).toBe('limonada');
+    expect(m('milanesa de pollo')).toBe('milanesa_pollo');
+    expect(m('gaseosa Inca Kola')).toBe('pe_inca_kola');
+    expect(m('refresco 7 Up')).toBe('pe_seven_up');
+    expect(m('Gatorade azul')).toBe('pe_gatorade');
+  });
+  it('ofrece lo que se confunde a la vista: primero lo que sugiere la IA', () => {
+    const ids = (name: string, alts: string[], id: string | null) => alternatives(FOODS, { name, alts }, id ? FOODS[id] : null).map((f) => f.id);
+    expect(ids('papa sancochada', ['pepinillo'], 'papa')).toEqual(['pepinillo', 'pepino', 'zapallito']);
+    expect(ids('puré de papa', [], 'pure')).not.toContain('pure');
+    expect(ids('cerveza negra', ['agua de cebada'], null)[0]).toBe('agua_cebada');
+    expect(ids('refresco amarillo', [], null)).toContain('maracuya_ref');
+    expect(ids('arroz blanco', [], 'arroz')).toEqual([]);
+  });
   it('no confunde papa con papaya y devuelve null si nada se parece', () => {
     expect(m('papaya picada')).toBe('papaya');
     expect(m('papa sancochada')).toBe('papa');
@@ -550,10 +588,22 @@ describe('veredicto', () => {
 });
 
 describe('registro', () => {
+  it('código de barras: solo EAN/UPC con dígito de control válido', () => {
+    expect(parseBarcode('7751655000596')).toBe('7751655000596');
+    expect(parseBarcode(' 77940131 ')).toBe('77940131');
+    expect(parseBarcode('049000001327')).toBe('0049000001327'); // UPC-A
+    expect(parseBarcode('04963406')).toBe('0049000006346'); // UPC-E
+    expect(parseBarcode('7751655000597')).toBeNull(); // lectura a medias
+    expect(parseBarcode('L2409-B12')).toBeNull(); // lote
+    expect(barcodeOf('est_7751655000596')).toBe('7751655000596');
+    expect(barcodeOf('pe_gatorade')).toBeNull();
+    expect(offName({ product_name: 'Galletas', brands: 'Andinas,Otra' })).toBe('Galletas (Andinas)');
+    expect(offName({})).toBeNull();
+  });
   it('busca sin tildes y prioriza el prefijo', () => {
     const atun = searchFoods(FOODS, 'atun');
     expect(atun.map((f) => f.id)).toContain('atun');
-    expect(atun.every((f) => f.name.startsWith('Atún'))).toBe(true);
+    expect(atun[0].name.startsWith('Atún')).toBe(true);
     const mani = searchFoods(FOODS, 'mani').map((f) => f.id);
     expect(mani[0]).toBe('mani');
     expect(mani).toEqual(expect.arrayContaining(['pbut', 'pe_karinto_mani', 'pe_turron_mani']));

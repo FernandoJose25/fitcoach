@@ -55,6 +55,8 @@ export interface Food {
   src?: 'off' | 'user' | 'ai';
   /** Palabras extra para la búsqueda (categoría de un producto envasado: "galleta", "gaseosa"…). */
   kw?: string;
+  /** Otros nombres separados por `|` ("puré|papa majada"): búsqueda y emparejado de lo que detecta la IA. */
+  aka?: string;
 }
 
 export interface Item {

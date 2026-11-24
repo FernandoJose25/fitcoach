@@ -1,4 +1,6 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
+import { LABEL, NAME, PHOTO } from './prompts.ts';
+import { emojiFor, storeLookup, type Per100 } from './store.ts';
 
 const DAILY_LIMIT = 30;
 // Groq por defecto (API compatible con OpenAI). El modelo con visión de Groq está en preview:
@@ -6,65 +8,46 @@ const DAILY_LIMIT = 30;
 const BASE_URL = Deno.env.get('VISION_BASE_URL') ?? 'https://api.groq.com/openai/v1';
 const MODEL = Deno.env.get('VISION_MODEL') ?? 'qwen/qwen3.8-27b';
 const KEY = Deno.env.get('VISION_API_KEY');
-
-const PER100 = '"kcal":<kcal por 100 g>,"p":<proteína g por 100 g>,"c":<carbohidratos g por 100 g>,"f":<grasa g por 100 g>';
-// Un plato mezclado (chaufa, saltado…) se pide desglosado: si no, el modelo lo devuelve como un solo item.
-const PHOTO = `Eres un nutricionista experto en comida peruana y latinoamericana. Analiza la foto de una comida y responde SOLO con JSON válido:
-{"dish":"nombre del plato en español (p. ej. Lomo saltado), o vacío si son alimentos sueltos","items":[{"name":"nombre del alimento en español, genérico y simple","grams":<número>,"confidence":<0 a 1>,${PER100}}]}
-Reglas:
-- Desglosa el plato: un item por cada ingrediente o componente que se vea, aunque vengan mezclados. Nunca
-  devuelvas un plato preparado como un solo item. Ejemplos: arroz chaufa → "arroz frito", "pollo", "huevo
-  revuelto", "cebolla china"; tallarín saltado → "fideos cocidos", "carne de res salteada", "cebolla", "tomate";
-  lomo saltado → "carne de res salteada", "papas fritas", "arroz blanco cocido", "cebolla", "tomate";
-  aeropuerto → "arroz frito", "fideos salteados", "pollo", "brotes de soya", "cebolla china".
-- Mira bien las mezclas: si entre el arroz hay fideos, huevo o carne, cada uno va como item aparte.
-- Incluye lo que aporte calorías aunque sea poco (salsas, aceite, queso, palta). Omite adornos sin calorías.
-- Estima los gramos de cada componente según la porción visible; la suma debe ser el peso total del plato.
-  Usa referencias de tamaño: plato llano ~26 cm, plato hondo ~20 cm, cuchara ~15 cm; 1 taza de arroz cocido
-  ~160 g; 1 huevo ~50 g; 1 presa de pollo ~120-180 g de carne; 1 pan francés ~35 g; 1 papa mediana ~150 g.
-- Si hay varios platos o vasos, incluye todo lo que se ve.
-- Lo frito o salteado absorbe aceite: refléjalo en la grasa por 100 g (papas fritas ~15 g, arroz chaufa ~6 g).
-- Bebidas: estima los mililitros como gramos.
-- Productos envasados de marca (gaseosa, galletas, golosinas, snacks): usa el nombre del producto, p. ej.
-  "Inca Kola", "galletas Oreo", con los valores de su etiqueta.
-- confidence < 0.5 si el componente está tapado o no estás seguro de qué es.
-- Nombres genéricos y simples, como "arroz blanco cocido", "pechuga de pollo a la plancha", "huevo frito".
-Los valores nutricionales son por 100 g del componente tal como se ve (cocido, frito...), según tablas de
-referencia (USDA, CENAN). Sin explicaciones. Si no hay comida en la imagen responde {"items":[]}`;
-const NAME = `Eres un asistente de nutrición. Te doy el nombre de una comida, bebida o producto (puede ser un plato
-peruano o latinoamericano). Responde SOLO con JSON válido:
-{"name":"nombre corregido en español","emoji":"un emoji de comida","serving_g":<gramos de una porción típica>,"serving":"descripción corta de la porción (p. ej. 1 plato, 1 vaso, 1 unidad)",${PER100}}
-Valores por 100 g según tablas de referencia (USDA, CENAN) o la receta típica. Si no es algo comestible
-responde {"name":""}`;
+/** Lo máximo que se espera por un cupo del proveedor (429) antes de devolver `busy`. */
+const MAX_WAIT_S = 15;
 
 const num = (v: unknown, max: number) => {
   const n = Number(v);
-  return Number.isFinite(n) && n >= 0 ? Math.min(max, Math.round(n * 10) / 10) : null;
+  return v !== null && v !== '' && Number.isFinite(n) && n >= 0 ? Math.min(max, Math.round(n * 10) / 10) : null;
 };
-/** Valores por 100 g coherentes (kcal ≈ 4P + 4C + 9G, ±35 %); si no, null. */
-function per100(x: Record<string, unknown>) {
-  const kcal = num(x.kcal, 950);
+const text = (v: unknown, max: number) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
+/**
+ * Valores por 100 g de la IA; null si faltan o no caben en 100 g. Si la energía no cuadra con los macros (±35 %) manda
+ * la mayor: o la IA se equivocó en las kcal, o son de alcohol (cerveza, pisco), que no está en los macros.
+ */
+function per100(x: Record<string, unknown>): Per100 | null {
+  const kcal = num(x.kcal ?? x.k, 950);
   const p = num(x.p, 100);
   const c = num(x.c, 100);
   const f = num(x.f, 100);
   if (kcal === null || p === null || c === null || f === null || p + c + f > 100.5) return null;
   const calc = p * 4 + c * 4 + f * 9;
-  if (kcal > 0 && Math.abs(calc - kcal) > Math.max(25, kcal * 0.35)) return null;
-  return { kcal: kcal || Math.round(calc), p, c, f };
+  const off = kcal === 0 || Math.abs(calc - kcal) > Math.max(25, kcal * 0.35);
+  return { kcal: off ? Math.min(900, Math.round(Math.max(kcal, calc))) : kcal, p, c, f };
 }
 
-/** Pide al modelo y devuelve el JSON. Un error 5xx o un JSON roto se reintenta una vez (un 429 no: es el límite). */
-async function ask(content: unknown, system: string) {
+type Failure = { error: 'busy' | 'provider' };
+const fail = ({ error }: Failure) => Response.json({ error }, { status: error === 'busy' ? 429 : 502 });
+
+/**
+ * Pide al modelo y devuelve el JSON. Un error 5xx o un JSON roto se reintenta una vez; un 429 (cupo por minuto
+ * del plan gratis) espera lo que pide el proveedor, si es poco.
+ */
+async function ask(content: unknown, system: string, maxTokens: number): Promise<{ out: Record<string, unknown> } | Failure> {
   for (let attempt = 0; attempt < 2; attempt++) {
     const res = await fetch(`${BASE_URL}/chat/completions`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${KEY}` },
       body: JSON.stringify({
         model: MODEL,
-        temperature: 0.2,
-        // El plan gratis de Groq rechaza (429) pedidos que podrían pasar de 1000 tokens de salida por minuto;
-        // un desglose usa ~150-300.
-        max_tokens: 700,
+        temperature: 0.1,
+        // El plan gratis de Groq rechaza (429) pedidos que podrían pasar de 1000 tokens de salida por minuto.
+        max_tokens: maxTokens,
         response_format: { type: 'json_object' },
         messages: [
           { role: 'system', content: system },
@@ -74,24 +57,40 @@ async function ask(content: unknown, system: string) {
     });
     if (!res.ok) {
       console.error('provider', res.status, await res.text());
+      if (res.status === 429) {
+        const wait = Number(res.headers.get('retry-after')) || 10;
+        if (attempt > 0 || wait > MAX_WAIT_S) return { error: 'busy' };
+        await new Promise((r) => setTimeout(r, wait * 1000));
+        continue;
+      }
       if (res.status >= 500 && attempt === 0) continue;
-      return null;
+      return { error: 'provider' };
     }
     const json = await res.json();
-    const text: string = json.choices?.[0]?.message?.content ?? '{}';
+    const raw: string = json.choices?.[0]?.message?.content ?? '{}';
     try {
-      return JSON.parse(text.match(/\{[\s\S]*\}/)?.[0] ?? '{}') as Record<string, unknown>;
+      return { out: JSON.parse(raw.match(/\{[\s\S]*\}/)?.[0] ?? '{}') };
     } catch {
-      console.error('json', text.slice(0, 300));
+      console.error('json', raw.slice(0, 300));
     }
   }
-  return null;
+  return { error: 'provider' };
+}
+
+/** Estimación por nombre (plato o producto). `food: null` si no es comestible. */
+async function estimate(name: string) {
+  const r = await ask(name, NAME, 300);
+  if ('error' in r) return r;
+  const v = per100(r.out);
+  const label = text(r.out.name, 60);
+  if (!v || !label) return { food: null };
+  const g = num(r.out.serving_g, 1500);
+  const emoji = text(r.out.emoji, 20);
+  return { food: { name: label, emoji: emoji && emoji.length <= 8 ? emoji : '🍽️', ...v, ...(g ? { serving: { g: Math.round(g), label: text(r.out.serving, 40) || `${Math.round(g)} g` } } : {}) } };
 }
 
 Deno.serve(async (req) => {
   try {
-    // Sin clave del proveedor el servicio no está configurado: la app lo muestra como "no disponible".
-    if (!KEY) return Response.json({ error: 'unavailable' }, { status: 503 });
     const auth = req.headers.get('Authorization') ?? '';
     const supa = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
     const {
@@ -101,49 +100,70 @@ Deno.serve(async (req) => {
 
     const body = await req.json();
 
+    // Código de barras que no está en la app, ni en la base compartida, ni en Open Food Facts. La tabla del
+    // supermercado es la de la etiqueta; si no hay, la IA estima por el nombre (`hint`: el de Open Food Facts sin valores).
+    if (typeof body.barcode === 'string') {
+      if (!/^\d{8,14}$/.test(body.barcode)) return Response.json({ error: 'barcode' }, { status: 400 });
+      const p = await storeLookup(body.barcode);
+      if (p?.per100) return Response.json({ source: 'label', food: { name: p.name, emoji: emojiFor(p), ...p.per100, ...(p.serving ? { serving: p.serving } : {}) } });
+      const name = p?.name || text(body.hint, 80);
+      if (!name || !KEY) return Response.json({ food: null, name });
+      const r = await estimate(name);
+      if ('error' in r || !r.food) return Response.json({ food: null, name });
+      return Response.json({ source: 'ai', food: { ...r.food, name, ...(p ? { emoji: emojiFor(p) } : {}), ...(p?.serving ? { serving: p.serving } : {}) } });
+    }
+
+    // Sin clave del proveedor el servicio no está configurado: la app lo muestra como "no disponible".
+    if (!KEY) return Response.json({ error: 'unavailable' }, { status: 503 });
+
     // Modo nombre: estimación de un alimento que no está en la base (texto, barato; no cuenta en el límite de fotos).
     if (typeof body.name === 'string') {
-      const name = body.name.trim().slice(0, 80);
+      const name = text(body.name, 80);
       if (name.length < 2) return Response.json({ error: 'name' }, { status: 400 });
-      const out = await ask(name, NAME);
-      if (!out) return Response.json({ error: 'provider' }, { status: 502 });
-      const v = per100(out);
-      if (!v || typeof out.name !== 'string' || !out.name.trim()) return Response.json({ food: null });
-      const g = num(out.serving_g, 1500);
-      return Response.json({
-        food: {
-          name: out.name.trim().slice(0, 60),
-          emoji: typeof out.emoji === 'string' && out.emoji.length <= 8 ? out.emoji : '🍽️',
-          ...v,
-          ...(g ? { serving: { g: Math.round(g), label: typeof out.serving === 'string' ? out.serving.slice(0, 40) : `${Math.round(g)} g` } } : {}),
-        },
-      });
+      const r = await estimate(name);
+      return 'error' in r ? fail(r) : Response.json(r);
     }
 
     const today = new Date().toISOString().slice(0, 10);
     const { data: u } = await supa.from('scan_usage').select('n').eq('user_id', user.id).eq('day', today).maybeSingle();
     if ((u?.n ?? 0) >= DAILY_LIMIT) return Response.json({ error: 'limit' }, { status: 429 });
+    // Solo cuenta la foto si el proveedor respondió.
+    const count = async () => {
+      const { error } = await supa.from('scan_usage').upsert({ user_id: user.id, day: today, n: (u?.n ?? 0) + 1 });
+      if (error) console.error('scan_usage', error.message);
+    };
 
     const { imageBase64, mime = 'image/jpeg' } = body;
     if (typeof imageBase64 !== 'string' || !imageBase64) return Response.json({ error: 'image' }, { status: 400 });
-    // Pista del usuario al corregir ("es un ají de gallina"): ayuda a reconocer el plato, se desglosa igual.
-    const hint = typeof body.hint === 'string' ? body.hint.trim().slice(0, 120) : '';
     const image = { type: 'image_url', image_url: { url: `data:${mime};base64,${imageBase64}` } };
+
+    // Modo etiqueta: lee la tabla nutricional del empaque para no copiarla a mano.
+    if (body.label === true) {
+      const r = await ask([image], LABEL, 250);
+      if ('error' in r) return fail(r);
+      await count();
+      const { out } = r;
+      const per = String(out.per) === '100' ? '100' : out.per === 'portion' ? 'portion' : null;
+      if (!per) return Response.json({ label: null });
+      return Response.json({ label: { name: text(out.name, 60), per, portion: num(out.portion, 1500), kcal: num(out.kcal, 2000), p: num(out.p, 500), c: num(out.c, 500), f: num(out.f, 500) } });
+    }
+
+    // Pista del usuario al corregir ("es un ají de gallina"): ayuda a reconocer el plato, se desglosa igual.
+    const hint = text(body.hint, 120);
     const content = hint ? [{ type: 'text', text: `El usuario dice que la foto es: "${hint}". Úsalo para reconocer el plato y desglósalo igual.` }, image] : [image];
-    const parsed = await ask(content, PHOTO);
-    if (!parsed) return Response.json({ error: 'provider' }, { status: 502 });
-    // Solo cuenta el escaneo si el proveedor respondió.
-    await supa.from('scan_usage').upsert({ user_id: user.id, day: today, n: (u?.n ?? 0) + 1 });
-    const items = ((parsed.items as Record<string, unknown>[]) ?? [])
-      .filter((i) => typeof i.name === 'string' && Number(i.grams) > 0)
+    const r = await ask(content, PHOTO, 700);
+    if ('error' in r) return fail(r);
+    await count();
+    const items = (Array.isArray(r.out.items) ? (r.out.items as Record<string, unknown>[]) : [])
+      .filter((i) => text(i.n, 60) && Number(i.g) > 0)
       .map((i) => ({
-        name: i.name as string,
-        grams: Math.min(800, Math.round(Number(i.grams))),
-        confidence: Number(i.confidence) || 0.5,
+        name: text(i.n, 60),
+        grams: Math.min(800, Math.round(Number(i.g))),
+        confidence: Number(i.s) || 0.5,
         per100: per100(i),
+        alts: (Array.isArray(i.a) ? i.a : []).map((x) => text(x, 40)).filter(Boolean).slice(0, 2),
       }));
-    const dish = typeof parsed.dish === 'string' ? parsed.dish.trim().slice(0, 60) : '';
-    return Response.json({ dish, items });
+    return Response.json({ dish: text(r.out.dish, 60), items });
   } catch (e) {
     return Response.json({ error: String(e) }, { status: 500 });
   }

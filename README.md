@@ -26,7 +26,7 @@ Proyecto personal **diseñado y construido por mí de punta a punta**: especific
 **Nutrición**
 - Onboarding de 10 pantallas que calcula calorías y macros según edad, peso, altura, objetivo, actividad y experiencia.
 - Plan diario con **133 recetas** intercambiables y porciones que se escalan a tus metas. Respeta alergias y alimentos excluidos, y tiene opciones veganas y sin gluten.
-- Registro de comidas por búsqueda (**303 alimentos**, 99 platos y productos peruanos), código de barras (Open Food Facts) y frecuentes.
+- Registro de comidas por búsqueda (**690 alimentos, platos, bebidas y productos** de Perú), código de barras (catálogo propio, Open Food Facts, supermercados peruanos o foto de la etiqueta) y frecuentes.
 - **Escáner de platos con IA:** tomas una foto y una Edge Function de Supabase identifica los alimentos y estima los gramos con un modelo de visión (Groq).
 - Agua, lista de compras y recordatorios locales.
 - **Ajuste adaptativo:** cada semana compara tu peso real con el esperado y propone ±100–150 kcal, con el motivo.
@@ -62,7 +62,7 @@ packages/core     Lógica pura: calorías y macros, plan de comidas, rutinas y s
                   100 % testeable, sin React ni red.
 apps/mobile       Expo Router: (tabs) Hoy · Plan · Entreno · Aprende, más onboarding,
                   entreno guiado, escáner y progreso.
-supabase          Migraciones 0001–0005, Edge Function scan-food y semillas de alimentos.
+supabase          Migraciones 0001–0009, Edge Function scan-food y semillas de alimentos.
 docs              Especificación, plan de ejecución, política de privacidad y ficha de Play Store.
 ```
 

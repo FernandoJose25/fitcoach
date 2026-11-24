@@ -3,22 +3,24 @@ import { ActivityIndicator, FlatList, Linking, ScrollView, Text, TextInput, View
 import Animated, { Easing, FadeIn, cancelAnimation, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Image } from 'expo-image';
-import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
-import { matchFood, scanFood, searchFoods, totals, verdict, type Food, type Goal, type Item, type ScanItem, type Targets } from '@fitcoach/core';
+import { alternatives, matchFood, scanFood, searchFoods, totals, verdict, type Food, type Goal, type Item, type ScanItem, type Targets } from '@fitcoach/core';
 import { ConsequenceCard } from '@/components/Consequence';
 import { Icon } from '@/components/Icon';
 import { Tap } from '@/components/Tap';
 import { BigButton, Card, Em, Eyebrow, Pill, Small, T } from '@/components/ui';
 import { AI_ERRORS, aiFood, callAi } from '@/lib/foodApi';
+import { prepareShot, type Shot } from '@/lib/photo';
 import { useConsequence } from '@/lib/usePlan';
 import { supabase } from '@/lib/supabase';
 import { alpha, fonts, radius, useTheme } from '@/theme';
 
-/** `base`: gramos que estimó la IA (la porción ½×…2× se aplica sobre ellos). `low`: la IA no está segura. */
-type Row = { name: string; food: Food | null; grams: number; base: number; low: boolean };
+/**
+ * `base`: gramos que estimó la IA (la porción ½×…2× se aplica sobre ellos). `low`: la IA no está segura.
+ * `options`: lo que se confunde a la vista con lo detectado, para cambiarlo de un toque.
+ */
+type Row = { name: string; food: Food | null; grams: number; base: number; low: boolean; options: Food[] };
 type State = { kind: 'camera' } | { kind: 'loading'; uri: string } | { kind: 'result'; uri: string; rows: Row[]; dish: string } | { kind: 'error'; text: string };
-type Shot = { uri: string; base64: string };
 
 /** La IA puede tardar con fotos grandes; más allá de esto se corta para no dejar el spinner girando. */
 const SCAN_TIMEOUT = 35_000;
@@ -70,13 +72,6 @@ export function PlateScan({
   const [torch, setTorch] = useState(false);
   const shot = useRef<Shot | null>(null); // la última foto, para volver a analizarla con una pista
 
-  /** Foto a 1024 px en JPEG: suficiente para la IA y liviana para subir con datos móviles. */
-  const prepare = async (uri: string): Promise<Shot> => {
-    const img = await ImageManipulator.manipulate(uri).resize({ width: 1024 }).renderAsync();
-    const { base64 } = await img.saveAsync({ compress: 0.7, format: SaveFormat.JPEG, base64: true });
-    return { uri, base64: base64 ?? '' };
-  };
-
   const analyze = async (s: Shot, hint?: string) => {
     shot.current = s;
     setState({ kind: 'loading', uri: s.uri });
@@ -89,13 +84,10 @@ export function PlateScan({
         kind: 'result',
         uri: s.uri,
         dish: r.data?.dish ?? '',
-        rows: items.map((i) => ({
-          name: i.name,
-          food: scanFood(foods, i) ?? (i.per100 ? aiFood(i.name, i.per100) : matchFood(foods, i.name)),
-          grams: i.grams,
-          base: i.grams,
-          low: i.confidence < 0.5,
-        })),
+        rows: items.map((i) => {
+          const food = scanFood(foods, i) ?? (i.per100 ? aiFood(i.name, i.per100) : matchFood(foods, i.name));
+          return { name: i.name, food, grams: i.grams, base: i.grams, low: i.confidence < 0.5, options: alternatives(foods, i, food) };
+        }),
       });
     } catch {
       setState({ kind: 'error', text: 'No pudimos procesar la foto. Inténtalo de nuevo.' });
@@ -109,7 +101,7 @@ export function PlateScan({
       if (!photo) return;
       setTorch(false);
       setState({ kind: 'loading', uri: photo.uri });
-      await analyze(await prepare(photo.uri));
+      await analyze(await prepareShot(photo.uri));
     } catch {
       setState({ kind: 'error', text: 'No pudimos procesar la foto. Inténtalo de nuevo.' });
     }
@@ -122,7 +114,7 @@ export function PlateScan({
       const uri = res.canceled ? null : res.assets?.[0]?.uri;
       if (!uri) return;
       setState({ kind: 'loading', uri });
-      await analyze(await prepare(uri));
+      await analyze(await prepareShot(uri));
     } catch {
       setState({ kind: 'error', text: 'No pudimos abrir esa foto. Prueba con otra.' });
     }
@@ -175,7 +167,7 @@ export function PlateScan({
           title={adding ? '' : rows[replacing].name}
           foods={foods}
           onPick={(food) => {
-            setRows(adding ? [...rows, { name: food.name, food, grams: food.serving?.g ?? 100, base: food.serving?.g ?? 100, low: false }] : rows.map((r, i) => (i === replacing ? { ...r, food, low: false } : r)));
+            setRows(adding ? [...rows, { name: food.name, food, grams: food.serving?.g ?? 100, base: food.serving?.g ?? 100, low: false, options: [] }] : rows.map((r, i) => (i === replacing ? { ...r, food, low: false, options: [] } : r)));
             setReplacing(null);
           }}
           onRemove={
@@ -317,6 +309,8 @@ function Result({
   const [portion, setPortion] = useState(1);
   const [hint, setHint] = useState('');
   const step = (i: number, d: number) => setRows(rows.map((r, j) => (j === i ? { ...r, grams: Math.min(2000, Math.max(0, r.grams + d)) } : r)));
+  /** Cambia lo detectado por una de sus opciones; lo anterior queda como opción por si fue sin querer. */
+  const swap = (i: number, food: Food) => setRows(rows.map((r, j) => (j === i ? { ...r, food, low: false, options: [...(r.food ? [r.food] : []), ...r.options.filter((o) => o.id !== food.id)] } : r)));
   // Porción de todo el plato respecto a lo que estimó la IA (la IA suele fallar más en cantidad que en qué es).
   const scale = (f: number) => {
     setPortion(f);
@@ -393,29 +387,48 @@ function Result({
 
         <View style={{ marginTop: 12 }}>
           {rows.map((r, i) => (
-            <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 10, borderTopWidth: 1, borderTopColor: c.line }}>
-              <Tap haptic={false} onPress={() => onReplace(i)} accessibilityHint="Elegir otro alimento" style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                <Em size={38}>{r.food?.emoji ?? '❓'}</Em>
-                <View style={{ flex: 1 }}>
-                  <T kind="bold" numberOfLines={1}>
-                    {r.food?.name ?? r.name}
-                  </T>
-                  <Small numberOfLines={1} style={!r.food ? { color: c.f } : r.low ? { color: c.acc } : undefined}>
-                    {!r.food
-                      ? 'No está en la base · toca para elegir'
-                      : r.low
-                        ? `¿Es esto? La IA no está segura · cambiar`
-                        : `${Math.round((r.food.kcal * r.grams) / 100)} kcal${r.food.src === 'ai' ? ' · estimado por IA' : ''} · cambiar`}
-                  </Small>
-                </View>
-              </Tap>
-              <Tap onPress={() => step(i, -10)} accessibilityLabel={`Restar 10 gramos de ${r.food?.name ?? r.name}`} style={stepBtn(c)}>
-                <Icon name="minus" size={16} color={c.ink} />
-              </Tap>
-              <Text style={{ color: c.ink, fontFamily: fonts.num, fontSize: 14, minWidth: 48, textAlign: 'center' }}>{r.grams} g</Text>
-              <Tap onPress={() => step(i, 10)} accessibilityLabel={`Sumar 10 gramos de ${r.food?.name ?? r.name}`} style={stepBtn(c)}>
-                <Icon name="plus" size={16} color={c.ink} />
-              </Tap>
+            <View key={i} style={{ paddingVertical: 10, borderTopWidth: 1, borderTopColor: c.line }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                <Tap haptic={false} onPress={() => onReplace(i)} accessibilityHint="Elegir otro alimento" style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                  <Em size={38}>{r.food?.emoji ?? '❓'}</Em>
+                  <View style={{ flex: 1 }}>
+                    <T kind="bold" numberOfLines={1}>
+                      {r.food?.name ?? r.name}
+                    </T>
+                    <Small numberOfLines={1} style={!r.food ? { color: c.f } : r.low ? { color: c.acc } : undefined}>
+                      {!r.food
+                        ? 'No está en la base · toca para elegir'
+                        : r.low
+                          ? `¿Es esto? La IA no está segura · cambiar`
+                          : `${Math.round((r.food.kcal * r.grams) / 100)} kcal${r.food.src === 'ai' ? ' · estimado por IA' : ''} · cambiar`}
+                    </Small>
+                  </View>
+                </Tap>
+                <Tap onPress={() => step(i, -10)} accessibilityLabel={`Restar 10 gramos de ${r.food?.name ?? r.name}`} style={stepBtn(c)}>
+                  <Icon name="minus" size={16} color={c.ink} />
+                </Tap>
+                <Text style={{ color: c.ink, fontFamily: fonts.num, fontSize: 14, minWidth: 48, textAlign: 'center' }}>{r.grams} g</Text>
+                <Tap onPress={() => step(i, 10)} accessibilityLabel={`Sumar 10 gramos de ${r.food?.name ?? r.name}`} style={stepBtn(c)}>
+                  <Icon name="plus" size={16} color={c.ink} />
+                </Tap>
+              </View>
+              {r.options.length > 0 && (
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" style={{ flexGrow: 0, marginTop: 8 }} contentContainerStyle={{ gap: 6, alignItems: 'center' }}>
+                  <Small>¿O es?</Small>
+                  {r.options.map((o) => (
+                    <Tap
+                      key={o.id}
+                      onPress={() => swap(i, o)}
+                      accessibilityLabel={`Cambiar ${r.food?.name ?? r.name} por ${o.name}`}
+                      style={{ paddingHorizontal: 10, minHeight: 32, justifyContent: 'center', borderRadius: radius.chip, backgroundColor: c.bg, borderWidth: 1, borderColor: r.low ? c.acc : c.line }}
+                    >
+                      <Text style={{ color: c.ink, fontFamily: fonts.bold, fontSize: 12 }}>
+                        {o.emoji} {o.name}
+                      </Text>
+                    </Tap>
+                  ))}
+                </ScrollView>
+              )}
             </View>
           ))}
           <Tap onPress={() => onReplace('add')} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 10, borderTopWidth: 1, borderTopColor: c.line }}>

@@ -3,7 +3,7 @@ import { ActivityIndicator, Alert, BackHandler, FlatList, ScrollView, Text, Text
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { FOODS, PRODUCT_GROUPS, frequentFoodIds, searchFoods, type Food } from '@fitcoach/core';
+import { FOODS, PRODUCT_GROUPS, barcodeOf, estimateId, frequentFoodIds, searchFoods, type Food } from '@fitcoach/core';
 import { Chip } from '@/components/Chip';
 import { ConsequenceCard } from '@/components/Consequence';
 import { Icon, type IconName } from '@/components/Icon';
@@ -20,7 +20,7 @@ import { useApp, type Via } from '@/store/useApp';
 import { useUi } from '@/store/useUi';
 import { alpha, fonts, radius, useTheme } from '@/theme';
 
-type Screen = { kind: 'home' } | { kind: 'detail'; food: Food; via: Via } | { kind: 'photo' } | { kind: 'barcode' } | { kind: 'create'; name?: string; barcode?: string };
+type Screen = { kind: 'home' } | { kind: 'detail'; food: Food; via: Via } | { kind: 'photo' } | { kind: 'barcode' } | { kind: 'create'; name?: string; barcode?: string; photo?: boolean };
 type CartItem = { food: Food; grams: number; via: Via };
 type Row =
   | { t: 'h'; key: string; label: string }
@@ -30,7 +30,10 @@ type Row =
   | { t: 'loading'; key: string };
 
 const TITLES: Record<Screen['kind'], string> = { home: 'Registrar', detail: 'Registrar', photo: 'Foto del plato', barcode: 'Código de barras', create: 'Crear alimento' };
-const viaOf = (f: Food): Via => (f.src === 'off' || f.id.startsWith('bc_') ? 'barcode' : 'manual');const quickGrams = (f: Food) => f.serving?.g ?? 100;
+const viaOf = (f: Food): Via => (barcodeOf(f.id) ? 'barcode' : 'manual');
+const quickGrams = (f: Food) => f.serving?.g ?? 100;
+/** Producto escaneado cuyos valores estimó la IA por el nombre. */
+const isEstimate = (f: Food) => f.id === estimateId(barcodeOf(f.id) ?? '');
 
 /**
  * Registrar comida. Tres vías grandes (foto del plato, código de barras, escribir) y una búsqueda que
@@ -173,6 +176,7 @@ export default function Scan() {
             cart={cartItems}
             onAdd={(grams) => addToCart([{ food: screen.food, grams, via: screen.via }])}
             onRegister={(grams) => register([{ food: screen.food, grams, via: screen.via }])}
+            onFix={isEstimate(screen.food) ? () => setScreen({ kind: 'create', name: screen.food.name, barcode: barcodeOf(screen.food.id)!, photo: true }) : undefined}
           />
         )}
         {screen.kind === 'photo' && (
@@ -194,11 +198,11 @@ export default function Scan() {
               ensure(f);
               setScreen({ kind: 'detail', food: f, via: 'barcode' });
             }}
-            onCreate={(code) => setScreen({ kind: 'create', barcode: code })}
+            onCreate={(code, name, photo) => setScreen({ kind: 'create', barcode: code, name, photo })}
             onSearch={home}
           />
         )}
-        {screen.kind === 'create' && <CreateFood initialName={screen.name} barcode={screen.barcode} onSaved={(f) => setScreen({ kind: 'detail', food: f, via: screen.barcode ? 'barcode' : 'manual' })} />}
+        {screen.kind === 'create' && <CreateFood initialName={screen.name} barcode={screen.barcode} photo={screen.photo} onSaved={(f) => setScreen({ kind: 'detail', food: f, via: screen.barcode ? 'barcode' : 'manual' })} />}
         {screen.kind === 'home' && (
           <>
             {!query && <Budget cart={cartItems} />}

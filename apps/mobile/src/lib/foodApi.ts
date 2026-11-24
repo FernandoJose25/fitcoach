@@ -1,11 +1,13 @@
 import { FunctionsFetchError, FunctionsHttpError, FunctionsRelayError } from '@supabase/supabase-js';
-import { FOODS, PRODUCT_BY_BARCODE, barcodeId, customFood, foodFromOff, foodsFromOffSearch, normalize, offId, type Food } from '@fitcoach/core';
+import { FOODS, PRODUCT_BY_BARCODE, barcodeId, customFood, estimateId, foodFromOff, foodsFromOffSearch, normalize, offId, offName, type Food } from '@fitcoach/core';
 import { supabase } from './supabase';
 import { userId } from './sync';
 import { useApp } from '@/store/useApp';
 
-/** Open Food Facts puede tardar; sin respuesta en 12 s se corta en vez de dejar un spinner infinito. */
-const OFF_TIMEOUT = 12_000;
+/** Open Food Facts puede tardar; sin respuesta en 7 s se sigue con las tiendas en vez de dejar un spinner infinito. */
+const OFF_TIMEOUT = 7_000;
+/** Las tiendas responden en 1-3 s; la estimación por IA puede sumar unos segundos. */
+const STORE_TIMEOUT = 25_000;
 const UA = { 'User-Agent': 'FitCoach/0.9 (Android)' };
 const OFF_FIELDS = 'code,product_name,product_name_es,generic_name,generic_name_es,abbreviated_product_name,brands,nutriments,serving_quantity,serving_size';
 
@@ -20,27 +22,30 @@ async function getJson(url: string, ms = OFF_TIMEOUT): Promise<{ status: number;
   }
 }
 
-export type BarcodeResult = { food: Food } | { missing: true } | { error: 'offline' | 'slow' | 'service' };
+/** `missing` con nombre: se sabe qué producto es, pero no sus valores. */
+export type BarcodeResult = { food: Food } | { missing: true; name: string } | { error: 'offline' | 'slow' | 'service' };
 
 /**
  * Producto por código de barras, de lo más cercano a lo más lejano:
- * 1. ya guardado en el teléfono; 2. base compartida de FitCoach (productos que otro usuario creó o ya leyó);
- * 3. Open Food Facts. Si nadie lo tiene → `missing` (la app ofrece crearlo).
+ * 0. catálogo de la app; 1. ya guardado en el teléfono; 2. base compartida de FitCoach (productos que otro usuario
+ * creó o ya leyó); 3. Open Food Facts; 4. supermercados peruanos y, sin tabla, estimación de la IA por el nombre
+ * (Edge Function). Si nadie lo tiene → `missing` (la app ofrece leer la etiqueta con una foto).
  */
 export async function lookupBarcode(code: string): Promise<BarcodeResult> {
   // 0. Catálogo de productos peruanos que viene con la app (gaseosas, galletas, golosinas, snacks): sin internet.
   const product = PRODUCT_BY_BARCODE[code];
   if (product && FOODS[product]) return { food: FOODS[product] };
   const local = useApp.getState().customFoods;
-  const cached = local[offId(code)] ?? local[barcodeId(code)];
+  const cached = local[barcodeId(code)] ?? local[offId(code)];
   if (cached) return { food: cached };
 
   if (supabase) {
     try {
-      const { data } = await supabase.from('foods').select('id, name_es, emoji, kcal, p, c, f, role, source').in('id', [offId(code), barcodeId(code)]).limit(1);
-      const f = data?.[0];
+      const ids = [barcodeId(code), offId(code), estimateId(code)]; // de más a menos fiable
+      const { data } = await supabase.from('foods').select('id, name_es, emoji, kcal, p, c, f, role, source, serving_g, serving_label').in('id', ids);
+      const f = data?.sort((a, b) => ids.indexOf(a.id) - ids.indexOf(b.id))[0];
       if (f) {
-        const food: Food = { id: f.id, name: f.name_es, emoji: f.emoji ?? '🏷️', kcal: Number(f.kcal), p: Number(f.p), c: Number(f.c), f: Number(f.f), role: f.role, src: f.source === 'off' ? 'off' : 'user' };
+        const food: Food = { id: f.id, name: f.name_es, emoji: f.emoji ?? '🏷️', kcal: Number(f.kcal), p: Number(f.p), c: Number(f.c), f: Number(f.f), role: f.role, src: f.source === 'off' || f.source === 'ai' ? f.source : 'user', ...(f.serving_g ? { serving: { g: Number(f.serving_g), label: f.serving_label ?? `${f.serving_g} g` } } : {}) };
         useApp.getState().addFood(food);
         return { food };
       }
@@ -49,17 +54,43 @@ export async function lookupBarcode(code: string): Promise<BarcodeResult> {
     }
   }
 
+  let name = '';
+  let failure: 'offline' | 'slow' | 'service' | null = null;
   try {
     const { status, json } = await getJson(`https://world.openfoodfacts.org/api/v2/product/${code}.json?fields=${OFF_FIELDS}`);
     // 404 = el producto no existe en Open Food Facts; otro error = el servicio falló.
-    if (status !== 200 && status !== 404) return { error: 'service' };
-    const food = status === 200 ? foodFromOff(code, (json as { product?: unknown })?.product) : null;
-    if (!food) return { missing: true };
-    useApp.getState().addFood(food);
-    return { food };
+    if (status !== 200 && status !== 404) failure = 'service';
+    const product = (json as { product?: unknown } | null)?.product;
+    const food = foodFromOff(code, product);
+    if (food) {
+      useApp.getState().addFood(food);
+      return { food };
+    }
+    name = offName(product) ?? '';
   } catch (e) {
-    return { error: (e as Error)?.name === 'AbortError' ? 'slow' : 'offline' };
+    failure = (e as Error)?.name === 'AbortError' ? 'slow' : 'offline';
   }
+
+  // Lo estimado antes por la IA sirve sin conexión; con conexión se vuelve a buscar por si ya hay tabla.
+  const estimated = local[estimateId(code)];
+  if (failure === 'offline') return estimated ? { food: estimated } : { error: 'offline' };
+  type Out = { source?: 'label' | 'ai'; food: { name: string; emoji: string; kcal: number; p: number; c: number; f: number; serving?: Food['serving'] } | null; name?: string };
+  const r = await callAi<Out>({ barcode: code, ...(name ? { hint: name } : {}) }, STORE_TIMEOUT);
+  if ('error' in r) return estimated ? { food: estimated } : failure || r.error === 'offline' ? { error: failure ?? 'offline' } : { missing: true, name };
+  const x = r.data?.food;
+  if (!x) return estimated ? { food: estimated } : { missing: true, name: r.data?.name || name };
+  const label = r.data.source === 'label';
+  const food: Food = { id: label ? barcodeId(code) : estimateId(code), name: x.name, emoji: x.emoji, kcal: x.kcal, p: x.p, c: x.c, f: x.f, role: 'M', src: label ? 'user' : 'ai', ...(x.serving ? { serving: x.serving } : {}) };
+  useApp.getState().addFood(food);
+  return { food };
+}
+
+/** Tabla nutricional leída de una foto del empaque (valores por 100 o por porción, tal como están impresos). */
+export type Label = { name: string; per: '100' | 'portion'; portion: number | null; kcal: number | null; p: number | null; c: number | null; f: number | null };
+/** Lee la tabla nutricional de una foto. `null`: no se ve una tabla legible. */
+export async function readLabel(imageBase64: string): Promise<{ label: Label | null } | { error: string }> {
+  const r = await callAi<{ label: Label | null }>({ imageBase64, mime: 'image/jpeg', label: true }, 40_000);
+  return 'error' in r ? r : { label: r.data?.label ?? null };
 }
 
 /** Productos de marca en Open Food Facts (búsqueda por texto). Vacío si falla: es un extra, no bloquea. */
@@ -89,6 +120,7 @@ export async function searchProducts(query: string): Promise<Food[]> {
 export const AI_ERRORS: Record<string, string> = {
   limit: 'Llegaste al límite de 30 fotos de hoy. Mañana se renueva; mientras tanto, búscalo por nombre.',
   provider: 'El servicio de IA no respondió. Inténtalo de nuevo en un momento.',
+  busy: 'Hay muchas fotos en este momento. Espera un minuto y vuelve a intentarlo.',
   unauthorized: 'No pudimos iniciar tu sesión. Revisa tu internet e inténtalo de nuevo.',
   offline: 'Sin conexión. La IA necesita internet; mientras tanto, búscalo por nombre.',
   slow: 'La IA tardó demasiado. Revisa tu conexión e inténtalo de nuevo.',

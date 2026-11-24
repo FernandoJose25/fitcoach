@@ -302,6 +302,196 @@ vino,Vino tinto,🍷,85,0.1,2.6,0,M,,seed
 maca,Maca en polvo,🌾,325,14,71,3.5,M,,seed
 ketchup,Kétchup,🥫,101,1,27,0.1,M,,seed
 sillao,Sillao (salsa de soya),🥫,53,8,4.9,0.6,M,"soya,gluten",seed
+agua_natural,Agua,💧,0,0,0,0,M,,seed
+agua_cebada,Agua de cebada,🥤,24,0.2,5.8,0,M,,seed
+maracuya_ref,Refresco de maracuyá,🥤,44,0.2,10.7,0.1,M,,seed
+pina_agua,Agua de piña,🍍,30,0.1,7.4,0,M,,seed
+manzana_agua,Agua de manzana,🍎,26,0.1,6.5,0,M,,seed
+membrillo_agua,Agua de membrillo,🥤,30,0.1,7.4,0,M,,seed
+carambola_ref,Refresco de carambola,🥤,36,0.2,8.7,0.1,M,,seed
+cocona_ref,Refresco de cocona,🥤,38,0.2,9.1,0.1,M,,seed
+camucamu_ref,Refresco de camu camu,🥤,36,0.1,8.8,0,M,,seed
+tamarindo_ref,Refresco de tamarindo,🥤,46,0.2,11.3,0,M,,seed
+aguaymanto_ref,Refresco de aguaymanto,🥤,40,0.3,9.6,0.1,M,,seed
+aguajina,Aguajina,🥤,62,0.4,9.5,2.4,M,,seed
+emoliente,Emoliente,🍵,28,0.1,6.9,0,M,,seed
+agua_hierbas,Infusión con azúcar,🍵,20,0,5,0,M,,seed
+te_helado,Té helado,🥤,28,0,7,0,M,,seed
+chicha_jora,Chicha de jora,🍺,42,0.5,8.2,0,M,,seed
+gaseosa_zero,Gaseosa sin azúcar,🥤,0,0,0,0,M,,seed
+refresco_sobre,Refresco de sobre,🥤,20,0,5,0,M,,seed
+jugo_pina,Jugo de piña,🧃,52,0.4,12.6,0.1,M,,seed
+jugo_manzana,Jugo de manzana,🧃,46,0.1,11.3,0.1,M,,seed
+jugo_papaya,Jugo de papaya,🧃,42,0.4,10,0.1,M,,seed
+jugo_mango,Jugo de mango,🧃,55,0.4,13.2,0.1,M,,seed
+jugo_uva,Jugo de uva,🧃,60,0.4,14.5,0.1,M,,seed
+jugo_fresa,Jugo de fresa,🧃,42,0.4,9.9,0.2,M,,seed
+jugo_zanahoria,Jugo de naranja con zanahoria,🧃,43,0.7,9.8,0.2,M,,seed
+jugo_verde,Jugo verde,🧃,35,0.5,8.1,0.1,M,,seed
+jugo_beterraga,Jugo de beterraga,🧃,42,0.9,9.5,0.1,M,,seed
+papaya_leche,Jugo de papaya con leche,🥤,60,1.8,10,1.5,M,lacteos,seed
+fresa_leche,Jugo de fresa con leche,🥤,62,1.9,10.2,1.6,M,lacteos,seed
+platano_leche,Jugo de plátano con leche,🥤,75,2.1,12.8,1.7,M,lacteos,seed
+lucuma_leche,Jugo de lúcuma con leche,🥤,90,2.3,15.6,2,M,lacteos,seed
+jugo_especial,Jugo especial,🥤,85,2,14.4,2.1,M,"lacteos,huevo",seed
+milkshake,Milkshake,🥤,112,3.2,17.4,3.3,M,lacteos,seed
+cafe_azucar,Café con azúcar,☕,17,0.2,4,0,M,,seed
+cafe_leche,Café con leche,☕,41,2,4.6,1.6,M,lacteos,seed
+frappe,Frappé,☕,100,1.5,16,3.3,M,lacteos,seed
+chocolate_taza,Chocolate caliente con leche,☕,86,3.2,11.5,3,M,lacteos,seed
+avena_bebible,Avena con leche (bebible),🥤,66,2.3,10.5,1.6,M,"lacteos,gluten",seed
+quinua_bebible,Quinua con manzana (bebible),🥤,56,1.2,11.5,0.5,M,,seed
+kiwicha_bebible,Kiwicha con leche (bebible),🥤,66,2.3,10.5,1.6,M,lacteos,seed
+maca_bebible,Maca con leche (bebible),🥤,66,2.3,10.5,1.6,M,lacteos,seed
+soya_bebible,Soya caliente de carretilla,🥤,48,2,7,1.3,M,soya,seed
+siete_semillas,Siete semillas (bebible),🥤,56,1.5,10.6,0.8,M,,seed
+champus,Champús,🥣,95,1,22,0.3,M,,seed
+chapo,Chapo de plátano,🍌,76,0.7,17.8,0.2,M,,seed
+raspadilla,Raspadilla,🍧,75,0,18.8,0,M,,seed
+cremolada,Cremolada de fruta,🍧,70,0.2,17.2,0.1,M,,seed
+marciano,Marciano de fruta,🍧,70,0.3,17,0.1,M,,seed
+kombucha,Kombucha,🥤,15,0,3.7,0,M,,seed
+pisco_sour,Pisco sour,🍸,150,0.6,13,0,M,,seed
+chilcano,Chilcano de pisco,🍸,75,0,5.5,0,M,,seed
+pepinillo,Pepinillo encurtido,🥒,14,0.5,2.4,0.3,M,,seed
+cebolla_encurtida,Cebolla encurtida,🧅,35,0.8,7.8,0.1,M,cebolla,seed
+pure_camote,Puré de camote,🍠,100,1.6,19,1.9,M,lacteos,seed
+pure_zapallo,Puré de zapallo,🎃,56,1.3,8.5,2,M,lacteos,seed
+pure_espinaca,Puré de espinaca,🥬,92,2.6,12,3.8,M,lacteos,seed
+papa_dorada,Papa dorada,🥔,135,2.2,21,4.7,M,,seed
+camote_frito,Camote frito,🍠,250,2,34,12,M,,seed
+arroz_amarillo,Arroz a la jardinera,🍚,150,3,27.5,3,M,,seed
+lenteja_guisada,Lentejas guisadas,🫘,126,7.5,18,2.6,M,,seed
+frejol_guisado,Frejoles guisados,🫘,140,7.5,20,3.3,M,,seed
+garbanzo_guisado,Garbanzos guisados,🫘,150,7.5,21,4,M,,seed
+pallar_guisado,Pallares guisados,🫘,130,7,19,2.8,M,,seed
+quinua_guisada,Quinua atamalada,🌾,135,5,17,5.2,M,lacteos,seed
+ensalada_cocida,Ensalada cocida,🥗,48,1.8,9,0.5,M,,seed
+ensalada_palta,Ensalada con palta,🥗,86,1.5,6,6.5,M,,seed
+ensalada_col,Ensalada de col con mayonesa,🥗,142,1.2,9,11.3,M,huevo,seed
+ensalada_cesar,Ensalada César,🥗,145,8,6,10,M,"lacteos,pollo,gluten",seed
+solterito,Solterito,🥗,112,5,9,6.2,M,"lacteos,cebolla",seed
+torrejita,Torrejitas de verduras,🍳,190,6,17,11,M,"huevo,gluten",seed
+huevo_revuelto,Huevos revueltos,🍳,170,12,1.5,12.8,M,huevo,seed
+omelette,Omelette,🍳,166,11.5,1.5,12.6,M,huevo,seed
+milanesa_pollo,Milanesa de pollo,🍗,246,20,12,13,M,"pollo,gluten,huevo",seed
+milanesa_res,Milanesa de carne,🥩,265,20,12,15.2,M,"res,gluten,huevo",seed
+milanesa_cerdo,Milanesa de cerdo,🥓,270,19,12,16.2,M,"cerdo,gluten,huevo",seed
+nuggets,Nuggets de pollo,🍗,282,14,17,17.5,M,"pollo,gluten",seed
+alitas,Alitas de pollo,🍗,290,22,5,20,M,pollo,seed
+pollo_frito,Pollo frito,🍗,246,24,5,14.5,M,pollo,seed
+pollo_guisado,Pollo guisado,🍗,150,17,3,7.7,M,pollo,seed
+chicharron_pollo,Chicharrón de pollo,🍗,262,20,12,14.8,M,"pollo,gluten",seed
+carne_guisada,Carne guisada,🥩,162,17,3,9,M,res,seed
+carne_mechada,Carne deshilachada,🥩,190,28,1,8.2,M,res,seed
+asado_carne,Asado de res en salsa,🥩,185,22,3,9.3,M,res,seed
+cerdo_horno,Cerdo al horno,🥓,240,25,0.5,15.2,M,cerdo,seed
+adobo,Adobo de cerdo,🥓,176,15,4,11,M,cerdo,seed
+pancita,Pancita a la parrilla,🥩,170,20,1,9.5,M,res,seed
+patita_mani,Patita con maní,🍲,162,12,8,9.2,M,"cerdo,mani",seed
+chanfainita,Chanfainita,🍲,122,9,11,4.6,M,res,seed
+sangrecita,Sangrecita,🍲,130,16,5,5,M,pollo,seed
+pescado_plancha,Pescado a la plancha,🐟,126,23,0.5,3.5,M,pescado,seed
+chicharron_pescado,Chicharrón de pescado,🐟,240,17,13,13.4,M,"pescado,gluten",seed
+escabeche,Escabeche de pescado,🐟,150,13,6,8.2,M,"pescado,cebolla",seed
+tiradito,Tiradito,🐟,95,15,4,2,M,pescado,seed
+tallarin_rojo,Tallarines rojos,🍝,152,7,20,4.8,M,"gluten,pollo",seed
+tallarin_huancaina,Tallarines a la huancaína,🍝,190,7,21,8.6,M,"gluten,lacteos",seed
+tallarin_alfredo,Fettuccine Alfredo,🍝,195,7,20,9.6,M,"gluten,lacteos",seed
+lasagna,Lasaña,🍝,162,9,13,8.2,M,"gluten,lacteos,res",seed
+chaufa_carne,Arroz chaufa de carne,🍚,178,8,24,5.5,M,"res,huevo,soya,cebolla",seed
+chaufa_mariscos,Arroz chaufa de mariscos,🍚,165,8,24,4,M,"mariscos,huevo,soya,cebolla",seed
+aeropuerto,Aeropuerto,🍚,170,7.5,24,4.9,M,"pollo,huevo,soya,cebolla,gluten",seed
+mostrito,Mostrito (pollo a la brasa con chaufa),🍗,216,14,17,10.2,M,"pollo,huevo,soya",seed
+tipakay,Ti pa kay,🍗,230,14,22,9.6,M,"pollo,gluten",seed
+chijaukay,Chi jau kay,🍗,235,17,14,12.4,M,"pollo,soya,gluten",seed
+kam_lu,Kam lu wantán,🥟,220,10,22,10.2,M,"pollo,gluten",seed
+wantan_frito,Wantán frito,🥟,322,9,33,17,M,"gluten,cerdo",seed
+tequenos,Tequeños,🥟,302,9,30,16.2,M,"gluten,lacteos",seed
+causa_atun,Causa de atún,🥔,160,6,20,6.3,M,"pescado,huevo",seed
+ocopa,Papa con ocopa,🥔,152,4,14,8.9,M,"lacteos,mani",seed
+humita,Humita,🫔,190,4,27,7.3,M,lacteos,seed
+pastel_acelga,Pastel de acelga,🥧,192,7,17,10.8,M,"huevo,gluten,lacteos",seed
+caigua_rellena,Caigua rellena,🥒,95,7,6,4.8,M,res,seed
+maki_acevichado,Maki acevichado,🍣,176,7,23,6.2,M,"pescado,soya",seed
+taco,Taco,🌮,215,10,20,10.5,M,"res,lacteos",seed
+burrito,Burrito,🌯,205,9,25,7.6,M,gluten,seed
+quesadilla,Quesadilla,🫓,290,13,27,14.4,M,"gluten,lacteos",seed
+nachos,Nachos con queso,🔺,310,7,33,16.7,M,lacteos,seed
+shawarma,Shawarma,🌯,210,12,20,9.1,M,gluten,seed
+sopa_pollo,Sopa de pollo,🍲,50,4,5,1.5,M,"pollo,gluten",seed
+sopa_verduras,Sopa de verduras,🍲,35,1.5,5.8,0.6,M,,seed
+sopa_wantan,Sopa wantán,🍲,66,5,6,2.4,M,"pollo,gluten",seed
+crema_zapallo,Crema de zapallo,🍲,56,1.5,7.5,2.2,M,lacteos,seed
+crema_verduras,Crema de verduras,🍲,55,1.6,7,2.3,M,lacteos,seed
+aguadito,Aguadito de pollo,🍲,76,5,8,2.6,M,pollo,seed
+sancochado,Sancochado,🍲,86,6,8,3.3,M,res,seed
+parihuela,Parihuela,🍲,76,10,3,2.6,M,"mariscos,pescado",seed
+chilcano_pescado,Chilcano de pescado,🍲,36,5,1,1.3,M,pescado,seed
+patasca,Patasca,🍲,88,6,9,3,M,res,seed
+pan_ciabatta,Pan ciabatta,🥖,270,9,51,3,M,gluten,seed
+pan_serrano,Pan serrano,🍞,285,9,56,2.5,M,gluten,seed
+pan_hamburguesa,Pan de hamburguesa,🍞,280,9,50,4.6,M,gluten,seed
+croissant,Croissant,🥐,406,8.2,45.8,21,M,"gluten,lacteos",seed
+pan_palta,Pan con palta,🥪,242,6,31,10.5,M,gluten,seed
+pan_huevo,Pan con huevo,🥪,260,11,32,9.7,M,"gluten,huevo",seed
+pan_queso,Pan con queso,🥪,285,12,38,9.3,M,"gluten,lacteos",seed
+pan_jamon_queso,Sándwich de jamón y queso,🥪,255,13,27,10.5,M,"gluten,lacteos,cerdo",seed
+pan_mantequilla,Pan con mantequilla,🥪,350,7.5,47,14.5,M,"gluten,lacteos",seed
+pan_mermelada,Pan con mermelada,🥪,280,7,59,1.6,M,gluten,seed
+pan_camote,Pan con camote,🥪,220,5,40,4.4,M,gluten,seed
+pan_tortilla,Pan con tortilla,🥪,250,9.5,33,8.8,M,"gluten,huevo",seed
+pan_atun,Pan con atún,🥪,225,13,27,7,M,"gluten,pescado",seed
+pan_jamonada,Pan con jamonada,🥪,265,10,36,9,M,"gluten,cerdo",seed
+butifarra,Butifarra,🥪,242,12,27,9.5,M,"gluten,cerdo,cebolla",seed
+pan_pescado,Pan con pescado frito,🥪,240,12,27,9.2,M,"gluten,pescado,cebolla",seed
+empanada_pollo,Empanada de pollo,🥟,280,9,30,13.8,M,"pollo,gluten,huevo",seed
+empanada_queso,Empanada de queso,🥟,300,9,31,15.5,M,"gluten,lacteos",seed
+crema_aji,Crema de ají,🌶️,340,1.5,6,34.5,M,huevo,seed
+crema_rocoto,Crema de rocoto,🌶️,300,1.5,7,29.5,M,lacteos,seed
+salsa_golf,Salsa golf,🥫,402,1,14,38,M,huevo,seed
+salsa_tartara,Salsa tártara,🥫,400,1,7,41,M,huevo,seed
+salsa_bbq,Salsa BBQ,🥫,152,0.8,36,0.5,M,,seed
+salsa_blanca,Salsa blanca,🥫,122,3.5,9,8,M,"lacteos,gluten",seed
+salsa_tomate,Salsa de tomate,🥫,60,1.5,9,2,M,,seed
+salsa_verde,Salsa verde de tallarín,🥫,240,5,8,21,M,lacteos,seed
+mostaza,Mostaza,🥫,66,4,5,3.6,M,,seed
+chimichurri,Chimichurri,🌿,355,1,5,37,M,,seed
+vinagreta,Vinagreta,🥫,290,0.2,8,28.6,M,,seed
+torta_choc,Torta de chocolate,🍰,370,5,50,16.8,M,"gluten,huevo,lacteos",seed
+tres_leches,Torta tres leches,🍰,250,5.5,35,9.8,M,"gluten,huevo,lacteos",seed
+cheesecake,Cheesecake,🍰,322,5.5,26,22,M,"gluten,huevo,lacteos",seed
+pie_limon,Pie de limón,🥧,300,4.5,43,12.5,M,"gluten,huevo,lacteos",seed
+pie_manzana,Pie de manzana,🥧,240,2,35,10.3,M,gluten,seed
+crema_volteada,Crema volteada,🍮,165,5.5,25,4.8,M,"huevo,lacteos",seed
+flan,Flan,🍮,125,3.5,22,2.6,M,lacteos,seed
+gelatina,Gelatina,🍮,62,1.4,14.1,0,M,,seed
+suspiro,Suspiro limeño,🍮,310,5,52,9.2,M,"huevo,lacteos",seed
+arroz_zambito,Arroz zambito,🍚,160,2.8,31,2.7,M,lacteos,seed
+turron_pepa,Turrón de Doña Pepa,🍬,420,5,66,15.2,M,"gluten,huevo",seed
+budin,Budín de pan,🍮,230,5.5,37,6.7,M,"gluten,huevo,lacteos",seed
+churro,Churro relleno,🍩,380,5,50,17.8,M,gluten,seed
+dona,Dona,🍩,420,5,50,22.2,M,"gluten,huevo,lacteos",seed
+brownie,Brownie,🍫,422,5,55,20.2,M,"gluten,huevo,lacteos",seed
+muffin,Muffin,🧁,376,5,53,16,M,"gluten,huevo,lacteos",seed
+queque_platano,Keke de plátano,🍰,330,5,50,12.2,M,"gluten,huevo",seed
+panqueque,Panqueques,🥞,227,6,28,10.1,M,"gluten,huevo,lacteos",seed
+waffle,Waffle,🧇,291,8,33,14.1,M,"gluten,huevo,lacteos",seed
+cachanga,Cachanga,🫓,370,6,50,16,M,gluten,seed
+tuna,Tuna,🍈,43,0.7,9.6,0.5,M,,seed
+carambola,Carambola,⭐,33,1,6.7,0.3,M,,seed
+guayaba,Guayaba,🍈,68,2.6,14.3,1,M,,seed
+cocona,Cocona,🍅,41,0.9,9.2,0.5,M,,seed
+aguaje,Aguaje,🥥,283,2.3,18.1,25,M,,seed
+pacae,Pacae,🫛,62,1,15.4,0.1,M,,seed
+pepino_dulce,Pepino dulce,🍈,28,0.4,6.6,0.1,M,,seed
+cereza,Cerezas,🍒,63,1.1,16,0.2,M,,seed
+mora,Moras,🫐,43,1.4,9.6,0.5,M,,seed
+caqui,Caqui,🍅,70,0.6,18.6,0.2,M,,seed
+mamey,Mamey,🍑,51,0.5,12.5,0.5,M,,seed
+nispero,Níspero,🍑,47,0.4,12.1,0.2,M,,seed
+acelga,Acelga,🥬,19,1.8,3.7,0.2,M,,seed
+nabo,Nabo,🥕,28,0.9,6.4,0.1,M,,seed
 pe_inca_kola,Inca Kola,🥤,19,0,4.3,0,M,,seed
 pe_inca_kola_zero,Inca Kola sin azúcar,🥤,0,0,0,0,M,,seed
 pe_coca_cola,Coca-Cola sabor original,🥤,42,0,10.6,0,M,,seed
@@ -310,21 +500,65 @@ pe_sprite,Sprite,🥤,0,0,0,0,M,,seed
 pe_fanta_kola,Fanta Kola Inglesa,🥤,20,0,5,0,M,,seed
 pe_fanta_naranja,Fanta naranja,🥤,25,0,6.2,0,M,,seed
 pe_guarana,Guaraná Backus,🥤,19,0,4.8,0,M,,seed
-pe_big_cola,Big Cola,🥤,48,0,11.8,0,M,,seed
+pe_big_cola,Big Cola,🥤,23,0,5.8,0,M,,seed
 pe_oro,Gaseosa Oro,🥤,47,0,11.7,0,M,,seed
 pe_kola_real,Kola Real,🥤,44,0,11,0,M,,seed
 pe_pepsi,Pepsi,🥤,44,0,11,0,M,,seed
 pe_seven_up,7 Up,🥤,40,0,10,0,M,,seed
-pe_concordia,Concordia (piña o fresa),🥤,45,0,11.3,0,M,,seed
+pe_concordia,Concordia (piña o fresa),🥤,20,0,5,0,M,,seed
 pe_frugos,Frugos del Valle durazno,🧃,40,0.2,9.8,0,M,,seed
 pe_pulp,Pulp durazno,🧃,48,0.2,11.8,0,M,,seed
-pe_cifrut,Cifrut,🧃,30,0,7.4,0,M,,seed
-pe_sporade,Sporade,🥤,9,0,2.2,0,M,,seed
-pe_gatorade,Gatorade,🥤,24,0,6,0,M,,seed
+pe_cifrut,Cifrut,🧃,24,0,5.8,0,M,,seed
+pe_sporade,Sporade,🥤,21,0,5.2,0,M,,seed
+pe_gatorade,Gatorade,🥤,25,0,6,0,M,,seed
 pe_volt,Volt (energizante),⚡,45,0,11.2,0,M,,seed
 pe_red_bull,Red Bull,⚡,45,0,11,0,M,,seed
 pe_agua,Agua San Luis / Cielo,💧,0,0,0,0,M,,seed
-pe_yogurt_gloria,Yogurt Gloria fresa,🥛,90,2.8,15,2.2,M,lacteos,seed
+pe_yogurt_gloria,Yogurt Gloria bebible,🥛,69,2.9,9.9,2,M,lacteos,seed
+pe_powerade,Powerade,🥤,22,0,5.6,0,M,,seed
+pe_electrolight,Electrolight,🥤,24,0,6,0,M,,seed
+pe_aquarius,Aquarius,🧃,20,0,5,0,M,,seed
+pe_frugos_fresh,Frugos Fresh,🧃,19,0,4.8,0,M,,seed
+pe_free_tea,Free Tea té verde limón,🥤,19,0,4.8,0,M,,seed
+pe_free_tea_rojos,Free Tea té negro frutos rojos,🥤,23,0,5.8,0,M,,seed
+pe_chicha_gloria,Chicha morada Gloria,🍇,33,0,8.3,0,M,,seed
+pe_chicha_naturale,Chicha morada Naturale,🍇,40,0.1,10,0,M,,seed
+pe_volt_zero,Volt sin azúcar,⚡,0,0,0,0,M,,seed
+pe_red_bull_zero,Red Bull sin azúcar,⚡,2,0,0.4,0,M,,seed
+pe_monster,Monster Energy,⚡,46,0,11.7,0,M,,seed
+pe_guarana_zero,Guaraná Backus sin azúcar,🥤,0,0,0,0,M,,seed
+pe_crush,Crush naranja,🥤,19,0,4.8,0,M,,seed
+pe_bio_amayu,Bio Amayu aguaymanto,🧃,34,0.2,7.9,0.1,M,,seed
+pe_agua_sabor,"Agua saborizada sin azúcar (San Carlos, San Luis)",💧,0,0,0,0,M,,seed
+pe_angel_flakes,Cereal Ángel Flakes,🥣,364,4.5,86.4,1.4,M,gluten,seed
+pe_angel_zuck,Cereal Ángel Zuck,🥣,364,4.5,90.9,0.9,M,gluten,seed
+pe_angel_chock,Cereal Ángel Chock,🥣,364,4.5,90.9,1.8,M,gluten,seed
+pe_angel_frutt,Cereal Ángel Frutt (aros de colores),🥣,380,5,88,1.5,M,gluten,seed
+pe_angel_meli,Cereal Ángel Meli,🥣,400,5,90,1.5,M,gluten,seed
+pe_angel_copix,Cereal Ángel Copix con marshmallows,🥣,380,4.5,87,1.5,M,gluten,seed
+pe_angel_almohada_choc,Almohaditas Ángel de chocolate,🥣,440,6,75,13,M,"gluten,lacteos",seed
+pe_angel_almohada_fresa,Almohaditas Ángel de fresa,🥣,430,5.5,77,11,M,"gluten,lacteos",seed
+pe_angel_life_fibra,Ángel Life Fibra,🥣,350,9,74,2,M,gluten,seed
+pe_angel_life_protein,Ángel Life Protein,🥣,364,18.2,69,1.4,M,"gluten,soya",seed
+pe_angel_life_cero,Ángel Life Cero azúcar,🥣,364,9,78,1.5,M,gluten,seed
+pe_angel_copos,Ángel copos de avena,🥣,375,9,76,4,M,gluten,seed
+pe_angel_semillitas,Ángel Natura Semillitas,🥣,400,10,85,2,M,gluten,seed
+pe_zucaritas,Zucaritas (Kellogg's),🥣,367,3.3,88,0.5,M,gluten,seed
+pe_corn_flakes,Corn Flakes (Kellogg's),🥣,367,6.7,83.3,0.5,M,gluten,seed
+pe_froot_loops,Froot Loops (Kellogg's),🥣,380,5.5,85,2.5,M,gluten,seed
+pe_choco_krispis,Choco Krispis (Kellogg's),🥣,380,5,86.7,2,M,gluten,seed
+pe_corn_flakes_nestle,Corn Flakes Nestlé sin gluten,🥣,367,6.7,80,2,M,,seed
+pe_chocapic,Chocapic (Nestlé),🥣,373,8.3,74.7,4.7,M,gluten,seed
+pe_trix,Trix (Nestlé),🥣,380,4.7,78.3,5.3,M,gluten,seed
+pe_fitness,Fitness original (Nestlé),🥣,347,9,70.7,3.4,M,gluten,seed
+pe_fitness_miel,Fitness miel y almendras (Nestlé),🥣,337,9.7,62,5.7,M,"gluten,frutos",seed
+pe_cheerios_miel,Cheerios miel y almendras,🥣,378,8,78,4,M,"gluten,frutos",seed
+pe_bells_flakes,Corn Flakes Bell's,🥣,370,7,84,0.5,M,gluten,seed
+pe_quaker,Avena Quaker tradicional,🥣,375,12.5,62,7.5,M,gluten,seed
+pe_tres_ositos,Avena 3 Ositos clásica,🥣,352,11.7,56,8,M,gluten,seed
+pe_tres_ositos_quinua,Avena 3 Ositos con quinua,🥣,373,16.1,63.3,6.7,M,gluten,seed
+pe_milo,Milo en polvo,🍫,388,7.6,76,5.5,M,"gluten,lacteos",seed
+pe_ecco,Ecco (cebada instantánea),☕,360,5,85,0,M,gluten,seed
 pe_soda_field,Galletas Soda Field,🍘,403,7.8,75,7.8,M,gluten,seed
 pe_soda_san_jorge,Galletas Soda San Jorge,🍘,437,8,75,12,M,gluten,seed
 pe_casino_menta,Casino sabor menta,🍪,488,4.7,70,21,M,gluten,seed
@@ -368,6 +602,9 @@ pe_chomp,Chomp (Victoria),🍪,490,5,66,23,M,gluten,seed
 pe_bells,Galletas saladitas Bell's,🍘,478,6.5,71.7,17.4,M,gluten,seed
 pe_union_kiwicha,Galletas integrales con kiwicha (Unión),🍘,467,9,70.5,16.5,M,gluten,seed
 pe_wafer,Wafer de chocolate (Mabel's),🧇,494,6.9,69,21,M,gluten,seed
+pe_bimboletes,Bimboletes (Bimbo),🍰,340,5.7,43,17.1,M,"gluten,huevo,lacteos",seed
+pe_paneton_todinno,Panetón Todinno,🍞,351,9.1,52.1,11.8,M,"gluten,huevo,lacteos",seed
+pe_paneton_costa,Panetón Costa,🍞,360,9.7,50.5,13.2,M,"gluten,huevo,lacteos",seed
 pe_sublime,Sublime clásico,🍫,537,10,50,33,M,"mani,lacteos",seed
 pe_sublime_blanco,Sublime blanco,🍫,566,9.9,51.6,35.6,M,"mani,lacteos",seed
 pe_sublime_stick,Sublime stick,🍫,540,7.9,52.9,32.9,M,"mani,lacteos",seed
@@ -395,6 +632,21 @@ pe_halls,Halls,🍬,390,0,97,0,M,,seed
 pe_chupetin,Chupetín,🍭,390,0,97,0,M,,seed
 pe_marshmallows,Marshmallows (bombones),🍡,320,2,80,0,M,,seed
 pe_helado_princesa,Helado Princesa (Nestlé),🍨,219,4.2,23.7,11.9,M,"lacteos,gluten",seed
+pe_ambrosito,Gomitas Ambrosito,🍬,376,6.4,86.8,0.4,M,,seed
+pe_gusanos,Gomitas Gusanos (Ambrosoli),🍬,344,5.6,80.4,0,M,,seed
+pe_loop,Gomitas ácidas Loop (Ambrosoli),🍬,359,6,82.8,0.4,M,,seed
+pe_fini,Gomitas Fini,🍬,360,6,83,0,M,,seed
+pe_frugele,Frugelé,🍬,350,1,86,0,M,,seed
+pe_trululu,Gomitas Trululu,🍬,340,5,80,0,M,,seed
+pe_globo_pop,Globo Pop,🍭,379,0,94.7,0,M,,seed
+pe_mentos,Mentos,🍬,390,0,94,1.5,M,,seed
+pe_hersheys,Hershey's con leche,🍫,515,6,55,30,M,lacteos,seed
+pe_canonazo,Cañonazo,🍫,510,4.2,63.3,26.7,M,"gluten,lacteos",seed
+pe_lentejas,"Lentejas de chocolate (Chin Chin, D’Onofrio)",🍫,500,3.1,65.6,25,M,lacteos,seed
+pe_beso_moza,Beso de Moza,🍫,430,4,66,16.5,M,"gluten,lacteos",seed
+pe_twix,Twix,🍫,495,4.5,65,24,M,"gluten,lacteos",seed
+pe_milky_way,Milky Way,🍫,449,4,71,17,M,"gluten,lacteos",seed
+pe_trident,Chicle Trident sin azúcar,🍬,160,0,40,0,M,,seed
 pe_lays,Papas Lay's clásicas,🥔,520,5,59,29,M,,seed
 pe_doritos,Doritos queso atrevido,🔺,510,6,58,28,M,lacteos,seed
 pe_cheetos,Cheetos horneados,🧀,479,5.9,67.6,20.6,M,lacteos,seed
@@ -408,3 +660,32 @@ pe_stax,Lay's Stax queso cheddar,🥔,516,6,60,28,M,lacteos,seed
 pe_karinto_mani,Maní crocante Karinto,🥜,531,18,45,31,M,"mani,gluten",seed
 pe_karinto_habas,Habas saladas Karinto,🫘,453,25,50,17,M,,seed
 pe_canchita,Canchita salada,🌽,445,8,65,17,M,,seed
+pe_leche_gloria,Leche Gloria azul (evaporada),🥫,133,6.6,10,7.5,M,lacteos,seed
+pe_leche_gloria_zero,Leche Gloria Zero Lacto (evaporada),🥫,99,6.5,10,3.7,M,lacteos,seed
+pe_leche_gloria_uht,Leche Gloria UHT entera,🥛,60,3.1,4.7,3.2,M,lacteos,seed
+pe_leche_choc_gloria,Leche chocolatada Gloria,🥛,81,3,13.8,1.5,M,lacteos,seed
+pe_leche_choc_laive,Leche chocolatada Laive,🥛,63,1,12,1.2,M,lacteos,seed
+pe_yogurt_gloria_vaso,Yogurt Gloria frutado (vaso),🥛,108,3.8,18.1,2.3,M,lacteos,seed
+pe_batishake,Yogurt Gloria Batishake,🥛,107,4.2,17,2.5,M,"lacteos,gluten",seed
+pe_yogurt_slim,Yogurt Gloria Slim,🥛,35,3.5,5.2,0.1,M,lacteos,seed
+pe_yogurt_actibio,Yogurt Gloria ActiBio,🥛,50,3.4,8,0.5,M,lacteos,seed
+pe_yogurt_griego_gloria,Yogurt griego Gloria,🥛,95,5,10,3.9,M,lacteos,seed
+pe_yogurt_laive,Yogurt Laive bebible,🥛,64,2.7,10,1.5,M,lacteos,seed
+pe_yogurt_laive_bio,Yogurt Laive Bio,🥛,80,2.7,13.2,1.8,M,lacteos,seed
+pe_yogurt_sbelt,Yogurt Laive Sbelt,🥛,40,3,6.5,0.2,M,lacteos,seed
+pe_yogurt_mix,Yogurt Laive Mix,🥛,98,3.2,15.2,2.8,M,"lacteos,gluten",seed
+pe_yogurt_griego_laive,Yogurt griego Laive,🥛,76,5,8,2.7,M,lacteos,seed
+pe_manjar_bonle,Manjarblanco Bonlé,🍮,260,6,50.3,4,M,lacteos,seed
+pe_atun_florida,Atún Florida en aceite (filete),🥫,150,26,0,5,M,pescado,seed
+pe_atun_florida_agua,Atún Florida en agua,🥫,110,26,0,1,M,pescado,seed
+pe_atun_grated,Grated de atún Florida en aceite,🥫,230,23,1,15,M,pescado,seed
+pe_mermelada_fanny,Mermelada Fanny de fresa,🍓,227,0.7,56,0,M,,seed
+pe_nutella,Nutella,🍫,539,6.3,57.5,30.9,M,"frutos,lacteos",seed
+pe_pita_integral,Pan pita integral Bimbo,🫓,215,10,40,1.7,M,gluten,seed
+pe_pan_artesano,Pan Artesano Bimbo,🍞,244,8.9,47.8,1.7,M,gluten,seed
+pe_mayonesa_alacena,Mayonesa Alacena,🥫,660,0.7,3,72,M,huevo,seed
+pe_ketchup_alacena,Kétchup Alacena,🥫,120,1,28,0,M,,seed
+pe_tari,Ají Tarí (Alacena),🌶️,332,1,10,32,M,huevo,seed
+pe_huancaina_alacena,Huancaína Alacena,🌶️,302,2.5,10,28,M,lacteos,seed
+pe_hot_dog_sf,Hot dog San Fernando,🌭,225,11,7,17,M,"pollo,cerdo",seed
+pe_jamonada_sf,Jamonada San Fernando,🥓,198,12,6,14,M,cerdo,seed

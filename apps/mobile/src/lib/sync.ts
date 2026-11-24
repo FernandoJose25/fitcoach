@@ -75,7 +75,7 @@ async function pushDay(uid: string, day: string) {
         await supabase!.from('foods').upsert(
           own.map((f) => {
             const off = f.id.startsWith('off_');
-            return { id: f.id, name_es: f.name, emoji: f.emoji, kcal: f.kcal, p: f.p, c: f.c, f: f.f, role: f.role, barcode: off ? f.id.slice(4) : null, source: off ? 'off' : f.src === 'ai' ? 'ai' : 'user' };
+            return { id: f.id, name_es: f.name, emoji: f.emoji, kcal: f.kcal, p: f.p, c: f.c, f: f.f, role: f.role, barcode: off ? f.id.slice(4) : null, source: off ? 'off' : f.src === 'ai' ? 'ai' : 'user', serving_g: f.serving?.g ?? null, serving_label: f.serving?.label ?? null };
           }),
           { onConflict: 'id', ignoreDuplicates: true },
         ),
@@ -134,10 +134,10 @@ async function pull(uid: string) {
   const { data: wsets } = ok(await supabase!.from('workout_sets').select('day, exercise, set_no, reps, weight_kg').eq('user_id', uid));
   const { data: wlogs } = ok(await supabase!.from('weight_logs').select('day, kg').eq('user_id', uid));
   const ownIds = [...new Set((meals ?? []).flatMap((m) => m.meal_log_items.map((i) => i.food_id as string)))].filter((id) => !FOODS[id]);
-  const { data: own } = ownIds.length ? ok(await supabase!.from('foods').select('id, name_es, emoji, kcal, p, c, f, role, source').in('id', ownIds)) : { data: [] };
+  const { data: own } = ownIds.length ? ok(await supabase!.from('foods').select('id, name_es, emoji, kcal, p, c, f, role, source, serving_g, serving_label').in('id', ownIds)) : { data: [] };
 
   for (const f of own ?? []) {
-    useApp.getState().addFood({ id: f.id, name: f.name_es, emoji: f.emoji ?? '🏷️', kcal: Number(f.kcal), p: Number(f.p), c: Number(f.c), f: Number(f.f), role: f.role, src: f.source === 'off' || f.source === 'ai' ? f.source : 'user' });
+    useApp.getState().addFood({ id: f.id, name: f.name_es, emoji: f.emoji ?? '🏷️', kcal: Number(f.kcal), p: Number(f.p), c: Number(f.c), f: Number(f.f), role: f.role, src: f.source === 'off' || f.source === 'ai' ? f.source : 'user', ...(f.serving_g ? { serving: { g: Number(f.serving_g), label: f.serving_label ?? `${f.serving_g} g` } } : {}) });
   }
   const known = allFoods();
   const logs: Record<string, LogItem[]> = {};
