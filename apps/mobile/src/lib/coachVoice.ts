@@ -60,16 +60,19 @@ export const cue = {
       `¡Arrancamos${withName(name, 0.8)}! Primer ejercicio: ${exercise}. ${target}. Ponte en posición.`,
       `¡Hora de entrenar${withName(name, 0.8)}! Empezamos con ${exercise}. ${target}. Colócate.`,
     ]),
-  work: (set: number, sets: number, target: string, name?: string) =>
-    set === sets && sets > 1
-      ? pick([`¡Última serie${withName(name, 0.6)}! ${target}. ¡Dalo todo!`, `¡Última! ${target}. ¡Termina fuerte!`])
+  /** `exercise`: en circuito cambia de ejercicio en cada serie, así que se dice cuál toca. */
+  work: (set: number, sets: number, target: string, name?: string, exercise?: string) => {
+    const what = exercise ? `${exercise}, ` : '';
+    return set === sets && sets > 1
+      ? pick([`¡Última serie${withName(name, 0.6)}! ${what}${target}. ¡Dalo todo!`, `¡Última de ${exercise ?? 'este ejercicio'}! ${target}. ¡Termina fuerte!`])
       : set === 1
-        ? pick([`¡Vamos! Serie uno de ${sets}. ${target}.`, `Serie uno. ${target}. ¡Con todo${withName(name)}!`])
-        : pick([`¡Vamos! Serie ${set} de ${sets}. ${target}.`, `Serie ${set}. ${target}. ¡Tú puedes${withName(name)}!`, `¡Otra más! Serie ${set}, ${target}.`]),
+        ? pick([`¡Vamos! ${what}serie uno de ${sets}. ${target}.`, `${exercise ?? 'Serie uno'}. ${target}. ¡Con todo${withName(name)}!`])
+        : pick([`¡Vamos! ${what}serie ${set} de ${sets}. ${target}.`, `${what}serie ${set}. ${target}. ¡Tú puedes${withName(name)}!`, `¡Otra vuelta! ${what}${target}.`]);
+  },
   midSet: (muscle: string) => (Math.random() < 0.7 ? pick(TECHNIQUE[muscle] ?? KEEP_GOING) : pick(KEEP_GOING)),
   rest: (secs: number, nextExercise: string | null, name?: string) =>
     nextExercise
-      ? pick([`¡Ejercicio terminado${withName(name)}! Descansa ${secs} segundos. Lo que sigue: ${nextExercise}.`, `¡Excelente! Recupera ${secs} segundos. Ahora viene ${nextExercise}.`])
+      ? pick([`¡Buena serie${withName(name)}! Descansa ${secs} segundos. Sigue: ${nextExercise}.`, `¡Excelente! ${secs} segundos y vamos con ${nextExercise}.`, `¡Eso es! Respira ${secs} segundos. Ahora viene ${nextExercise}.`])
       : pick([`¡Buena serie! Descansa ${secs} segundos.`, `¡Muy bien${withName(name)}! Recupera, ${secs} segundos.`, `¡Eso es! Respira, ${secs} segundos de descanso.`]),
   restEnding: (set: number, nextExercise: string | null) => (nextExercise ? `Diez segundos. Prepárate para ${nextExercise}.` : `Diez segundos. Prepárate para la serie ${set}.`),
   timeUp: () => pick(['¡Tiempo!', '¡Listo, tiempo!']),

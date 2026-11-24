@@ -1,5 +1,21 @@
-import type { Profile, Where } from './types';
+import type { Focus, Profile, Where } from './types';
 import { EXERCISES } from './data/exercises';
+
+/**
+ * Descanso entre series. Como cada circuito alterna músculos distintos, cada músculo igual descansa
+ * 2–3 min entre sus propias series (lo que pide la hipertrofia) sin pausas largas para el usuario.
+ */
+export const REST_SEC = 30;
+
+/** Músculos que suma cada zona prioritaria. */
+export const FOCUS_MUSCLES: Record<Focus, string[]> = {
+  pecho: ['pecho'],
+  espalda: ['espalda'],
+  hombro: ['hombro'],
+  brazos: ['biceps', 'triceps'],
+  core: ['core'],
+  pierna: ['pierna'],
+};
 
 export const TRAIN_DAYS = { 3: [0, 2, 4], 4: [0, 1, 3, 4], 5: [0, 1, 2, 4, 5], 6: [0, 1, 2, 3, 4, 5] } as const; // 0 = lunes
 export const SPLIT = {
@@ -34,14 +50,33 @@ export interface PlannedExercise {
   sets: number;
   reps: string;
   restSec: number;
+  /** Circuito (0 = A): sus ejercicios se hacen seguidos, una serie de cada uno, y se repiten por vueltas. */
+  block: number;
+  /** Ejercicio o serie extra por la zona que el usuario quiere priorizar. */
+  focus?: boolean;
 }
 
+type Draft = Omit<PlannedExercise, 'block'>;
+
+/**
+ * Sesión del split: ejercicios del lugar (rotan con `occurrence`), series según nivel, repeticiones según
+ * objetivo (ganar músculo: pesado; perder grasa: más repeticiones). La zona prioritaria suma una serie a
+ * sus dos primeros ejercicios y, si la sesión la trabaja poco, un ejercicio más. Sale ordenada en circuitos.
+ */
 export function buildSession(kind: SessionKind, occurrence: number, p: Profile): PlannedExercise[] {
   const where = p.where === 'home' ? 'home' : 'gym';
+  const slots: { m: string; extra: boolean }[] = MUSCLES[kind].map((m) => ({ m, extra: false }));
+  const countOf = (m: string) => slots.filter((s) => s.m === m).length;
+  for (const f of (p.focus ?? []).slice(0, 2)) {
+    // Brazos: el de los dos que menos aparece en la sesión (bíceps en empuje, tríceps en tirón).
+    const m = [...(FOCUS_MUSCLES[f] ?? [])].sort((a, b) => countOf(a) - countOf(b))[0];
+    if (m && countOf(m) < 3) slots.push({ m, extra: true });
+  }
+  const focusMuscles = new Set((p.focus ?? []).flatMap((f) => FOCUS_MUSCLES[f] ?? []));
   const used = new Set<string>();
   const count: Record<string, number> = {};
-  const out: PlannedExercise[] = [];
-  MUSCLES[kind].forEach((m, i) => {
+  const out: Draft[] = [];
+  slots.forEach(({ m, extra }, i) => {
     const list = EXERCISES[m][where];
     count[m] ??= 0;
     let name: string | null = null;
@@ -56,7 +91,9 @@ export function buildSession(kind: SessionKind, occurrence: number, p: Profile):
     if (!name) return;
     used.add(name);
     const compound = i < 2;
-    const sets = p.level === 'beginner' ? 3 : p.level === 'advanced' ? (compound ? 5 : 4) : compound ? 4 : 3;
+    const base = p.level === 'beginner' ? 3 : p.level === 'advanced' ? (compound ? 5 : 4) : compound ? 4 : 3;
+    const prioritized = focusMuscles.has(m) && !extra && count[m] <= 2;
+    const sets = Math.min(5, base + (prioritized ? 1 : 0));
     const reps =
       p.goal === 'gain'
         ? compound
@@ -69,10 +106,34 @@ export function buildSession(kind: SessionKind, occurrence: number, p: Profile):
           : compound
             ? '8–10'
             : '10–12';
-    out.push({ name, muscle: m, compound, sets, reps, restSec: compound ? 120 : 75 });
+    out.push({ name, muscle: m, compound, sets, reps, restSec: REST_SEC, ...(extra || prioritized ? { focus: true } : {}) });
   });
+  return toCircuits(out);
+}
+
+/**
+ * Reparte la sesión en circuitos de 2–3 ejercicios de músculos distintos (los compuestos primero):
+ * así nunca se encadenan series del mismo músculo y el entreno se siente variado.
+ */
+export function toCircuits(exs: Draft[]): PlannedExercise[] {
+  const n = exs.length;
+  const blocks = Math.ceil(n / 3);
+  const left = [...exs];
+  const out: PlannedExercise[] = [];
+  for (let b = 0; b < blocks; b++) {
+    const size = Math.floor(n / blocks) + (b < n % blocks ? 1 : 0);
+    const block: Draft[] = [];
+    while (block.length < size && left.length) {
+      const i = left.findIndex((e) => !block.some((x) => x.muscle === e.muscle));
+      block.push(left.splice(Math.max(0, i), 1)[0]);
+    }
+    out.push(...block.map((e) => ({ ...e, block: b })));
+  }
   return out;
 }
+
+/** Letra del circuito: 0 → "A". */
+export const circuitLetter = (block: number) => String.fromCharCode(65 + block);
 
 /** Sesión que corresponde a un día de la semana (0 = lunes) o null si es descanso. */
 export function sessionForWeekday(weekday: number, p: Profile): { kind: SessionKind; occurrence: number } | null {
@@ -98,9 +159,16 @@ export function nextSession(weekday: number, p: Profile): { kind: SessionKind; o
 export const alternativeExercises = (muscle: string, where: Where, used: string[]): string[] =>
   (EXERCISES[muscle]?.[where] ?? []).filter((n) => !used.includes(n));
 
-/** Sesión con los cambios de ejercicio del usuario aplicados (índice → nombre). */
+/**
+ * Sesión con los cambios de ejercicio del usuario aplicados (índice → nombre). Un cambio guardado con
+ * otro orden de la sesión (otra zona prioritaria, versión anterior) se ignora si no es del mismo músculo.
+ */
 export const applySwaps = (session: PlannedExercise[], swaps: Record<number, string>): PlannedExercise[] =>
-  session.map((e, i) => (swaps[i] ? { ...e, name: swaps[i] } : e));
+  session.map((e, i) => {
+    const n = swaps[i];
+    const ok = n && (EXERCISES[e.muscle]?.gym.includes(n) || EXERCISES[e.muscle]?.home.includes(n));
+    return ok ? { ...e, name: n } : e;
+  });
 
 /** Serie registrada: repeticiones y peso (0 = solo peso corporal). */
 export interface SetLog {
@@ -166,7 +234,7 @@ export function programWeek(start: string, today: string): number {
 }
 
 /** Ejercicios isométricos: se cuentan en segundos, no en repeticiones. */
-export const isTimed = (name: string) => /plancha/i.test(name);
+export const isTimed = (name: string) => /^plancha/i.test(name); // "Flexión con giro a plancha lateral" va por repeticiones
 
 /** Último número del rango de repeticiones ("6–8" → 8). */
 export const repsHigh = (reps: string) => {
@@ -174,9 +242,9 @@ export const repsHigh = (reps: string) => {
   return n ? Number(n[n.length - 1]) : 10;
 };
 
-/** Duración de una serie: ~3 s por repetición + 5 s para colocarse, en múltiplos de 5 (20–60 s). Isométricos: 40 s. */
+/** Duración de una serie: ~3 s por repetición + 5 s para colocarse, en múltiplos de 5 (20–60 s). Isométricos: 30 s. */
 export function setSeconds(ex: Pick<PlannedExercise, 'name' | 'reps'>): number {
-  if (isTimed(ex.name)) return 40;
+  if (isTimed(ex.name)) return 30;
   return Math.min(60, Math.max(20, Math.round((repsHigh(ex.reps) * 3 + 5) / 5) * 5));
 }
 
@@ -186,17 +254,30 @@ export type Step =
   | { kind: 'work'; ex: number; set: number; secs: number }
   | { kind: 'rest'; ex: number; set: number; secs: number };
 
-/** Línea de tiempo completa: preparación, cada serie y su descanso (no hay descanso tras la última serie). */
+/**
+ * Línea de tiempo en circuitos: en cada vuelta, una serie de cada ejercicio del circuito con su descanso
+ * entre medio; al terminar las vueltas, el circuito siguiente. No hay descanso tras la última serie.
+ */
 export function buildTimeline(exs: PlannedExercise[], prepSec = 10): Step[] {
-  const out: Step[] = [{ kind: 'prep', ex: 0, set: 1, secs: prepSec }];
-  exs.forEach((e, i) => {
-    for (let set = 1; set <= e.sets; set++) {
-      out.push({ kind: 'work', ex: i, set, secs: setSeconds(e) });
-      const last = i === exs.length - 1 && set === e.sets;
-      if (!last) out.push({ kind: 'rest', ex: set === e.sets ? i + 1 : i, set: set === e.sets ? 1 : set + 1, secs: e.restSec });
-    }
+  const works: { ex: number; set: number }[] = [];
+  for (const b of [...new Set(exs.map((e) => e.block))]) {
+    const idx = exs.flatMap((e, i) => (e.block === b ? [i] : []));
+    const rounds = Math.max(...idx.map((i) => exs[i].sets));
+    for (let set = 1; set <= rounds; set++) for (const i of idx) if (exs[i].sets >= set) works.push({ ex: i, set });
+  }
+  const out: Step[] = [{ kind: 'prep', ex: works[0]?.ex ?? 0, set: 1, secs: prepSec }];
+  works.forEach((w, k) => {
+    out.push({ kind: 'work', ...w, secs: setSeconds(exs[w.ex]) });
+    const next = works[k + 1];
+    if (next) out.push({ kind: 'rest', ...next, secs: exs[w.ex].restSec });
   });
   return out;
+}
+
+/** Ejercicio de la última serie antes del paso `i` (−1 si aún no hubo ninguna). */
+export function prevWorkEx(t: Step[], i: number): number {
+  for (let k = i - 1; k >= 0; k--) if (t[k].kind === 'work') return t[k].ex;
+  return -1;
 }
 
 export const timelineSeconds = (t: Step[]) => t.reduce((a, s) => a + s.secs, 0);

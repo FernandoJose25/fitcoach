@@ -24,9 +24,11 @@ import {
   applySwaps,
   buildSession,
   buildTimeline,
+  circuitLetter,
   isTimed,
   lastSet,
   newRecords,
+  prevWorkEx,
   programWeek,
   repsLow,
   sessionForDay,
@@ -118,23 +120,26 @@ export default function Workout() {
     if (voiceRef.current) speak(text);
   }, []);
 
+  /** Indicación por voz del paso `i`. En circuito casi cada serie cambia de ejercicio: entonces se nombra. */
   const announce = useCallback(
-    (step: Step) => {
+    (i: number) => {
+      const step = timeline[i];
       const e = exercises[step.ex];
       const v = valueOf(step.ex, step.set);
       const target = isTimed(e.name) ? `${v.r} segundos` : `${v.r} repeticiones${v.w ? ` con ${fmtKg(v.w)} kilos` : ''}`;
+      const changed = prevWorkEx(timeline, i) !== step.ex;
       if (step.kind === 'work') {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-        say(cue.work(step.set, e.sets, target, firstName));
+        say(cue.work(step.set, e.sets, target, firstName, changed ? e.name : undefined));
       } else if (step.kind === 'rest') {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy).catch(() => {});
-        // En el descanso, `ex`/`set` son de la serie que viene: set 1 = cambia de ejercicio.
-        say(cue.rest(step.secs, step.set === 1 ? e.name : null, firstName));
+        // En el descanso, `ex`/`set` son de la serie que viene.
+        say(cue.rest(step.secs, changed ? e.name : null, firstName));
       } else {
         say(cue.start(e.name, target, firstName));
       }
     },
-    [exercises, firstName, say, valueOf],
+    [exercises, firstName, say, timeline, valueOf],
   );
 
   const log = useCallback(
@@ -169,7 +174,7 @@ export default function Workout() {
       s.mid = false;
       if (s.i >= timeline.length) return finish();
       s.endsAt = base + timeline[s.i].secs * 1000;
-      announce(timeline[s.i]);
+      announce(s.i);
       render();
     },
     [announce, finish, log, timeline],
@@ -179,7 +184,7 @@ export default function Workout() {
   useEffect(() => {
     allowNotifications();
     prepareVoice();
-    announce(timeline[0]);
+    announce(0);
     return () => {
       stopVoice();
       cancelAll();
@@ -209,7 +214,7 @@ export default function Workout() {
         say(cue.midSet(e.muscle));
       } else if (!s.done && !s.mid && step.kind === 'rest' && step.secs >= 25 && left === 10) {
         s.mid = true;
-        say(cue.restEnding(step.set, step.set === 1 ? e.name : null));
+        say(cue.restEnding(step.set, prevWorkEx(timeline, s.i) !== step.ex ? e.name : null));
       }
       setNow(t);
     }, 200);
@@ -348,7 +353,7 @@ export default function Workout() {
               {ex.name}
             </Text>
             <Small style={{ marginTop: 4, fontSize: 13 }}>
-              {ex.sets} series × {isTimed(ex.name) ? `${setSeconds(ex)} s` : `${ex.reps} reps`}
+              Circuito {circuitLetter(ex.block)} · {ex.sets} series × {isTimed(ex.name) ? `${setSeconds(ex)} s` : `${ex.reps} reps`}
             </Small>
           </View>
           <Countdown key={`c-${s.i}`} total={step.secs * 1000} remaining={remaining} paused={s.paused !== null} ver={s.ver} color={tint}>

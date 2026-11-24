@@ -339,7 +339,8 @@ const ROWS: Record<string, Row> = {
   sillao: ['🥫', 'Sillao (salsa de soya)', 53, 8, 4.9, 0.6, 'M', 'soya,gluten'],
 };
 
-export const FOODS: Record<string, Food> = Object.fromEntries(
+/** Alimentos y platos. El catálogo completo (`FOODS` del índice) suma los productos envasados (products.ts). */
+export const BASE_FOODS: Record<string, Food> = Object.fromEntries(
   Object.entries(ROWS).map(([id, [emoji, name, kcal, p, c, f, role, tag]]) => [
     id,
     { id, emoji, name, kcal, p, c, f, role, ...(tag ? { tag } : {}) },

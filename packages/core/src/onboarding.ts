@@ -1,4 +1,4 @@
-import type { Activity, Goal, Level, Pace, Where } from './types';
+import type { Activity, Focus, Goal, Level, Pace, Where } from './types';
 
 export interface Option<T extends string = string> {
   value: T;
@@ -12,10 +12,24 @@ export const MINOR_NOTICE =
 export const isMinor = (age: number) => age < 18;
 
 export const GOALS: Option<Goal>[] = [
-  { value: 'gain', label: 'Ganar masa muscular', desc: 'Más calorías, proteína alta y entrenamiento de fuerza' },
-  { value: 'lose', label: 'Perder grasa', desc: 'Déficit moderado cuidando tu músculo' },
-  { value: 'maintain', label: 'Mantener peso', desc: 'Comer lo que gastas y mejorar tu composición' },
+  { value: 'gain', label: 'Ganar masa muscular', desc: 'Más calorías, proteína alta y circuitos de fuerza pesados' },
+  { value: 'lose', label: 'Perder grasa', desc: 'Déficit moderado y circuitos con más repeticiones para quemar más' },
+  { value: 'maintain', label: 'Mantener peso', desc: 'Comer lo que gastas y tonificar' },
 ];
+/** Zonas que se pueden priorizar: más ejercicios y series para ellas, sin dejar de entrenar el resto. */
+export const FOCUS_OPTIONS: Option<Focus>[] = [
+  { value: 'pecho', label: 'Pecho', desc: 'Pectorales más llenos y fuertes' },
+  { value: 'espalda', label: 'Espalda', desc: 'Espalda ancha y buena postura' },
+  { value: 'hombro', label: 'Hombros', desc: 'Hombros anchos y redondos' },
+  { value: 'brazos', label: 'Brazos', desc: 'Bíceps y tríceps' },
+  { value: 'core', label: 'Abdomen', desc: 'Core fuerte y marcado' },
+  { value: 'pierna', label: 'Piernas y glúteos', desc: 'Cuádriceps, femorales y glúteos' },
+];
+export const MAX_FOCUS = 2;
+/** "Pecho y Brazos", o "Equilibrado" si no hay zona prioritaria. */
+export const focusLabel = (focus?: Focus[]) =>
+  focus?.length ? focus.map((f) => FOCUS_OPTIONS.find((o) => o.value === f)?.label ?? f).join(' y ') : 'Equilibrado';
+
 export const PACES: Option<Pace>[] = [
   { value: 'slow', label: 'Lento', desc: 'Recomendado si empiezas: menos grasa acumulada' },
   { value: 'moderate', label: 'Moderado', desc: 'Equilibrio entre velocidad y calidad' },
@@ -44,9 +58,11 @@ export const MEALS_OPTIONS: Option<'3' | '4' | '5'>[] = [
   { value: '5', label: '5', desc: 'Dos colaciones, ideal si te cuesta comer mucho' },
 ];
 
+// Primero el objetivo y la zona a trabajar: es lo que el usuario viene a decir.
 export const STEPS = [
+  { id: 'goal', title: '¿Qué quieres lograr?', subtitle: 'Define tus calorías y cómo entrenas: más fuerza para ganar músculo, más repeticiones para quemar grasa.' },
+  { id: 'focus', title: '¿Qué zona quieres trabajar más?', subtitle: 'Le damos más ejercicios y series sin descuidar el resto. Elige hasta dos, o ninguna para un plan equilibrado.' },
   { id: 'basics', title: 'Tus datos básicos', subtitle: 'Los usamos para estimar cuántas calorías gasta tu cuerpo en reposo.' },
-  { id: 'goal', title: '¿Qué quieres lograr?', subtitle: 'Tu objetivo define cuántas calorías comes por encima o por debajo de tu mantenimiento.' },
   { id: 'pace', title: 'Ritmo de progreso', subtitle: '' },
   { id: 'level', title: 'Tu experiencia entrenando', subtitle: 'Ajustamos series, repeticiones y volumen a tu nivel.' },
   { id: 'where', title: '¿Dónde y cuánto entrenas?', subtitle: 'En casa y en gimnasio los ejercicios son distintos.' },

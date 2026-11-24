@@ -3,7 +3,7 @@ import { ActivityIndicator, Alert, BackHandler, FlatList, ScrollView, Text, Text
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { FOODS, frequentFoodIds, searchFoods, type Food } from '@fitcoach/core';
+import { FOODS, PRODUCT_GROUPS, frequentFoodIds, searchFoods, type Food } from '@fitcoach/core';
 import { Chip } from '@/components/Chip';
 import { ConsequenceCard } from '@/components/Consequence';
 import { Icon, type IconName } from '@/components/Icon';
@@ -30,8 +30,7 @@ type Row =
   | { t: 'loading'; key: string };
 
 const TITLES: Record<Screen['kind'], string> = { home: 'Registrar', detail: 'Registrar', photo: 'Foto del plato', barcode: 'Código de barras', create: 'Crear alimento' };
-const viaOf = (f: Food): Via => (f.src === 'off' || f.id.startsWith('bc_') ? 'barcode' : 'manual');
-const quickGrams = (f: Food) => f.serving?.g ?? 100;
+const viaOf = (f: Food): Via => (f.src === 'off' || f.id.startsWith('bc_') ? 'barcode' : 'manual');const quickGrams = (f: Food) => f.serving?.g ?? 100;
 
 /**
  * Registrar comida. Tres vías grandes (foto del plato, código de barras, escribir) y una búsqueda que
@@ -62,6 +61,7 @@ export default function Scan() {
   const [query, setQuery] = useState('');
   const [brand, setBrand] = useState<{ q: string; foods: Food[]; loading: boolean }>({ q: '', foods: [], loading: false });
   const [ai, setAi] = useState<{ busy: boolean; msg: string | null }>({ busy: false, msg: null });
+  const [group, setGroup] = useState<number | null>(null); // categoría de productos envasados abierta
   const slotLabel = plan[slot]?.label ?? 'mi día';
   const home = () => setScreen({ kind: 'home' });
 
@@ -137,7 +137,7 @@ export default function Scan() {
   };
 
   const cartItems = useMemo(() => cart.map((i) => ({ foodId: i.food.id, grams: i.grams })), [cart]);
-  const rows = useRows({ query, foods, customFoods, allLogs, brand, ai, estimate, setScreen });
+  const rows = useRows({ query, foods, customFoods, allLogs, brand, ai, estimate, setScreen, group });
 
   return (
     <View style={{ flex: 1, backgroundColor: c.bg, paddingTop: insets.top + 12, paddingBottom: insets.bottom + 12 }}>
@@ -188,7 +188,16 @@ export default function Scan() {
             onRegister={(items) => register([...cart, ...items.map((i) => ({ ...i, via: 'scan' as const }))])}
           />
         )}
-        {screen.kind === 'barcode' && <BarcodeScan onFood={open} onCreate={(code) => setScreen({ kind: 'create', barcode: code })} onSearch={home} />}
+        {screen.kind === 'barcode' && (
+          <BarcodeScan
+            onFood={(f) => {
+              ensure(f);
+              setScreen({ kind: 'detail', food: f, via: 'barcode' });
+            }}
+            onCreate={(code) => setScreen({ kind: 'create', barcode: code })}
+            onSearch={home}
+          />
+        )}
         {screen.kind === 'create' && <CreateFood initialName={screen.name} barcode={screen.barcode} onSaved={(f) => setScreen({ kind: 'detail', food: f, via: screen.barcode ? 'barcode' : 'manual' })} />}
         {screen.kind === 'home' && (
           <>
@@ -226,6 +235,12 @@ export default function Scan() {
                       <Method icon="edit" title="Crear" sub="Con sus valores" onPress={() => setScreen({ kind: 'create' })} />
                     </View>
                     <Suggestion slot={slot} label={slotLabel} onAdd={(items) => addToCart(items)} />
+                    <Eyebrow style={{ marginTop: 14, marginBottom: 8 }}>Productos envasados</Eyebrow>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0 }} contentContainerStyle={{ gap: 8, paddingVertical: 2, paddingHorizontal: 2 }}>
+                      {PRODUCT_GROUPS.map((g, i) => (
+                        <Chip key={g.label} small label={g.label} on={group === i} onPress={() => setGroup(group === i ? null : i)} />
+                      ))}
+                    </ScrollView>
                   </>
                 )
               }
@@ -267,7 +282,9 @@ function useRows({
   ai,
   estimate,
   setScreen,
+  group,
 }: {
+  group: number | null;
   query: string;
   foods: Record<string, Food>;
   customFoods: Record<string, Food>;
@@ -280,6 +297,10 @@ function useRows({
   return useMemo(() => {
     const q = query.trim();
     const out: Row[] = [];
+    if (!q && group !== null && PRODUCT_GROUPS[group]) {
+      const g = PRODUCT_GROUPS[group];
+      return [{ t: 'h', key: 'h-grp', label: g.label }, ...g.ids.flatMap((id) => (foods[id] ? [{ t: 'food' as const, key: `g-${id}`, food: foods[id] }] : []))];
+    }
     if (!q) {
       const recent = frequentFoodIds(allLogs, 12).flatMap((id) => (foods[id] ? [foods[id]] : []));
       if (recent.length) out.push({ t: 'h', key: 'h-rec', label: 'Recientes' }, ...recent.map((f) => ({ t: 'food' as const, key: `r-${f.id}`, food: f })));
@@ -308,7 +329,7 @@ function useRows({
     if (brand.loading) out.push({ t: 'loading', key: 'loading' });
     if (local.length) out.push(...more);
     return out;
-  }, [query, foods, customFoods, allLogs, brand, ai, estimate, setScreen]);
+  }, [query, foods, customFoods, allLogs, brand, ai, estimate, setScreen, group]);
 }
 
 /** Lo que queda del día (con lo que ya está en el plato): kcal y macros. */

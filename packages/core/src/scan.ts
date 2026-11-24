@@ -47,7 +47,23 @@ export function matchFood(foods: Record<string, Food>, name: string): Food | nul
   return bestScore >= 0.75 ? best : null;
 }
 
-export type Verdict = { level: 'ok' | 'protein' | 'tight' | 'over'; text: string };
+/**
+ * Alimento para un componente detectado en una foto. Si el nombre coincide del todo con uno de la base, se
+ * usa ese. Si coincide solo en parte ("arroz frito" → Arroz) y la IA estimó valores, la base solo vale cuando
+ * sus kcal se parecen (±30 %): si no, `null` y se registra la estimación de la IA (el frito lleva aceite).
+ */
+export function scanFood(foods: Record<string, Food>, item: Pick<ScanItem, 'name' | 'per100'>): Food | null {
+  const m = matchFood(foods, item.name);
+  if (!m) return null;
+  const ai = item.per100?.kcal;
+  if (!ai || !m.kcal) return m;
+  const ft = tokens(m.name);
+  if (tokens(item.name).every((w) => ft.includes(w))) return m;
+  const ratio = ai / m.kcal;
+  return ratio > 1.3 || ratio < 0.7 ? null : m;
+}
+
+export type Verdict ={ level: 'ok' | 'protein' | 'tight' | 'over'; text: string };
 
 export function verdict(item: { kcal: number; p: number }, eaten: { kcal: number }, t: Targets, goal: Goal): Verdict {
   const after = eaten.kcal + item.kcal;

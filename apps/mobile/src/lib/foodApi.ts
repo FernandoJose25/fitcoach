@@ -1,5 +1,5 @@
 import { FunctionsFetchError, FunctionsHttpError, FunctionsRelayError } from '@supabase/supabase-js';
-import { barcodeId, customFood, foodFromOff, foodsFromOffSearch, normalize, offId, type Food } from '@fitcoach/core';
+import { FOODS, PRODUCT_BY_BARCODE, barcodeId, customFood, foodFromOff, foodsFromOffSearch, normalize, offId, type Food } from '@fitcoach/core';
 import { supabase } from './supabase';
 import { userId } from './sync';
 import { useApp } from '@/store/useApp';
@@ -28,6 +28,9 @@ export type BarcodeResult = { food: Food } | { missing: true } | { error: 'offli
  * 3. Open Food Facts. Si nadie lo tiene → `missing` (la app ofrece crearlo).
  */
 export async function lookupBarcode(code: string): Promise<BarcodeResult> {
+  // 0. Catálogo de productos peruanos que viene con la app (gaseosas, galletas, golosinas, snacks): sin internet.
+  const product = PRODUCT_BY_BARCODE[code];
+  if (product && FOODS[product]) return { food: FOODS[product] };
   const local = useApp.getState().customFoods;
   const cached = local[offId(code)] ?? local[barcodeId(code)];
   if (cached) return { food: cached };

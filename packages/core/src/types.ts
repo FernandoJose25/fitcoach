@@ -5,6 +5,8 @@ export type Activity = 'low' | 'active' | 'very_active';
 export type Level = 'beginner' | 'intermediate' | 'advanced';
 export type Where = 'gym' | 'home';
 export type SlotType = 'D' | 'S' | 'A' | 'C'; // desayuno, snack, almuerzo, cena
+/** Zona del cuerpo que el usuario quiere priorizar en el entreno. */
+export type Focus = 'pecho' | 'espalda' | 'hombro' | 'brazos' | 'core' | 'pierna';
 
 export interface Profile {
   name: string;
@@ -21,6 +23,8 @@ export interface Profile {
   mealsPerDay: 3 | 4 | 5;
   allergies: string[];
   avoid: string[];
+  /** Zonas a priorizar (máx. 2). Vacío = equilibrado; sin dato = aún no lo eligió (perfiles anteriores). */
+  focus?: Focus[];
 }
 
 export interface Targets {
@@ -49,6 +53,8 @@ export interface Food {
   serving?: { g: number; label: string };
   /** De dónde salen los valores: catálogo (sin campo), producto de marca, creado por el usuario o estimado por IA. */
   src?: 'off' | 'user' | 'ai';
+  /** Palabras extra para la búsqueda (categoría de un producto envasado: "galleta", "gaseosa"…). */
+  kw?: string;
 }
 
 export interface Item {

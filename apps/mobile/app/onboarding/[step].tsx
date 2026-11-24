@@ -8,12 +8,14 @@ import {
   ALLERGIES,
   AVOIDS,
   DAYS_OPTIONS,
+  GOALS,
   LEVELS,
   MEALS_OPTIONS,
   MINOR_NOTICE,
   PLACES,
   STEPS,
   computeTargets,
+  focusLabel,
   goalOptions,
   isMinor,
   paceOptions,
@@ -21,7 +23,9 @@ import {
   type Profile,
 } from '@fitcoach/core';
 import { Chip, OptionCard } from '@/components/Chip';
+import { FocusPicker } from '@/components/FocusPicker';
 import { Tap } from '@/components/Tap';
+import { GOAL_IMAGE } from '@/lib/refImages';
 import { BigButton, Card, H, Small, T, easeOut, flipIn } from '@/components/ui';
 import { fmt } from '@/lib/format';
 import { useApp } from '@/store/useApp';
@@ -108,7 +112,7 @@ export default function OnboardingStep() {
     }
     if (step < LAST) router.push(`/onboarding/${step + 1}`);
     else {
-      commitProfile(draft as Profile);
+      commitProfile({ ...draft, focus: draft.focus ?? [] } as Profile);
       router.replace('/(tabs)');
     }
   };
@@ -167,7 +171,9 @@ export default function OnboardingStep() {
             </>
           )}
 
-          {meta.id === 'goal' && goalOptions(draft.age ?? 25).map((o) => <OptionCard key={o.value} title={o.label} desc={o.desc} on={draft.goal === o.value} onPress={() => pick({ goal: o.value })} />)}
+          {meta.id === 'goal' &&
+            goalOptions(draft.age ?? 25).map((o) => <OptionCard key={o.value} title={o.label} desc={o.desc} image={GOAL_IMAGE[o.value]} on={draft.goal === o.value} onPress={() => pick({ goal: o.value })} />)}
+          {meta.id === 'focus' && <FocusPicker value={draft.focus ?? []} onChange={(focus) => setDraft({ focus })} sex={draft.sex} />}
           {meta.id === 'pace' && paceOptions(draft.age ?? 25).map((o) => <OptionCard key={o.value} title={o.label} desc={o.desc} on={draft.pace === o.value} onPress={() => pick({ pace: o.value })} />)}
           {meta.id === 'level' && LEVELS.map((o) => <OptionCard key={o.value} title={o.label} desc={o.desc} on={draft.level === o.value} onPress={() => pick({ level: o.value })} />)}
           {meta.id === 'where' && (
@@ -217,6 +223,9 @@ export default function OnboardingStep() {
               </Card>
               <Card>
                 <T>
+                  {GOALS.find((g) => g.value === draft.goal)?.label} · Zona: {focusLabel(draft.focus)}
+                </T>
+                <T style={{ marginTop: 8 }}>
                   {PLACES.find((p) => p.value === draft.where)?.label} · {draft.daysPerWeek} días · {LEVELS.find((l) => l.value === draft.level)?.label}
                 </T>
                 <T style={{ marginTop: 8 }}>{draft.mealsPerDay} comidas al día</T>

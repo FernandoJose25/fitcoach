@@ -33,6 +33,8 @@ const config: ExpoConfig = {
     ['expo-splash-screen', { image: './assets/splash-icon.png', resizeMode: 'contain', backgroundColor: '#0B0F14' }],
     'expo-notifications',
     ['expo-camera', { cameraPermission: 'FitCoach usa la cámara para leer códigos de barras y analizar tu plato.', recordAudioAndroid: false }],
+    // Galería para analizar una foto de comida que ya tomaste (Android 13+ usa el selector de fotos, sin permiso).
+    ['expo-image-picker', { photosPermission: 'FitCoach abre tu galería para analizar la foto de un plato.', cameraPermission: false, microphonePermission: false }],
   ],
   experiments: { typedRoutes: true },
   extra: { eas: { projectId: 'b17cddb9-2d31-44b1-8eb8-5a2944e130df' } },

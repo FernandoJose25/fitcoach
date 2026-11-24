@@ -7,12 +7,14 @@ import { FORMATS, householdMeasure, portionAmount, recipeFormats, recipeVersions
 import { GUIDES } from '../data/guides';
 import { MEAL_GUIDES } from '../data/guides-meals';
 import { VERSIONS } from '../data/versions';
-import { buildSession, buildTimeline, exerciseHistory, programWeek, sessionForDay, setSeconds, timelineSeconds, lastSet, alternativeExercises, nextSession, setScore, TRAIN_DAYS, volumeOf } from '../workouts';
-import { matchFood, verdict } from '../scan';
+import { REST_SEC, applySwaps, buildSession, buildTimeline, exerciseHistory, programWeek, sessionForDay, setSeconds, timelineSeconds, lastSet, alternativeExercises, nextSession, setScore, toCircuits, TRAIN_DAYS, volumeOf } from '../workouts';
+import { STEPS, focusLabel } from '../onboarding';
+import { matchFood, scanFood, verdict } from '../scan';
 import { customFood, foodFromOff, foodsFromOffSearch, frequentFoodIds, searchFoods } from '../foodlog';
 import { compensate, consequence, consequenceLines } from '../consequence';
 import { compareVersions, updateFor } from '../releases';
-import { FOODS } from '../data/foods';
+import { FOODS } from '../data/catalog';
+import { PRODUCTS, PRODUCT_BY_BARCODE, PRODUCT_GROUPS } from '../data/products';
 import { RECIPES } from '../data/recipes';
 import { EXERCISES, exerciseImages } from '../data/exercises';
 import { learnFoods, macroRows, mealShares, weeksPerKg } from '../learn';
@@ -318,6 +320,23 @@ describe('contenido', () => {
       }),
     );
   });
+  it('productos envasados: 4 categorías, porción, códigos únicos y búsqueda por categoría', () => {
+    expect(PRODUCT_GROUPS.map((g) => g.label)).toEqual(['Gaseosas y bebidas', 'Galletas', 'Golosinas', 'Snacks']);
+    PRODUCT_GROUPS.forEach((g) => expect(g.ids.length, g.label).toBeGreaterThanOrEqual(12));
+    Object.values(PRODUCTS).forEach((p) => {
+      expect(FOODS[p.id]).toBe(p);
+      expect(p.role).toBe('M');
+      expect(p.serving?.g).toBeGreaterThan(0);
+    });
+    expect(FOODS[PRODUCT_BY_BARCODE['7750182006088']].name).toBe('Inca Kola');
+    expect(PRODUCT_BY_BARCODE['7622201383589']).toBe('pe_oreo');
+    Object.keys(PRODUCT_BY_BARCODE).forEach((code) => expect(code).toMatch(/^\d{8,13}$/));
+    const names = (q: string) => searchFoods(FOODS, q).map((f) => f.id);
+    expect(names('galleta')).toContain('pe_oreo');
+    expect(names('gaseosa')).toContain('pe_inca_kola');
+    expect(names('golosina')).toContain('pe_sublime');
+    expect(names('oreo')).toEqual(['pe_oreo']);
+  });
   it('un plato con varias etiquetas se veta por cualquiera de ellas', () => {
     expect(isBanned(FOODS.lomo_saltado, bannedTags({ allergies: [], avoid: ['Cebolla'] }))).toBe(true);
     expect(isBanned(FOODS.lomo_saltado, bannedTags({ allergies: ['Mariscos'], avoid: [] }))).toBe(false);
@@ -370,23 +389,66 @@ describe('entreno guiado', () => {
     expect(programWeek('2026-11-16', '2026-11-23')).toBe(2);
     expect(programWeek('2026-11-16', '2026-12-31')).toBe(7);
   });
-  it('duración de serie según repeticiones; plancha por tiempo', () => {
+  it('duración de serie según repeticiones; plancha por tiempo (30 s)', () => {
     expect(setSeconds({ name: 'Press banca', reps: '6–8' })).toBe(30);
     expect(setSeconds({ name: 'Curl', reps: '12–15' })).toBe(50);
-    expect(setSeconds({ name: 'Plancha', reps: '10–12' })).toBe(40);
+    expect(setSeconds({ name: 'Plancha', reps: '10–12' })).toBe(30);
+    expect(setSeconds({ name: 'Flexión con giro a plancha lateral', reps: '10–12' })).toBe(40);
   });
-  it('línea de tiempo: preparación, series y descansos, sin descanso al final', () => {
+  it('línea de tiempo en circuitos: una serie de cada ejercicio por vuelta, 30 s de descanso, sin descanso al final', () => {
     const exs = buildSession('push', 0, base);
     const t = buildTimeline(exs);
     const sets = exs.reduce((n, e) => n + e.sets, 0);
     expect(t[0].kind).toBe('prep');
     expect(t.filter((s) => s.kind === 'work')).toHaveLength(sets);
-    expect(t.filter((s) => s.kind === 'rest')).toHaveLength(sets - 1);
+    const rests = t.filter((s) => s.kind === 'rest');
+    expect(rests).toHaveLength(sets - 1);
+    expect(rests.every((s) => s.secs === REST_SEC)).toBe(true);
     expect(t[t.length - 1].kind).toBe('work');
-    // El descanso tras la última serie de un ejercicio anuncia el siguiente ejercicio.
-    const firstSets = exs[0].sets;
-    expect(t[firstSets * 2]).toMatchObject({ kind: 'rest', ex: 1, set: 1 });
-    expect(timelineSeconds(t) / 60).toBeGreaterThan(20);
+    // Tras la serie 1 del primer ejercicio no viene su serie 2 sino otro músculo del circuito.
+    expect(t[1]).toMatchObject({ kind: 'work', ex: 0, set: 1 });
+    expect(t[2]).toMatchObject({ kind: 'rest', ex: 1, set: 1 });
+    expect(exs[1].muscle).not.toBe(exs[0].muscle);
+    // Nunca dos series seguidas del mismo ejercicio.
+    const works = t.filter((s) => s.kind === 'work');
+    works.slice(1).forEach((w, i) => expect(w.ex).not.toBe(works[i].ex));
+    expect(timelineSeconds(t) / 60).toBeGreaterThan(15);
+  });
+  it('circuitos de 2–3 ejercicios de músculos distintos en sesiones variadas', () => {
+    // Tirón y pierna tienen 3–4 ejercicios del mismo músculo: ahí un circuito repite músculo.
+    for (const kind of ['push', 'upper', 'full'] as const) {
+      const exs = buildSession(kind, 0, base);
+      for (const b of new Set(exs.map((e) => e.block))) {
+        const m = exs.filter((e) => e.block === b).map((e) => e.muscle);
+        expect(m.length).toBeGreaterThanOrEqual(2);
+        expect(m.length).toBeLessThanOrEqual(3);
+        expect(new Set(m).size, `${kind} ${b}`).toBe(m.length);
+      }
+    }
+    expect(toCircuits([1, 2, 3, 4, 5, 6, 7].map((i) => ({ name: String(i), muscle: String(i), compound: false, sets: 3, reps: '10', restSec: 30 }))).map((e) => e.block)).toEqual([0, 0, 0, 1, 1, 2, 2]);
+  });
+  it('zona prioritaria: más series y un ejercicio extra si la sesión la trabaja poco', () => {
+    const plain = buildSession('push', 0, base);
+    const arms = buildSession('push', 0, { ...base, focus: ['brazos'] });
+    expect(arms).toHaveLength(plain.length + 1);
+    expect(arms.find((e) => e.muscle === 'biceps')?.focus).toBe(true); // en empuje suma bíceps
+    const tri = (s: typeof plain) => s.filter((e) => e.muscle === 'triceps').reduce((n, e) => n + e.sets, 0);
+    expect(tri(arms)).toBe(tri(plain) + 2);
+    // Pierna ya tiene 4 ejercicios en el día de pierna: solo suma series, no ejercicios.
+    const legs = buildSession('lower', 0, { ...base, focus: ['pierna'] });
+    expect(legs).toHaveLength(buildSession('lower', 0, base).length);
+    expect(legs.filter((e) => e.focus)).toHaveLength(2);
+    expect(buildSession('upper', 0, { ...base, focus: ['pierna', 'core'] }).filter((e) => e.muscle === 'pierna' || e.muscle === 'core')).toHaveLength(2);
+    expect(focusLabel(['pecho', 'brazos'])).toBe('Pecho y Brazos');
+    expect(focusLabel([])).toBe('Equilibrado');
+  });
+  it('un cambio de ejercicio de otro músculo (orden anterior) se ignora', () => {
+    const s = buildSession('push', 0, base);
+    expect(applySwaps(s, { 0: 'Curl con barra' })[0].name).toBe(s[0].name);
+    expect(applySwaps(s, { 0: alternativeExercises(s[0].muscle, 'gym', [s[0].name])[0] })[0].name).not.toBe(s[0].name);
+  });
+  it('el onboarding empieza por el objetivo y la zona a trabajar', () => {
+    expect(STEPS.slice(0, 3).map((s) => s.id)).toEqual(['goal', 'focus', 'basics']);
   });
 });
 
@@ -435,6 +497,15 @@ describe('escáner: emparejar nombres de la IA con la base', () => {
     expect(m('tomates')).toBe('tomate');
     expect(m('Lomo saltado')).toBe('lomo_saltado');
   });
+  it('foto: coincidencia parcial con kcal muy distintas usa la estimación de la IA', () => {
+    const s = (name: string, kcal?: number) => scanFood(FOODS, { name, per100: kcal ? { kcal, p: 3, c: 25, f: 6 } : null })?.id ?? null;
+    expect(s('arroz frito', 185)).toBeNull(); // Arroz blanco son 130 kcal
+    expect(s('arroz blanco cocido', 135)).toBe('arroz');
+    expect(s('pechuga de pollo', 300)).toBe('pollo'); // coincide del todo: manda la base
+    expect(s('arroz frito')).toBe('arroz'); // sin estimación, lo más parecido
+    expect(s('pechuga de pollo frita', 260)).toBeNull();
+    expect(s('pechuga de pollo a la plancha', 170)).toBe('pollo');
+  });
   it('no confunde papa con papaya y devuelve null si nada se parece', () => {
     expect(m('papaya picada')).toBe('papaya');
     expect(m('papa sancochada')).toBe('papa');
@@ -458,7 +529,9 @@ describe('registro', () => {
     const atun = searchFoods(FOODS, 'atun');
     expect(atun.map((f) => f.id)).toContain('atun');
     expect(atun.every((f) => f.name.startsWith('Atún'))).toBe(true);
-    expect(searchFoods(FOODS, 'mani').map((f) => f.id)).toEqual(['mani', 'pbut']);
+    const mani = searchFoods(FOODS, 'mani').map((f) => f.id);
+    expect(mani[0]).toBe('mani');
+    expect(mani).toEqual(expect.arrayContaining(['pbut', 'pe_karinto_mani', 'pe_turron_mani']));
     expect(searchFoods(FOODS, 'zzz')).toEqual([]);
   });
   it('frecuentes: distintos, del más reciente al más antiguo', () => {

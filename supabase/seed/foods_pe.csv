@@ -302,3 +302,109 @@ vino,Vino tinto,🍷,85,0.1,2.6,0,M,,seed
 maca,Maca en polvo,🌾,325,14,71,3.5,M,,seed
 ketchup,Kétchup,🥫,101,1,27,0.1,M,,seed
 sillao,Sillao (salsa de soya),🥫,53,8,4.9,0.6,M,"soya,gluten",seed
+pe_inca_kola,Inca Kola,🥤,19,0,4.3,0,M,,seed
+pe_inca_kola_zero,Inca Kola sin azúcar,🥤,0,0,0,0,M,,seed
+pe_coca_cola,Coca-Cola sabor original,🥤,42,0,10.6,0,M,,seed
+pe_coca_cola_zero,Coca-Cola sin azúcar,🥤,0,0,0,0,M,,seed
+pe_sprite,Sprite,🥤,0,0,0,0,M,,seed
+pe_fanta_kola,Fanta Kola Inglesa,🥤,20,0,5,0,M,,seed
+pe_fanta_naranja,Fanta naranja,🥤,25,0,6.2,0,M,,seed
+pe_guarana,Guaraná Backus,🥤,19,0,4.8,0,M,,seed
+pe_big_cola,Big Cola,🥤,48,0,11.8,0,M,,seed
+pe_oro,Gaseosa Oro,🥤,47,0,11.7,0,M,,seed
+pe_kola_real,Kola Real,🥤,44,0,11,0,M,,seed
+pe_pepsi,Pepsi,🥤,44,0,11,0,M,,seed
+pe_seven_up,7 Up,🥤,40,0,10,0,M,,seed
+pe_concordia,Concordia (piña o fresa),🥤,45,0,11.3,0,M,,seed
+pe_frugos,Frugos del Valle durazno,🧃,40,0.2,9.8,0,M,,seed
+pe_pulp,Pulp durazno,🧃,48,0.2,11.8,0,M,,seed
+pe_cifrut,Cifrut,🧃,30,0,7.4,0,M,,seed
+pe_sporade,Sporade,🥤,9,0,2.2,0,M,,seed
+pe_gatorade,Gatorade,🥤,24,0,6,0,M,,seed
+pe_volt,Volt (energizante),⚡,45,0,11.2,0,M,,seed
+pe_red_bull,Red Bull,⚡,45,0,11,0,M,,seed
+pe_agua,Agua San Luis / Cielo,💧,0,0,0,0,M,,seed
+pe_yogurt_gloria,Yogurt Gloria fresa,🥛,90,2.8,15,2.2,M,lacteos,seed
+pe_soda_field,Galletas Soda Field,🍘,403,7.8,75,7.8,M,gluten,seed
+pe_soda_san_jorge,Galletas Soda San Jorge,🍘,437,8,75,12,M,gluten,seed
+pe_casino_menta,Casino sabor menta,🍪,488,4.7,70,21,M,gluten,seed
+pe_casino_chocolate,Casino sabor chocolate,🍪,488,4.7,72,21,M,gluten,seed
+pe_casino_vainilla,Casino sabor vainilla,🍪,488,4.7,67.4,21,M,gluten,seed
+pe_casino_fresa,Casino sabor fresa,🍪,488,4.7,70,21,M,gluten,seed
+pe_casino_alfajor,Casino alfajor,🍪,480,4.5,70,20,M,gluten,seed
+pe_casino_banada,Casino bañada,🍪,513,7.7,64.1,25.6,M,"gluten,lacteos",seed
+pe_oreo,Oreo,🍪,472,4.2,69.4,19.4,M,gluten,seed
+pe_club_social,Club Social original,🍘,458,8.3,70.8,16.7,M,gluten,seed
+pe_club_social_integral,Club Social integral,🍘,423,7.7,65.4,15.4,M,gluten,seed
+pe_ritz,Ritz sabor queso,🍘,484,6.7,59,25,M,"gluten,lacteos",seed
+pe_chokosoda,Choco Soda Field,🍪,500,4.2,69.4,22.2,M,gluten,seed
+pe_dona_pepa,Doña Pepa,🍪,461,4.3,78,13,M,gluten,seed
+pe_hony_bran,Hony Bran,🍪,424,6.1,75.8,12.1,M,gluten,seed
+pe_chips_ahoy,Chips Ahoy!,🍪,467,4.4,68.9,20,M,gluten,seed
+pe_morochas,Morochas,🍪,480,5,66,22,M,gluten,seed
+pe_sublime_galleta,Galleta Sublime,🍪,560,10.1,49.4,35.8,M,"gluten,mani,lacteos",seed
+pe_tentacion,Tentación chocolate (Field),🍪,480,5,70,20,M,gluten,seed
+pe_glacitas,Glacitas (Field),🍪,470,5,70,19,M,gluten,seed
+pe_vainilla_field,Vainilla Field,🍪,440,6.5,75,12.5,M,gluten,seed
+pe_animalitos,Animalitos Field,🍪,440,6.5,74,13,M,gluten,seed
+pe_margarita,Margarita (Nestlé),🍪,450,6,72,15,M,gluten,seed
+pe_cua_cua,Cua Cua (Field),🍫,520,5,62,28,M,"gluten,lacteos",seed
+pe_gran_cereal,Gran Cereal clásica (Costa),🍪,437,7.8,64.4,17.8,M,gluten,seed
+pe_gran_cereal_cacao,Gran Cereal cacao (Costa),🍪,446,7.4,63.6,18,M,gluten,seed
+pe_frac,Frac clásica (Costa),🍪,487,6,70,20.3,M,gluten,seed
+pe_frac_chocolate,Frac chocolate (Costa),🍪,483,6.3,70,19.3,M,gluten,seed
+pe_frac_vainilla,Frac vainilla (Costa),🍪,490,6.3,70,20.3,M,gluten,seed
+pe_frac_menta,Frac menta (Costa),🍪,485,5.6,67.3,21.5,M,gluten,seed
+pe_gretel,Gretel chocolate (Costa),🍪,525,5,67.2,26.3,M,gluten,seed
+pe_agua_line,Agua Line (Costa),🍘,408,8.2,82.5,5.1,M,gluten,seed
+pe_costa_integrales,Galletas integrales (Costa),🍘,442,10.1,72.8,12.3,M,gluten,seed
+pe_costa_chips,Costa Chips con chispas de chocolate,🍪,483,4.3,67.3,21.8,M,gluten,seed
+pe_nik,Nik fresa (Costa),🍪,524,3,69.6,25.9,M,gluten,seed
+pe_doblon,Doblón (Costa),🍪,500,7.1,71.4,21.4,M,gluten,seed
+pe_obsesion,Obsesión (Costa),🍪,519,3.7,70.4,22.2,M,gluten,seed
+pe_rellenitas,Rellenitas (GN),🍪,500,5.6,72.2,19.4,M,gluten,seed
+pe_picaras,Picaras (Winter's),🍪,500,6,67,22,M,gluten,seed
+pe_chomp,Chomp (Victoria),🍪,490,5,66,23,M,gluten,seed
+pe_bells,Galletas saladitas Bell's,🍘,478,6.5,71.7,17.4,M,gluten,seed
+pe_union_kiwicha,Galletas integrales con kiwicha (Unión),🍘,467,9,70.5,16.5,M,gluten,seed
+pe_wafer,Wafer de chocolate (Mabel's),🧇,494,6.9,69,21,M,gluten,seed
+pe_sublime,Sublime clásico,🍫,537,10,50,33,M,"mani,lacteos",seed
+pe_sublime_blanco,Sublime blanco,🍫,566,9.9,51.6,35.6,M,"mani,lacteos",seed
+pe_sublime_stick,Sublime stick,🍫,540,7.9,52.9,32.9,M,"mani,lacteos",seed
+pe_princesa,Princesa (Nestlé),🍫,516,6,60,28,M,"gluten,lacteos",seed
+pe_triangulo,Triángulo (D’Onofrio),🍫,540,8,55,32,M,"mani,lacteos",seed
+pe_chocman,Chocman (Costa),🍫,455,4.5,63,20.5,M,"gluten,lacteos",seed
+pe_golazo,Golazo (Ambrosoli),🍫,528,3.6,62.8,29.2,M,lacteos,seed
+pe_vizzio,Vizzio (Costa),🍫,545,10,55,32,M,"frutos,lacteos",seed
+pe_milky,Milky (La Ibérica),🍫,540,10,55,30,M,lacteos,seed
+pe_kit_kat,Kit Kat,🍫,518,6.5,62,27,M,"gluten,lacteos",seed
+pe_snickers,Snickers,🍫,488,7.5,60,24,M,"mani,lacteos",seed
+pe_m_and_ms,M&M's de chocolate,🍬,492,4.4,70,21,M,lacteos,seed
+pe_bon_o_bon,Bon o Bon,🍫,538,8.9,49,34,M,"mani,lacteos",seed
+pe_sapito,Sapito (Arcor),🍫,522,5,61.1,28.9,M,lacteos,seed
+pe_golpe,Golpe (Arcor),🍫,504,3.7,70.4,24.1,M,gluten,seed
+pe_cofler_block,Cofler Block maní,🍫,572,18,31,42,M,"mani,lacteos",seed
+pe_chocoteja,Chocoteja de pecanas,🍫,480,5,60,25,M,"frutos,lacteos",seed
+pe_king_kong,King Kong de manjar blanco,🍰,400,6,65,13,M,"gluten,lacteos,huevo",seed
+pe_turron_mani,Turrón de maní,🥜,426,8.8,73,7.9,M,mani,seed
+pe_ambrosia,Caramelos Ambrosía,🍬,383,0.6,95,0,M,,seed
+pe_flipy,Gomitas Flipy,🍬,350,7.6,78.8,0.4,M,,seed
+pe_mogul,Gomitas Mogul,🍬,325,6,75,0,M,,seed
+pe_frunas,Frunas,🍬,396,0,90,4,M,,seed
+pe_halls,Halls,🍬,390,0,97,0,M,,seed
+pe_chupetin,Chupetín,🍭,390,0,97,0,M,,seed
+pe_marshmallows,Marshmallows (bombones),🍡,320,2,80,0,M,,seed
+pe_helado_princesa,Helado Princesa (Nestlé),🍨,219,4.2,23.7,11.9,M,"lacteos,gluten",seed
+pe_lays,Papas Lay's clásicas,🥔,520,5,59,29,M,,seed
+pe_doritos,Doritos queso atrevido,🔺,510,6,58,28,M,lacteos,seed
+pe_cheetos,Cheetos horneados,🧀,479,5.9,67.6,20.6,M,lacteos,seed
+pe_cuates,Cuates picantes,🌶️,538,7,51,34,M,,seed
+pe_piqueo_snax,Piqueo Snax,🥨,531,6,57,31,M,mani,seed
+pe_chizitos,Chizitos,🧀,526,6,58,30,M,lacteos,seed
+pe_tortees,Tortees picantes,🔺,507,6,60,27,M,,seed
+pe_inka_chips,Inka Chips sal de mar,🥔,509,5.2,59.1,28,M,,seed
+pe_pringles,Pringles original,🥔,536,4.5,51,35,M,,seed
+pe_stax,Lay's Stax queso cheddar,🥔,516,6,60,28,M,lacteos,seed
+pe_karinto_mani,Maní crocante Karinto,🥜,531,18,45,31,M,"mani,gluten",seed
+pe_karinto_habas,Habas saladas Karinto,🫘,453,25,50,17,M,,seed
+pe_canchita,Canchita salada,🌽,445,8,65,17,M,,seed

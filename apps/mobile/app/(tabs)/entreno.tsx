@@ -5,10 +5,13 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import {
   LEVELS,
   PLACES,
+  REST_SEC,
   SESSION_NAMES,
   SPLIT,
   alternativeExercises,
+  circuitLetter,
   exerciseHistory,
+  focusLabel,
   isTimed,
   muscleSets,
   personalRecords,
@@ -80,6 +83,12 @@ export default function Entreno() {
         <Small style={{ marginTop: 2 }}>
           {split} · {PLACES.find((x) => x.value === profile.where)?.label} · {LEVELS.find((x) => x.value === profile.level)?.label}
         </Small>
+        <Tap haptic={false} onPress={() => router.push('/enfoque')} accessibilityHint="Elegir la zona que quieres trabajar más" style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 6, alignSelf: 'flex-start' }}>
+          <Small>
+            Zona prioritaria: <Text style={{ color: c.ink, fontFamily: fonts.bold }}>{profile.focus ? focusLabel(profile.focus) : 'sin elegir'}</Text>
+          </Small>
+          <Small style={{ color: c.acc, fontFamily: fonts.bold }}>Cambiar ›</Small>
+        </Tap>
         <View style={{ flexDirection: 'row', gap: 6, marginTop: 14 }}>
           {days.map((x, i) => (
             <Segment key={x.d} on={doneDays.has(x.d)} current={x.d === next} delay={i * 80} />
@@ -91,6 +100,22 @@ export default function Entreno() {
           <T style={{ marginTop: 12, fontSize: 14 }}>Hoy ya entrenaste. Descansar también construye músculo; mañana toca el Día {next + 1}.</T>
         ) : null}
       </Card>
+
+      {/* Perfiles de antes de la zona prioritaria: se les ofrece elegirla una vez. */}
+      {!profile.focus && (
+        <Tap onPress={() => router.push('/enfoque')} style={{ marginBottom: 12 }}>
+          <Card style={{ marginBottom: 0, flexDirection: 'row', alignItems: 'center', gap: 12, borderColor: c.acc }}>
+            <View style={{ flex: 1 }}>
+              <Eyebrow color={c.acc}>Nuevo</Eyebrow>
+              <H size={17} style={{ marginTop: 2 }}>
+                ¿Qué zona quieres trabajar más?
+              </H>
+              <Small>Pecho, brazos, abdomen, piernas… le damos más ejercicios y series.</Small>
+            </View>
+            <Text style={{ color: c.acc, fontSize: 22 }}>›</Text>
+          </Card>
+        </Tap>
+      )}
 
       {days.map((x, i) => (
         <DayCard
@@ -248,8 +273,21 @@ function DayCard({ index, day, kind, exercises, recommended, where, minutes, don
             {exercises.map((e, i) => {
               const swapped = e.name !== recommended[i];
               const alts = hist === i ? alternativeExercises(e.muscle, where, exercises.map((y) => y.name)).filter((n) => n !== recommended[i]) : [];
+              const startsBlock = i === 0 || exercises[i - 1].block !== e.block;
+              const rounds = Math.max(...exercises.filter((x) => x.block === e.block).map((x) => x.sets));
               return (
-                <View key={`${i}-${e.name}`} style={{ borderTopWidth: 1, borderTopColor: c.line }}>
+                <View key={`${i}-${e.name}`}>
+                {startsBlock && (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingTop: i ? 14 : 4, paddingBottom: 6 }}>
+                    <View style={{ width: 22, height: 22, borderRadius: 6, backgroundColor: c.ink, alignItems: 'center', justifyContent: 'center' }}>
+                      <Text style={{ color: c.bg, fontFamily: fonts.numB, fontSize: 12 }}>{circuitLetter(e.block)}</Text>
+                    </View>
+                    <Small style={{ fontFamily: fonts.num, fontSize: 10.5, letterSpacing: 1.4 }}>
+                      CIRCUITO {circuitLetter(e.block)} · {rounds} VUELTAS · {REST_SEC} s ENTRE EJERCICIOS
+                    </Small>
+                  </View>
+                )}
+                <View style={{ borderTopWidth: 1, borderTopColor: c.line }}>
                   <Tap haptic={false} onPress={() => toggleRow(i)} accessibilityState={{ expanded: hist === i }} accessibilityHint="Muestra tu progresión y equivalentes" style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10 }}>
                     <ExerciseDemo name={e.name} muscle={e.muscle} size={40} animate={hist === i} />
                     <View style={{ flex: 1 }}>
@@ -258,7 +296,8 @@ function DayCard({ index, day, kind, exercises, recommended, where, minutes, don
                       </T>
                       <Small>
                         {swapped && <Text style={{ color: c.acc, fontFamily: fonts.num, fontSize: 10.5, letterSpacing: 1 }}>CAMBIADO · </Text>}
-                        {e.sets} × {isTimed(e.name) ? `${setSeconds(e)} s` : `${e.reps} reps`} · descanso {e.restSec} s
+                        {e.sets} × {isTimed(e.name) ? `${setSeconds(e)} s` : `${e.reps} reps`} · {MUSCLE_LABEL[e.muscle] ?? e.muscle}
+                        {e.focus && <Text style={{ color: c.acc, fontFamily: fonts.num, fontSize: 10.5, letterSpacing: 1 }}> · PRIORIDAD</Text>}
                       </Small>
                     </View>
                     <Text style={{ color: c.mut, fontSize: 18, transform: [{ rotate: hist === i ? '90deg' : '0deg' }] }}>›</Text>
@@ -289,10 +328,13 @@ function DayCard({ index, day, kind, exercises, recommended, where, minutes, don
                     </>
                   )}
                 </View>
+                </View>
               );
             })}
             <BigButton label={done ? '↻  Repetir entreno' : '▶  Iniciar entreno'} onPress={onStart} style={{ marginTop: 10 }} />
-            <Small style={{ textAlign: 'center', marginTop: 8 }}>Todo es automático: series, descansos y cambio de ejercicio, con voz.</Small>
+            <Small style={{ textAlign: 'center', marginTop: 8 }}>
+              Haces una serie de cada ejercicio del circuito, descansas {REST_SEC} s entre uno y otro y repites las vueltas. Todo automático y con voz.
+            </Small>
           </Animated.View>
         )}
       </View>

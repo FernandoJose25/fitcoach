@@ -16,9 +16,10 @@ const SLUGS: Record<string, Slug[]> = {
 };
 
 /** Cuerpo anatómico de frente y de espaldas con los grupos musculares (`e.muscle`) resaltados. */
-export function MuscleMap({ groups, height = 220, style }: { groups: string[]; height?: number; style?: StyleProp<ViewStyle> }) {
+export function MuscleMap({ groups, height = 220, style, sex }: { groups: string[]; height?: number; style?: StyleProp<ViewStyle>; sex?: 'male' | 'female' }) {
   const { c } = useTheme();
-  const gender = useApp((s) => s.profile?.sex) ?? 'male';
+  const profileSex = useApp((s) => s.profile?.sex);
+  const gender = sex ?? profileSex ?? 'male';
   const data: ExtendedBodyPart[] = [...new Set(groups.flatMap((g) => SLUGS[g] ?? []))].map((slug) => ({ slug, color: c.acc }));
   return (
     <View style={[{ flexDirection: 'row', justifyContent: 'center', gap: 8 }, style]}>

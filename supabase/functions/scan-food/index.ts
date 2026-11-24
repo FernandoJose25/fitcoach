@@ -9,8 +9,8 @@ const KEY = Deno.env.get('VISION_API_KEY');
 
 const PER100 = '"kcal":<kcal por 100 g>,"p":<proteína g por 100 g>,"c":<carbohidratos g por 100 g>,"f":<grasa g por 100 g>';
 // Un plato mezclado (chaufa, saltado…) se pide desglosado: si no, el modelo lo devuelve como un solo item.
-const PHOTO = `Eres un asistente de nutrición. Analiza la foto de una comida y responde SOLO con JSON válido:
-{"items":[{"name":"nombre del alimento en español, genérico y simple","grams":<número>,"confidence":<0 a 1>,${PER100}}]}
+const PHOTO = `Eres un nutricionista experto en comida peruana y latinoamericana. Analiza la foto de una comida y responde SOLO con JSON válido:
+{"dish":"nombre del plato en español (p. ej. Lomo saltado), o vacío si son alimentos sueltos","items":[{"name":"nombre del alimento en español, genérico y simple","grams":<número>,"confidence":<0 a 1>,${PER100}}]}
 Reglas:
 - Desglosa el plato: un item por cada ingrediente o componente que se vea, aunque vengan mezclados. Nunca
   devuelvas un plato preparado como un solo item. Ejemplos: arroz chaufa → "arroz frito", "pollo", "huevo
@@ -20,6 +20,14 @@ Reglas:
 - Mira bien las mezclas: si entre el arroz hay fideos, huevo o carne, cada uno va como item aparte.
 - Incluye lo que aporte calorías aunque sea poco (salsas, aceite, queso, palta). Omite adornos sin calorías.
 - Estima los gramos de cada componente según la porción visible; la suma debe ser el peso total del plato.
+  Usa referencias de tamaño: plato llano ~26 cm, plato hondo ~20 cm, cuchara ~15 cm; 1 taza de arroz cocido
+  ~160 g; 1 huevo ~50 g; 1 presa de pollo ~120-180 g de carne; 1 pan francés ~35 g; 1 papa mediana ~150 g.
+- Si hay varios platos o vasos, incluye todo lo que se ve.
+- Lo frito o salteado absorbe aceite: refléjalo en la grasa por 100 g (papas fritas ~15 g, arroz chaufa ~6 g).
+- Bebidas: estima los mililitros como gramos.
+- Productos envasados de marca (gaseosa, galletas, golosinas, snacks): usa el nombre del producto, p. ej.
+  "Inca Kola", "galletas Oreo", con los valores de su etiqueta.
+- confidence < 0.5 si el componente está tapado o no estás seguro de qué es.
 - Nombres genéricos y simples, como "arroz blanco cocido", "pechuga de pollo a la plancha", "huevo frito".
 Los valores nutricionales son por 100 g del componente tal como se ve (cocido, frito...), según tablas de
 referencia (USDA, CENAN). Sin explicaciones. Si no hay comida en la imagen responde {"items":[]}`;
@@ -45,30 +53,39 @@ function per100(x: Record<string, unknown>) {
   return { kcal: kcal || Math.round(calc), p, c, f };
 }
 
+/** Pide al modelo y devuelve el JSON. Un error 5xx o un JSON roto se reintenta una vez (un 429 no: es el límite). */
 async function ask(content: unknown, system: string) {
-  const res = await fetch(`${BASE_URL}/chat/completions`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${KEY}` },
-    body: JSON.stringify({
-      model: MODEL,
-      temperature: 0.2,
-      // El plan gratis de Groq rechaza (429) pedidos que podrían pasar de 1000 tokens de salida por minuto;
-      // un desglose usa ~150-300.
-      max_tokens: 700,
-      response_format: { type: 'json_object' },
-      messages: [
-        { role: 'system', content: system },
-        { role: 'user', content },
-      ],
-    }),
-  });
-  if (!res.ok) {
-    console.error('provider', res.status, await res.text());
-    return null;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const res = await fetch(`${BASE_URL}/chat/completions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${KEY}` },
+      body: JSON.stringify({
+        model: MODEL,
+        temperature: 0.2,
+        // El plan gratis de Groq rechaza (429) pedidos que podrían pasar de 1000 tokens de salida por minuto;
+        // un desglose usa ~150-300.
+        max_tokens: 700,
+        response_format: { type: 'json_object' },
+        messages: [
+          { role: 'system', content: system },
+          { role: 'user', content },
+        ],
+      }),
+    });
+    if (!res.ok) {
+      console.error('provider', res.status, await res.text());
+      if (res.status >= 500 && attempt === 0) continue;
+      return null;
+    }
+    const json = await res.json();
+    const text: string = json.choices?.[0]?.message?.content ?? '{}';
+    try {
+      return JSON.parse(text.match(/\{[\s\S]*\}/)?.[0] ?? '{}') as Record<string, unknown>;
+    } catch {
+      console.error('json', text.slice(0, 300));
+    }
   }
-  const json = await res.json();
-  const text: string = json.choices?.[0]?.message?.content ?? '{}';
-  return JSON.parse(text.match(/\{[\s\S]*\}/)?.[0] ?? '{}') as Record<string, unknown>;
+  return null;
 }
 
 Deno.serve(async (req) => {
@@ -109,7 +126,11 @@ Deno.serve(async (req) => {
 
     const { imageBase64, mime = 'image/jpeg' } = body;
     if (typeof imageBase64 !== 'string' || !imageBase64) return Response.json({ error: 'image' }, { status: 400 });
-    const parsed = await ask([{ type: 'image_url', image_url: { url: `data:${mime};base64,${imageBase64}` } }], PHOTO);
+    // Pista del usuario al corregir ("es un ají de gallina"): ayuda a reconocer el plato, se desglosa igual.
+    const hint = typeof body.hint === 'string' ? body.hint.trim().slice(0, 120) : '';
+    const image = { type: 'image_url', image_url: { url: `data:${mime};base64,${imageBase64}` } };
+    const content = hint ? [{ type: 'text', text: `El usuario dice que la foto es: "${hint}". Úsalo para reconocer el plato y desglósalo igual.` }, image] : [image];
+    const parsed = await ask(content, PHOTO);
     if (!parsed) return Response.json({ error: 'provider' }, { status: 502 });
     // Solo cuenta el escaneo si el proveedor respondió.
     await supa.from('scan_usage').upsert({ user_id: user.id, day: today, n: (u?.n ?? 0) + 1 });
@@ -121,7 +142,8 @@ Deno.serve(async (req) => {
         confidence: Number(i.confidence) || 0.5,
         per100: per100(i),
       }));
-    return Response.json({ items });
+    const dish = typeof parsed.dish === 'string' ? parsed.dish.trim().slice(0, 60) : '';
+    return Response.json({ dish, items });
   } catch (e) {
     return Response.json({ error: String(e) }, { status: 500 });
   }

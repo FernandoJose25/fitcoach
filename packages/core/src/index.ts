@@ -12,6 +12,7 @@ export * from './foodlog';
 export * from './consequence';
 export * from './releases';
 export * from './learn';
-export { FOODS } from './data/foods';
+export { FOODS } from './data/catalog';
+export { PRODUCTS, PRODUCT_BY_BARCODE, PRODUCT_GROUPS } from './data/products';
 export { RECIPES } from './data/recipes';
 export { EXERCISES, EXERCISE_DB_ID, exerciseImages } from './data/exercises';

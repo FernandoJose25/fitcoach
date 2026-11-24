@@ -15,8 +15,8 @@ export function searchFoods(foods: Record<string, Food>, query: string): Food[] 
   if (!q) return all;
   const words = q.split(/\s+/);
   return all
-    .map((f) => ({ f, n: normalize(f.name) }))
-    .filter(({ n }) => words.every((w) => n.includes(w)))
+    .map((f) => ({ f, n: normalize(f.name), k: f.kw ? normalize(`${f.name} ${f.kw}`) : null }))
+    .filter(({ n, k }) => words.every((w) => (k ?? n).includes(w)))
     .sort((a, b) => Number(b.n.startsWith(q)) - Number(a.n.startsWith(q)) || a.n.localeCompare(b.n))
     .map(({ f }) => f);
 }

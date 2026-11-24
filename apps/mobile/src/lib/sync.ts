@@ -46,6 +46,8 @@ async function pushProfile(uid: string) {
         meals_per_day: p.mealsPerDay,
         allergies: p.allergies,
         avoid: p.avoid,
+        // Sin elegir (perfil anterior a la zona prioritaria) se guarda null para volver a ofrecerla.
+        focus: p.focus ?? null,
         kcal: Math.round(t.kcal),
         protein: Math.round(t.protein),
         carbs: Math.round(t.carbs),
@@ -125,6 +127,7 @@ async function pull(uid: string) {
     mealsPerDay: row.meals_per_day,
     allergies: row.allergies,
     avoid: row.avoid,
+    ...(Array.isArray(row.focus) ? { focus: row.focus } : {}),
   };
   const { data: meals } = ok(await supabase!.from('meal_logs').select('day, slot, meal_log_items(food_id, grams, via)').eq('user_id', uid));
   const { data: water } = ok(await supabase!.from('water_logs').select('day, glasses').eq('user_id', uid));

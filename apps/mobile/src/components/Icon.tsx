@@ -18,7 +18,9 @@ export type IconName =
   | 'search'
   | 'lock'
   | 'spark'
-  | 'back';
+  | 'back'
+  | 'image'
+  | 'flash';
 
 /** Íconos de trazo propio (24×24, línea 1.75, terminaciones rectas): sustituyen a los emojis de la interfaz. */
 export function Icon({ name, size = 22, color, stroke = 1.75 }: { name: IconName; size?: number; color: string; stroke?: number }) {
@@ -69,6 +71,14 @@ export function Icon({ name, size = 22, color, stroke = 1.75 }: { name: IconName
       )}
       {name === 'spark' && <Path d="M12 3.5l1.9 5.6 5.6 1.9-5.6 1.9L12 18.5l-1.9-5.6L4.5 11l5.6-1.9zM18.5 16.5l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z" {...p} strokeLinejoin="round" />}
       {name === 'back' && <Path d="M14.5 5.5L8 12l6.5 6.5" {...p} />}
+      {name === 'image' && (
+        <>
+          <Rect x={3.5} y={5} width={17} height={14} {...p} />
+          <Circle cx={9} cy={10} r={1.6} {...p} />
+          <Path d="M3.5 16.5l5-4.5 4 3.5 3-2.5 5 4" {...p} />
+        </>
+      )}
+      {name === 'flash' && <Path d="M13.5 3L6 13.5h5.5L10.5 21 18 10.5h-5.5z" {...p} />}
     </Svg>
   );
 }

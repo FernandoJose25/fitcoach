@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Text, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import { Image } from 'expo-image';
 import { Tap } from './Tap';
 import { Em, Small, T, easeOut } from './ui';
 import { fonts, radius, useTheme } from '@/theme';
@@ -36,8 +37,8 @@ export function Chip({ label, on, onPress, small }: { label: string; on: boolean
   );
 }
 
-/** Tarjeta de opción con título y descripción (onboarding). */
-export function OptionCard({ title, desc, on, onPress }: { title: string; desc: string; on: boolean; onPress: () => void }) {
+/** Tarjeta de opción con título y descripción (onboarding); con `image`, foto de referencia a la izquierda. */
+export function OptionCard({ title, desc, on, onPress, image }: { title: string; desc: string; on: boolean; onPress: () => void; image?: number }) {
   const { c } = useTheme();
   const s = useSharedValue(1);
   useEffect(() => {
@@ -50,17 +51,23 @@ export function OptionCard({ title, desc, on, onPress }: { title: string; desc: 
         onPress={onPress}
         accessibilityState={{ selected: on }}
         style={{
-          padding: 14,
-          paddingHorizontal: 16,
+          padding: image ? 8 : 14,
+          paddingHorizontal: image ? 8 : 16,
           borderRadius: radius.btn,
           backgroundColor: on ? c.hero : c.card,
           borderWidth: 1,
           borderColor: on ? c.acc : c.line,
           marginBottom: 10,
+          flexDirection: image ? 'row' : 'column',
+          alignItems: image ? 'center' : 'stretch',
+          gap: 12,
         }}
       >
-        <T kind="bold">{title}</T>
-        <Small style={{ marginTop: 2, fontSize: 13 }}>{desc}</Small>
+        {image !== undefined && <Image source={image} contentFit="cover" style={{ width: 104, height: 76, borderRadius: radius.chip }} accessibilityIgnoresInvertColors />}
+        <View style={{ flex: image ? 1 : undefined }}>
+          <T kind="bold">{title}</T>
+          <Small style={{ marginTop: 2, fontSize: 13 }}>{desc}</Small>
+        </View>
       </Tap>
     </Animated.View>
   );

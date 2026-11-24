@@ -2,7 +2,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { Alert, Linking, Pressable, Switch, Text, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import Constants from 'expo-constants';
-import { GOALS, LEVELS, PLACES, achievements } from '@fitcoach/core';
+import { GOALS, LEVELS, PLACES, achievements, focusLabel } from '@fitcoach/core';
 import { Chip } from '@/components/Chip';
 import { Icon } from '@/components/Icon';
 import { Tap } from '@/components/Tap';
@@ -66,6 +66,7 @@ export default function Perfil() {
         <KV k="Ritmo estimado" v={`${t.weeklyKg > 0 ? '+' : ''}${t.weeklyKg} kg/sem`} />
         <KV k="Proteína · Carbos · Grasas" v={`${t.protein} · ${t.carbs} · ${t.fat} g`} />
         <KV k="Entreno" v={`${PLACES.find((x) => x.value === p.where)?.label} · ${p.daysPerWeek} días · ${LEVELS.find((x) => x.value === p.level)?.label}`} />
+        <KV k="Zona prioritaria" v={p.focus ? focusLabel(p.focus) : 'Sin elegir'} />
         <KV k="Comidas al día" v={String(p.mealsPerDay)} />
       </Card>
       <KcalWeek />

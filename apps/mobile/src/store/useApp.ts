@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { applyKcalDelta, computeTargets, type Food, type Item, type MealFormat, type Profile, type SetLog, type Targets } from '@fitcoach/core';
+import { applyKcalDelta, computeTargets, type Focus, type Food, type Item, type MealFormat, type Profile, type SetLog, type Targets } from '@fitcoach/core';
 
 export type Via = 'plan' | 'manual' | 'scan' | 'barcode';
 export interface LogItem extends Item {
@@ -46,6 +46,7 @@ export const DRAFT_DEFAULT: Partial<Profile> = {
   allergies: [],
   avoid: [],
   mealsPerDay: 4,
+  focus: [],
 };
 
 interface AppState {
@@ -95,6 +96,8 @@ interface AppState {
   setDraft: (patch: Partial<Profile>) => void;
   resetDraft: (from?: Profile | null) => void;
   commitProfile: (p: Profile) => void;
+  /** Cambia la zona prioritaria sin tocar metas ni ajustes; los cambios de ejercicio se reinician (cambia el orden). */
+  setFocus: (focus: Focus[]) => void;
   swapRecipe: (slot: number) => void;
   setFormat: (slot: number, f: MealFormat | null) => void;
   setVersion: (recipeId: string, v: number) => void;
@@ -204,6 +207,11 @@ export const useApp = create<AppState>()(
           kcalAdjust: 0,
           weights: get().profile?.weightKg === p.weightKg && Object.keys(get().weights).length ? get().weights : { ...get().weights, [todayKey()]: p.weightKg },
         }),
+      setFocus: (focus) => {
+        const p = get().profile;
+        if (!p) return;
+        set({ profile: { ...p, focus }, draft: { ...get().draft, focus }, swaps: {}, profileDirty: true });
+      },
       swapRecipe: (slot) => {
         const day = todayKey();
         const d = dayPrefs(get());
