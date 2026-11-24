@@ -139,7 +139,8 @@ export function PlateScan({
     );
   }
   if (!permission) return null;
-  if (!permission.granted) {
+  // Solo antes de tomar o elegir la foto: con la cámara negada, la foto de la galería sigue su análisis.
+  if (!permission.granted && state.kind === 'camera') {
     return (
       <Center>
         <T kind="mut" style={{ textAlign: 'center' }}>

@@ -6,7 +6,7 @@ const config: ExpoConfig = {
   // Cuenta Expo dueña del proyecto EAS. Para usar la otra cuenta hay que cambiar owner y projectId a la vez
   // (y conservar el mismo keystore); ver las reglas de cuentas en la memoria del usuario.
   owner: 'ferrrrr23',
-  version: '0.13.0',
+  version: '0.14.0',
   runtimeVersion: { policy: 'appVersion' },
   scheme: 'fitcoach',
   orientation: 'portrait',
@@ -15,7 +15,7 @@ const config: ExpoConfig = {
   android: {
     package: 'com.fitcoach.app',
     // Súbelo en cada build que vaya a Play o se instale encima de otro (EAS no admite autoIncrement con app.config.ts).
-    versionCode: 5,
+    versionCode: 6,
     // Aviso puntual del fin del descanso; sin este permiso Android puede retrasar la notificación hasta ~1 min.
     // REQUEST_INSTALL_PACKAGES: la app descarga e instala su propia actualización (ver src/lib/updater.ts).
     permissions: ['android.permission.SCHEDULE_EXACT_ALARM', 'android.permission.REQUEST_INSTALL_PACKAGES'],
@@ -34,7 +34,9 @@ const config: ExpoConfig = {
     'expo-notifications',
     ['expo-camera', { cameraPermission: 'FitCoach usa la cámara para leer códigos de barras y analizar tu plato.', recordAudioAndroid: false }],
     // Galería para analizar una foto de comida que ya tomaste (Android 13+ usa el selector de fotos, sin permiso).
-    ['expo-image-picker', { photosPermission: 'FitCoach abre tu galería para analizar la foto de un plato.', cameraPermission: false, microphonePermission: false }],
+    // cameraPermission NO puede ser false: el plugin pondría CAMERA como bloqueado en el manifiesto y Android
+    // negaría la cámara a toda la app (escáner, foto del plato y fotos de progreso). Pasó en la 0.13.0.
+    ['expo-image-picker', { photosPermission: 'FitCoach abre tu galería para analizar la foto de un plato.', cameraPermission: 'FitCoach usa la cámara para leer códigos de barras y analizar tu plato.', microphonePermission: false }],
   ],
   experiments: { typedRoutes: true },
   extra: { eas: { projectId: 'b17cddb9-2d31-44b1-8eb8-5a2944e130df' } },
