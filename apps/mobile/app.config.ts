@@ -4,8 +4,9 @@ const config: ExpoConfig = {
   name: 'FitCoach',
   slug: 'fitcoach',
   // Cuenta Expo dueña del proyecto EAS. Para usar la otra cuenta hay que cambiar owner y projectId a la vez
-  // (y conservar el mismo keystore); ver las reglas de cuentas en la memoria del usuario.
-  owner: 'ferrrrr23',
+  // (y conservar el mismo keystore); ver las reglas de cuentas en la memoria del usuario. El keystore va como
+  // credencial local (credentials.json, fuera de git), así que sirve igual en cualquiera de las dos cuentas.
+  owner: 'developerfer123',
   version: '0.16.0',
   runtimeVersion: { policy: 'appVersion' },
   scheme: 'fitcoach',
@@ -39,7 +40,8 @@ const config: ExpoConfig = {
     ['expo-image-picker', { photosPermission: 'FitCoach abre tu galería para analizar la foto de un plato.', cameraPermission: 'FitCoach usa la cámara para leer códigos de barras y analizar tu plato.', microphonePermission: false }],
   ],
   experiments: { typedRoutes: true },
-  extra: { eas: { projectId: 'b17cddb9-2d31-44b1-8eb8-5a2944e130df' } },
+  // Proyecto en developerfer123 desde la 0.16.0; el de ferrrrr23 era b17cddb9-2d31-44b1-8eb8-5a2944e130df.
+  extra: { eas: { projectId: '2a4060fc-5b64-4b86-a8a9-6daefa1b72a0' } },
 };
 
 export default config;

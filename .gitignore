@@ -8,3 +8,7 @@ dist/
 supabase/.temp/
 __pycache__/
 bugreport-*.zip
+
+# Llave de firma Android (credenciales locales de EAS): nunca al repo
+apps/mobile/credentials.json
+apps/mobile/credentials/

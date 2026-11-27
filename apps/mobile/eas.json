@@ -12,6 +12,7 @@
       "extends": "base",
       "environment": "preview",
       "distribution": "internal",
+      "credentialsSource": "local",
       "android": { "buildType": "apk" }
     },
     "production": {
