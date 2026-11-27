@@ -2,9 +2,10 @@ import { useCallback, useMemo, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { FOODS, FORMAT_LABEL, RECIPES, formatsFor, type MealFormat, type RecipeGuide } from '@fitcoach/core';
+import { FOODS, FORMAT_LABEL, RECIPES, formatsFor, householdMeasure, type MealFormat, type RecipeGuide } from '@fitcoach/core';
 import { Chip, FoodChip } from '@/components/Chip';
 import { ConsequenceCard } from '@/components/Consequence';
+import { GramsStepper } from '@/components/GramsStepper';
 import { Header } from '@/components/Header';
 import { Icon } from '@/components/Icon';
 import { StepArt } from '@/components/StepArt';
@@ -28,7 +29,7 @@ export default function Menu() {
   const router = useRouter();
   const profile = useApp((s) => s.profile)!;
   const t = useApp((s) => s.targets)!;
-  const { clearSlot, swapRecipe, setFormat } = useApp.getState();
+  const { clearSlot, swapRecipe, setFormat, setLogGrams } = useApp.getState();
   const prefs = useDayPrefs();
   // Tipos que ofrecen las recetas permitidas (botones Batido, Panqueques… en desayunos y snacks).
   const avail = useMemo(() => ({ D: formatsFor(profile, 'D', FOODS, RECIPES), S: formatsFor(profile, 'S', FOODS, RECIPES) }), [profile]);
@@ -36,6 +37,7 @@ export default function Menu() {
   const logs = useTodayLogs();
   const consequence = useConsequence(NO_ITEMS);
   const [focus, setFocus] = useState(0);
+  const [edit, setEdit] = useState<number | null>(null); // comida registrada cuyos gramos se están corrigiendo
   useFocusEffect(useCallback(() => setFocus((n) => n + 1), []));
 
   const total = sum(plan.flatMap((m) => m.items));
@@ -64,6 +66,7 @@ export default function Menu() {
       {plan.map((m, i) => {
         const L = logs.filter((l) => l.slot === i);
         const done = L.length > 0;
+        const editing = done && edit === i;
         const s = done ? sum(L) : sum(m.items);
         const target = Math.round(t.kcal * m.share);
         const { guide, versions, format } = pickGuide(m, i, prefs);
@@ -87,16 +90,48 @@ export default function Menu() {
               {!done && <Pill label="↻" a11y={`Cambiar receta de ${m.label.toLowerCase()}`} ghost onPress={() => swapRecipe(i)} style={{ paddingHorizontal: 12, minWidth: 44 }} />}
             </View>
             {types.length > 1 && <FormatChips types={types} on={format} onPick={(f) => setFormat(i, f)} />}
-            <Animated.View key={done ? `d-${L.length}` : `${m.recipeId}-${m.items.map((x) => x.grams).join()}`} entering={flipIn} style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 10 }}>
-              {(done ? L : m.items).map((x, j) => {
-                const f = foodOf(x.foodId);
-                return <FoodChip key={`${x.foodId}-${j}`} emoji={f.emoji} name={f.name} grams={x.grams} />;
-              })}
-            </Animated.View>
+            {editing ? (
+              <View style={{ marginBottom: 10 }}>
+                {L.map((x, j) => {
+                  const f = foodOf(x.foodId);
+                  return (
+                    <View key={`${x.foodId}-${j}`} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 8, borderTopWidth: 1, borderTopColor: c.line }}>
+                      <View style={{ flex: 1 }}>
+                        <T kind="bold" numberOfLines={2} style={{ fontSize: 13.5 }}>
+                          {f.name}
+                        </T>
+                        <Small numberOfLines={1}>{[householdMeasure(x.foodId, x.grams), `${Math.round((f.kcal * x.grams) / 100)} kcal`].filter(Boolean).join(' · ')}</Small>
+                      </View>
+                      <GramsStepper foodId={x.foodId} name={f.name} grams={x.grams} min={1} onChange={(g) => setLogGrams(i, j, g)} />
+                      <Tap
+                        onPress={() => {
+                          if (L.length === 1) setEdit(null);
+                          setLogGrams(i, j, 0);
+                        }}
+                        accessibilityLabel={`Quitar ${f.name}`}
+                        style={{ width: 30, height: 36, alignItems: 'center', justifyContent: 'center' }}
+                      >
+                        <Icon name="close" size={16} color={c.mut} />
+                      </Tap>
+                    </View>
+                  );
+                })}
+              </View>
+            ) : (
+              <Animated.View key={done ? `d-${L.length}` : `${m.recipeId}-${m.items.map((x) => x.grams).join()}`} entering={flipIn} style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 10 }}>
+                {(done ? L : m.items).map((x, j) => {
+                  const f = foodOf(x.foodId);
+                  return <FoodChip key={`${x.foodId}-${j}`} emoji={f.emoji} name={f.name} grams={x.grams} />;
+                })}
+              </Animated.View>
+            )}
             {!done && <RecipeLink guide={guide} forms={versions.length} onPress={() => router.push({ pathname: '/receta', params: { slot: String(i) } })} />}
-            {done ? (
+            {editing ? (
+              <Pill label="Listo" onPress={() => setEdit(null)} style={{ paddingVertical: 12 }} />
+            ) : done ? (
               <View style={{ flexDirection: 'row', gap: 8 }}>
                 <Pill label="Añadir algo más" ghost onPress={() => router.push({ pathname: '/scan', params: { slot: String(i) } })} style={{ flex: 1, paddingVertical: 12 }} />
+                <Pill label="Editar" ghost onPress={() => setEdit(i)} style={{ paddingVertical: 12 }} />
                 <Pill label="Quitar" ghost onPress={() => clearSlot(i)} style={{ paddingVertical: 12 }} />
               </View>
             ) : (

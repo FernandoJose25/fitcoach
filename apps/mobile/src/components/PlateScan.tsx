@@ -4,8 +4,9 @@ import Animated, { Easing, FadeIn, cancelAnimation, useAnimatedStyle, useSharedV
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
-import { alternatives, matchFood, scanFood, searchFoods, totals, verdict, type Food, type Goal, type Item, type ScanItem, type Targets } from '@fitcoach/core';
+import { alternatives, householdMeasure, matchFood, scanFood, searchFoods, totals, verdict, type Food, type Goal, type Item, type ScanItem, type Targets } from '@fitcoach/core';
 import { ConsequenceCard } from '@/components/Consequence';
+import { GramsStepper } from '@/components/GramsStepper';
 import { Icon } from '@/components/Icon';
 import { Tap } from '@/components/Tap';
 import { BigButton, Card, Em, Eyebrow, Pill, Small, T } from '@/components/ui';
@@ -308,7 +309,7 @@ function Result({
   const x = useConsequence(cart, slot, sum);
   const [portion, setPortion] = useState(1);
   const [hint, setHint] = useState('');
-  const step = (i: number, d: number) => setRows(rows.map((r, j) => (j === i ? { ...r, grams: Math.min(2000, Math.max(0, r.grams + d)) } : r)));
+  const setGrams = (i: number, grams: number) => setRows(rows.map((r, j) => (j === i ? { ...r, grams } : r)));
   /** Cambia lo detectado por una de sus opciones; lo anterior queda como opción por si fue sin querer. */
   const swap = (i: number, food: Food) => setRows(rows.map((r, j) => (j === i ? { ...r, food, low: false, options: [...(r.food ? [r.food] : []), ...r.options.filter((o) => o.id !== food.id)] } : r)));
   // Porción de todo el plato respecto a lo que estimó la IA (la IA suele fallar más en cantidad que en qué es).
@@ -400,17 +401,11 @@ function Result({
                         ? 'No está en la base · toca para elegir'
                         : r.low
                           ? `¿Es esto? La IA no está segura · cambiar`
-                          : `${Math.round((r.food.kcal * r.grams) / 100)} kcal${r.food.src === 'ai' ? ' · estimado por IA' : ''} · cambiar`}
+                          : [householdMeasure(r.food.id, r.grams), `${Math.round((r.food.kcal * r.grams) / 100)} kcal`, r.food.src === 'ai' && 'estimado por IA', 'cambiar'].filter(Boolean).join(' · ')}
                     </Small>
                   </View>
                 </Tap>
-                <Tap onPress={() => step(i, -10)} accessibilityLabel={`Restar 10 gramos de ${r.food?.name ?? r.name}`} style={stepBtn(c)}>
-                  <Icon name="minus" size={16} color={c.ink} />
-                </Tap>
-                <Text style={{ color: c.ink, fontFamily: fonts.num, fontSize: 14, minWidth: 48, textAlign: 'center' }}>{r.grams} g</Text>
-                <Tap onPress={() => step(i, 10)} accessibilityLabel={`Sumar 10 gramos de ${r.food?.name ?? r.name}`} style={stepBtn(c)}>
-                  <Icon name="plus" size={16} color={c.ink} />
-                </Tap>
+                <GramsStepper foodId={r.food?.id ?? ''} name={r.food?.name ?? r.name} grams={r.grams} onChange={(g) => setGrams(i, g)} />
               </View>
               {r.options.length > 0 && (
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" style={{ flexGrow: 0, marginTop: 8 }} contentContainerStyle={{ gap: 6, alignItems: 'center' }}>
@@ -481,8 +476,6 @@ function Result({
     </ScrollView>
   );
 }
-
-const stepBtn = (c: { bg: string; line: string }) => ({ width: 36, height: 36, borderRadius: radius.chip, backgroundColor: c.bg, borderWidth: 1, borderColor: c.line, alignItems: 'center' as const, justifyContent: 'center' as const });
 
 function Center({ children }: { children: React.ReactNode }) {
   return <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', gap: 12, paddingHorizontal: 10 }}>{children}</View>;

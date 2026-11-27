@@ -3,7 +3,7 @@ import type { Profile } from '../types';
 import { computeTargets, totals } from '../nutrition';
 import { buildDays, buildPlan, bannedTags, dayNumber, formatsFor, isBanned } from '../meals';
 import { shoppingList } from '../shopping';
-import { FORMATS, householdMeasure, portionAmount, recipeFormats, recipeVersions, versionIndex } from '../guides';
+import { FORMATS, householdMeasure, portionAmount, recipeFormats, recipeVersions, stepGrams, versionIndex } from '../guides';
 import { GUIDES } from '../data/guides';
 import { MEAL_GUIDES } from '../data/guides-meals';
 import { VERSIONS } from '../data/versions';
@@ -306,6 +306,18 @@ describe('recetas paso a paso', () => {
     expect(householdMeasure('aceite', 0.5)).toBeNull();
     expect(portionAmount('leche', 300)).toBe('300 ml');
     expect(portionAmount('pollo', 1200)).toBe('1.2 kg');
+  });
+  it('− / + van de media en media medida casera (de una en una en enteros, de 10 g sin medida)', () => {
+    expect(stepGrams('manzana', 170, 1)).toBe(225);
+    expect(householdMeasure('manzana', 225)).toBe('1½ manzanas');
+    expect(stepGrams('manzana', 170, -1)).toBe(150);
+    expect(stepGrams('mandarina', 160, 1)).toBe(200);
+    expect(stepGrams('huevo', 100, 1)).toBe(150);
+    expect(stepGrams('tofu', 437, 1)).toBe(440);
+    expect(stepGrams('papaya', 200, 1)).toBe(218);
+    expect(stepGrams('papaya', 218, -1)).toBe(145);
+    expect(stepGrams('platano', 50, -1)).toBe(0);
+    expect(stepGrams('tofu', 1995, 1)).toBe(2000);
   });
 });
 

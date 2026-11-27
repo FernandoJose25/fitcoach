@@ -104,6 +104,8 @@ interface AppState {
   toggleShop: (id: string) => void;
   clearShop: () => void;
   addLogs: (items: LogItem[], day?: string) => void;
+  /** Corrige los gramos del alimento `index` (en el orden de esa comida) ya registrado; 0 lo quita. */
+  setLogGrams: (slot: number, index: number, grams: number, day?: string) => void;
   clearSlot: (slot: number, day?: string) => void;
   setWater: (glasses: number, day?: string) => void;
   setScheme: (s: SchemePref) => void;
@@ -239,6 +241,11 @@ export const useApp = create<AppState>()(
       clearShop: () => set({ shopDone: {} }),
       addLogs: (items, day = todayKey()) =>
         set({ logs: { ...get().logs, [day]: [...(get().logs[day] ?? []), ...items] }, dirtyDays: touch(get().dirtyDays, day) }),
+      setLogGrams: (slot, index, grams, day = todayKey()) => {
+        let k = -1;
+        const logs = (get().logs[day] ?? []).flatMap((l) => (l.slot === slot && ++k === index ? (grams > 0 ? [{ ...l, grams }] : []) : [l]));
+        set({ logs: { ...get().logs, [day]: logs }, dirtyDays: touch(get().dirtyDays, day) });
+      },
       clearSlot: (slot, day = todayKey()) =>
         set({ logs: { ...get().logs, [day]: (get().logs[day] ?? []).filter((l) => l.slot !== slot) }, dirtyDays: touch(get().dirtyDays, day) }),
       setWater: (glasses, day = todayKey()) => 

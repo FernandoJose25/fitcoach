@@ -102,6 +102,19 @@ export function householdMeasure(foodId: string, grams: number): string | null {
   return `${int || ''}${ch} ${n + f > 1 ? many : one}`;
 }
 
+/**
+ * Cantidad tras un toque en − / +: de media en media medida casera (½ manzana, ½ taza), de una en una si va en
+ * enteros (huevos), o de 10 en 10 g si el alimento no tiene medida. Cae en la cuadrícula de ese paso.
+ */
+export function stepGrams(foodId: string, grams: number, dir: 1 | -1): number {
+  const m = MEASURES[foodId];
+  const u = !m ? 10 : m[3] ? m[0] : m[0] / 2;
+  const q = grams / u;
+  const e = 1 / u; // tolerancia de 1 g: los gramos se guardan redondeados
+  const n = dir > 0 ? Math.floor(q + e) + 1 : Math.ceil(q - e) - 1;
+  return Math.min(2000, Math.max(0, Math.round(n * u)));
+}
+
 /** Cantidad de la porción: ml o L para líquidos, g o kg para lo demás. */
 export function portionAmount(foodId: string, grams: number): string {
   const liquid = LIQUIDS.has(foodId);

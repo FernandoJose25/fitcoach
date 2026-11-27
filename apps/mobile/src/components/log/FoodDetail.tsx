@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { ScrollView, Text, TextInput, View } from 'react-native';
-import { verdict, type Food, type Item } from '@fitcoach/core';
+import { householdMeasure, stepGrams, verdict, type Food, type Item } from '@fitcoach/core';
 import { Chip } from '@/components/Chip';
 import { ConsequenceCard } from '@/components/Consequence';
 import { Icon } from '@/components/Icon';
@@ -50,7 +50,8 @@ export function FoodDetail({
   const eaten = sum([...logs, ...cart]);
   const v = verdict({ kcal: food.kcal * k, p: food.p * k }, eaten, targets, profile.goal);
   const presets = food.serving ? [food.serving.g, ...PRESETS.filter((g) => g !== food.serving!.g)] : PRESETS;
-  const step = (d: number) => setGrams((g) => Math.min(2000, Math.max(5, g + d)));
+  const step = (d: 1 | -1) => setGrams((g) => Math.max(5, stepGrams(food.id, g, d)));
+  const unit = householdMeasure(food.id, grams);
   const btn = { width: 48, height: 48, borderRadius: radius.btn, backgroundColor: c.bg, borderWidth: 1, borderColor: c.line, alignItems: 'center', justifyContent: 'center' } as const;
 
   return (
@@ -74,7 +75,7 @@ export function FoodDetail({
           ))}
         </ScrollView>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 12 }}>
-          <Tap onPress={() => step(-10)} style={btn} accessibilityLabel="Restar 10 gramos">
+          <Tap onPress={() => step(-1)} style={btn} accessibilityLabel="Menos">
             <Icon name="minus" size={20} color={c.ink} />
           </Tap>
           <View style={{ flex: 1, flexDirection: 'row', alignItems: 'baseline', justifyContent: 'center', gap: 4 }}>
@@ -89,10 +90,11 @@ export function FoodDetail({
             />
             <T kind="mut">g</T>
           </View>
-          <Tap onPress={() => step(10)} style={btn} accessibilityLabel="Sumar 10 gramos">
+          <Tap onPress={() => step(1)} style={btn} accessibilityLabel="Más">
             <Icon name="plus" size={20} color={c.ink} />
           </Tap>
         </View>
+        {unit && <Small style={{ textAlign: 'center', marginTop: 4 }}>≈ {unit}</Small>}
 
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 16, paddingTop: 14, borderTopWidth: 1, borderTopColor: c.line }}>
           {(
